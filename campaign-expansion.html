@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maneesh's Park in Parekklisia | Gardens of St. Gertrude</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: #eee;
+            border-radius: 50px;
+            margin: 1.5rem 0 0.5rem 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--color-success);
+            border-radius: 50px;
+        }
+
+        .stat-card {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+
+        .story-text {
+            align-items: flex-start;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body class="secondary-page">
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF4C00" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                    </svg>
+                    Gardens of St. Gertrude
+                </a>
+                <ul class="nav-links">
+
+                    <li><a href="adoptions.html">The Cats</a></li>
+                    <li><a href="the-vets.html">The Vets</a></li>
+                    <li><a href="campaigns.html" class="active">Campaigns</a></li>
+                    <li><a href="sponsor.html">Sponsor</a></li>
+                    <li><a href="donate.html">Donate</a></li>
+                    <li><a href="volunteer.html">Volunteer</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="login.html" style="font-weight: 600; color: var(--color-primary); font-size: 0.95rem;">Sign
+                        In</a>
+                    <a href="donate.html" class="btn btn-primary">Donate Now</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Campaign Hero (Center Layout) -->
+    <section class="story-section" style="display: block; text-align: center;">
+        <div class="container" style="max-width: 900px;">
+            <span
+                style="color: var(--color-primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; display: block;">Visionary
+                Project</span>
+            <h1 style="font-size: 3rem; margin-bottom: 2rem; line-height: 1.1;">The Sanctuary Expansion</h1>
+
+            <!-- Before/After Slider -->
+            <div class="slider-container"
+                style="position: relative; width: 100%; max-width: 800px; margin: 0 auto 3rem auto; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-float); aspect-ratio: 16/9;">
+                <div class="img-background"
+                    style="position: absolute; top:0; left:0; width:100%; height:100%; background-image: url('assets/garden_expansion.jpg'); background-size: cover; background-position: center;">
+                </div>
+                <div class="img-foreground"
+                    style="position: absolute; top:0; left:0; height:100%; width: 50%; background-image: url('assets/expansion_before.jpg'); background-size: cover; background-position: center; border-right: 3px solid white;">
+                </div>
+                <input type="range" min="0" max="100" value="50" class="slider" name='slider' id="slider"
+                    oninput="moveDivisor()"
+                    style="position: absolute; top: 50%; width: 100%; z-index: 100; opacity: 0; cursor: ew-resize;">
+                <div class="slider-button"
+                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: white; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3); pointer-events: none; display: flex; align-items: center; justify-content: center; color: var(--color-primary);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6" />
+                    </svg>
+                </div>
+                <div
+                    style="position: absolute; bottom: 1rem; left: 1rem; background: rgba(0,0,0,0.6); color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
+                    BEFORE</div>
+                <div
+                    style="position: absolute; bottom: 1rem; right: 1rem; background: rgba(0,0,0,0.6); color: white; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
+                    AFTER (VISION)</div>
+            </div>
+
+            <p
+                style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem; max-width: 700px; margin-left: auto; margin-right: auto;">
+                We have outgrown our sanctuary space, and there is a once-in-a-lifetime opportunity to purchase the
+                adjacent land.
+                This acquisition allows us to turn our sanctuary into a forever sanctuary and expand our capacity to
+                save lives.
+            </p>
+
+            <!-- Progress Block -->
+            <div
+                style="max-width: 600px; margin: 0 auto; background: white; padding: 1.5rem; border-radius: 8px; border: 1px solid #eee; margin-bottom: 2rem;">
+                <div
+                    style="display: flex; justify-content: space-between; font-weight: 600; font-size: 1.1rem; color: var(--color-primary);">
+                    <span>€11,000 Raised</span>
+                    <span style="color: #6b7280;">Goal: €220,000</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: 5%;"></div>
+                </div>
+                <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 1rem;">5% funded by early supporters</p>
+                <a href="#donate-widget" class="btn btn-primary" style="width: 100%; text-align: center;">Support the
+                    Expansion</a>
+            </div>
+        </div>
+
+        <script>
+            function moveDivisor() {
+                const sliderVal = document.getElementById("slider").value;
+                document.querySelector(".img-foreground").style.width = sliderVal + "%";
+                document.querySelector(".slider-button").style.left = sliderVal + "%";
+            }
+        </script>
+    </section>
+
+    <!-- Details Section -->
+    <section class="section">
+        <div class="container" style="max-width: 800px;">
+            <h2>A Sanctuary for the Future</h2>
+            <p style="font-size: 1.1rem; margin-bottom: 2rem;">
+                This expansion is not just about land; it's about the future of cat rescue in Cyprus. Maneesh's Park
+                will be a dedicated,
+                secure environment designed from the ground up to offer the highest standard of care, freedom, and
+                safety for our most vulnerable residents.
+            </p>
+
+            <h3 style="margin-bottom: 1rem;">The Vision</h3>
+            <ul
+                style="list-style: disc; padding-left: 1.5rem; margin-bottom: 2rem; font-size: 1.05rem; line-height: 1.6;">
+                <li style="margin-bottom: 0.5rem;"><strong>750 square meters</strong> of secure, open garden space.</li>
+                <li style="margin-bottom: 0.5rem;">Capacity to rescue and rehabilitate <strong>200+ additional
+                        cats</strong> annually.</li>
+                <li style="margin-bottom: 0.5rem;">Dedicated zones for senior cats and those with special needs.</li>
+                <li style="margin-bottom: 0.5rem;">Beautiful, natural landscaping integrated with enrichment structures.
+                </li>
+            </ul>
+
+            <div class="stats-row" style="margin-top: 3rem;">
+                <div class="stat-card" style="flex: 1;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary);">750m²</div>
+                    <div style="font-size: 0.9rem; color: #6b7280;">New Land</div>
+                </div>
+                <div class="stat-card" style="flex: 1;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary);">200+</div>
+                    <div style="font-size: 0.9rem; color: #6b7280;">More Lives Saved</div>
+                </div>
+                <div class="stat-card" style="flex: 1;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary);">Forever</div>
+                    <div style="font-size: 0.9rem; color: #6b7280;">Sanctuary Secure</div>
+                </div>
+            </div>
+
+            <div id="donate-widget"
+                style="margin-top: 4rem; background: #fdfaf5; padding: 2.5rem; border-radius: 12px; border: 1px solid #fed7aa;">
+                <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--color-primary);">Help Us Secure the
+                    Land</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <a href="checkout.html?amount=100&frequency=once&campaign=maneesh" class="btn"
+                        style="background: white; border: 2px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 1.5rem 1rem; border-radius: 8px; transition: all 0.2s;">
+                        <span
+                            style="display: block; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">€100</span>
+                        <span style="font-size: 0.9rem;">Buy 0.3m²</span>
+                    </a>
+                    <a href="checkout.html?amount=500&frequency=once&campaign=maneesh" class="btn"
+                        style="background: white; border: 2px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 1.5rem 1rem; border-radius: 8px; transition: all 0.2s;">
+                        <span
+                            style="display: block; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">€500</span>
+                        <span style="font-size: 0.9rem;">Buy 1.7m²</span>
+                    </a>
+                    <a href="checkout.html?amount=1000&frequency=once&campaign=maneesh" class="btn"
+                        style="background: white; border: 2px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 1.5rem 1rem; border-radius: 8px; transition: all 0.2s;">
+                        <span
+                            style="display: block; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">€1,000</span>
+                        <span style="font-size: 0.9rem;">Founder's Circle</span>
+                    </a>
+                    <a href="checkout.html?amount=10000&frequency=once&campaign=maneesh" class="btn"
+                        style="background: white; border: 2px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 1.5rem 1rem; border-radius: 8px; transition: all 0.2s;">
+                        <span
+                            style="display: block; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">€10,000</span>
+                        <span style="font-size: 0.9rem;">Secure 34m²</span>
+                    </a>
+                    <a href="checkout.html?amount=50000&frequency=once&campaign=maneesh" class="btn"
+                        style="background: var(--color-primary); color: white; text-align: center; padding: 1.5rem 1rem; border-radius: 8px; transition: all 0.2s;">
+                        <span
+                            style="display: block; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">€50,000</span>
+                        <span style="font-size: 0.9rem;">Legacy Guardian</span>
+                    </a>
+                </div>
+                <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: #666;">Donations of €10,000
+                    or more will be recognized on the "Founders Wall" in the new park.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer style="background: #111827; color: white; padding: 4rem 0;">
+        <div class="container">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3rem;">
+                <div style="max-width: 300px;">
+                    <h4 style="color: white; margin-bottom: 1rem; font-size: 1.25rem;">Gardens of St. Gertrude</h4>
+                    <p style="color: #9ca3af; font-size: 0.9rem;">A sanctuary for the forgotten, a garden for the soul.
+                        501(c)(3) Nonprofit.</p>
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 1rem;">123 Catnap Lane, Purrington, NC</p>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Discover</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="index.html" style="color: #9ca3af;">Home</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="adoptions.html" style="color: #9ca3af;">The Cats</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="campaigns.html"
+                                style="color: #9ca3af;">Campaigns</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="volunteer.html"
+                                style="color: #9ca3af;">Volunteer</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Take Action</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="donate.html" style="color: #9ca3af;">Donate</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="sponsor.html" style="color: #9ca3af;">Sponsor</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="contact.html" style="color: #9ca3af;">Contact Us</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div
+                style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #374151; text-align: center; color: #6b7280; font-size: 0.85rem;">
+                &copy; 2024 Gardens of St. Gertrude. All rights reserved. Privacy Policy.
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

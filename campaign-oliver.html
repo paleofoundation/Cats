@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency: Oliver's Story | Gardens of St. Gertrude</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: #eee;
+            border-radius: 50px;
+            margin: 1.5rem 0 0.5rem 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--color-success);
+            border-radius: 50px;
+        }
+
+        .stat-card {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+
+        .story-text {
+            align-items: flex-start;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body class="secondary-page">
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF4C00" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                    </svg>
+                    Gardens of St. Gertrude
+                </a>
+                <ul class="nav-links">
+
+                    <li><a href="adoptions.html">The Cats</a></li>
+                    <li><a href="the-vets.html">The Vets</a></li>
+                    <li><a href="campaigns.html" class="active">Campaigns</a></li>
+                    <li><a href="sponsor.html">Sponsor</a></li>
+                    <li><a href="donate.html">Donate</a></li>
+                    <li><a href="volunteer.html">Volunteer</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="login.html" style="font-weight: 600; color: var(--color-primary); font-size: 0.95rem;">Sign
+                        In</a>
+                    <a href="donate.html" class="btn btn-primary">Donate Now</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Campaign Hero (Split Layout) -->
+    <section class="story-section">
+        <!-- Image Side -->
+        <div class="story-img" style="background-image: url('assets/oliver_campaign.jpg');"></div>
+
+        <!-- Text Side -->
+        <div class="story-text">
+            <span
+                style="color: #e53e3e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Medical
+                Emergency</span>
+            <h1 style="font-size: 3rem; margin-bottom: 1.5rem; line-height: 1.1;">Oliver's Fight</h1>
+
+            <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                Oliver, a beloved regular visitor to our sanctuary, was found in critical condition after a senseless
+                act of cruelty.
+                We are raising funds for his surgeries and seeking justice for this heinous act.
+            </p>
+
+            <!-- Progress Block -->
+            <div
+                style="width: 100%; background: white; padding: 1.5rem; border-radius: 8px; border: 1px solid #eee; margin-bottom: 2rem;">
+                <div
+                    style="display: flex; justify-content: space-between; font-weight: 600; font-size: 1.1rem; color: var(--color-primary);">
+                    <span>$1,125 Raised</span>
+                    <span style="color: #6b7280;">Goal: $5,000</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: 22%;"></div>
+                </div>
+                <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 1rem;">22% funded by 45 donors</p>
+
+                <p style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; color: var(--color-primary);">
+                    Sponsor Oliver's Recovery (Monthly)</p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem;">
+                    <a href="checkout.html?amount=10&frequency=monthly&campaign=oliver" class="btn"
+                        style="background: white; border: 1px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 0.5rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem;">$10</a>
+                    <a href="checkout.html?amount=50&frequency=monthly&campaign=oliver" class="btn"
+                        style="background: white; border: 1px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 0.5rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem;">$50</a>
+                    <a href="checkout.html?amount=100&frequency=monthly&campaign=oliver" class="btn"
+                        style="background: white; border: 1px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 0.5rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem;">$100</a>
+                    <a href="checkout.html?amount=200&frequency=monthly&campaign=oliver" class="btn"
+                        style="background: white; border: 1px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 0.5rem; border-radius: 6px; font-weight: 600; font-size: 0.9rem;">$200</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Details Section -->
+    <section class="section">
+        <div class="container" style="max-width: 800px;">
+
+            <!-- Justice Pledge Section -->
+            <div
+                style="background: #111827; color: white; padding: 2.5rem; border-radius: 12px; margin-bottom: 3rem; text-align: center; border: 1px solid #374151;">
+                <h2 style="color: white; margin-bottom: 1rem; font-size: 2rem;">Justice for Oliver</h2>
+                <p style="font-size: 1.1rem; color: #d1d5db; max-width: 600px; margin: 0 auto 2rem auto;">
+                    We are offering a reward for information leading to the arrest of the individual responsible.
+                    Pledges are only collected if a conviction is made.
+                </p>
+
+                <div
+                    style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                    <div
+                        style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 8px; min-width: 200px;">
+                        <div style="font-size: 2.5rem; font-weight: 700; color: #fbbf24;">€2,500</div>
+                        <div
+                            style="font-size: 0.9rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em;">
+                            Current Reward</div>
+                    </div>
+                </div>
+
+                <a href="mailto:justice@gardens-stgertrude.org?subject=Pledge%20for%20Oliver" class="btn"
+                    style="background: #fbbf24; color: #111827; font-weight: 600; padding: 1rem 2rem; border-radius: 6px; text-decoration: none; display: inline-block;">Make
+                    a Pledge</a>
+                <p style="font-size: 0.85rem; color: #9ca3af; margin-top: 1rem;">Click to email your pledge amount. No
+                    payment required now.</p>
+            </div>
+
+            <h2>The Incident</h2>
+            <p style="font-size: 1.1rem; margin-bottom: 2rem;">
+                Oliver is not a full-time resident, but a familiar face who visits our gardens daily for food and
+                affection.
+                Three nights ago, he arrived at our gates dragging his back legs. X-rays confirmed our worst fears:
+                he had been shot. The bullet caused severe damage to his hip and spine, but our vets believe he has a
+                fighting chance to walk again with specialized surgery.
+            </p>
+
+            <h3 style="margin-bottom: 1rem;">Medical Evidence</h3>
+            <div class="gallery-grid"
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                <figure style="margin: 0;">
+                    <img src="assets/oliver_xray_cover.jpg" alt="Oliver X-Ray 1"
+                        style="width: 100%; border-radius: 8px; box-shadow: var(--shadow-sm);">
+                    <figcaption style="font-size: 0.85rem; color: #6b7280; margin-top: 0.5rem; text-align: center;">
+                        Initial impact diagnostics</figcaption>
+                </figure>
+                <figure style="margin: 0;">
+                    <img src="assets/oliver_xray_2.jpg" alt="Oliver X-Ray 2"
+                        style="width: 100%; border-radius: 8px; box-shadow: var(--shadow-sm);">
+                    <figcaption style="font-size: 0.85rem; color: #6b7280; margin-top: 0.5rem; text-align: center;">
+                        Reconstructive plating preview</figcaption>
+                </figure>
+            </div>
+
+            <div style="margin-bottom: 2.5rem;">
+                <h4 style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--color-primary);">Surgical Documentation
+                    (Sensitive)</h4>
+                <div class="sensitive-container"
+                    style="position: relative; background: #fafafa; border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid #e5e7eb;">
+
+                    <!-- Sensitive Content Overlay -->
+                    <div id="sensitive-overlay" onclick="revealContent()"
+                        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; z-index: 20; transition: opacity 0.3s; padding: 2rem; text-align: center;">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;">
+                            <path
+                                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24">
+                            </path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                        <p style="color: white; font-weight: 700; font-size: 1.25rem; margin-bottom: 0.5rem;">Sensitive
+                            Medical Content</p>
+                        <p style="color: #9ca3af; font-size: 0.95rem; max-width: 300px;">This section contains footage
+                            and images of surgical procedures. Viewer discretion advised.</p>
+                        <button
+                            style="margin-top: 1.5rem; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 0.75rem 1.5rem; border-radius: 50px; font-weight: 600; cursor: pointer; transition: background 0.2s;">Show
+                            Content</button>
+                    </div>
+
+                    <!-- Hidden Content -->
+                    <div class="sensitive-content" style="padding: 1rem;">
+                        <video id="oliver-video" controls
+                            style="width: 100%; border-radius: 8px; margin-bottom: 1rem; display: block; background: #000;">
+                            <source src="assets/oliver_recovery_placeholder.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+
+                        <div class="surgery-grid"
+                            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                            <img src="assets/oliver_surgery_1.png" alt="Surgery Step 1"
+                                style="width: 100%; border-radius: 4px; object-fit: cover; aspect-ratio: 1; cursor: pointer;"
+                                onclick="window.open(this.src, '_blank')">
+                            <img src="assets/oliver_surgery_2.png" alt="Surgery Step 2"
+                                style="width: 100%; border-radius: 4px; object-fit: cover; aspect-ratio: 1; cursor: pointer;"
+                                onclick="window.open(this.src, '_blank')">
+                            <img src="assets/oliver_surgery_3.png" alt="Surgery Step 3"
+                                style="width: 100%; border-radius: 4px; object-fit: cover; aspect-ratio: 1; cursor: pointer;"
+                                onclick="window.open(this.src, '_blank')">
+                        </div>
+                        <p style="font-size: 0.8rem; color: #6b7280; margin-top: 0.5rem; text-align: center;">Surgical
+                            reconstruction details.</p>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                function revealContent() {
+                    const overlay = document.getElementById('sensitive-overlay');
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                    }, 300);
+                }
+            </script>
+
+            <h3 style="margin-bottom: 1rem;">Treatment Plan</h3>
+            <ul
+                style="list-style: disc; padding-left: 1.5rem; margin-bottom: 2rem; font-size: 1.05rem; line-height: 1.6;">
+                <li style="margin-bottom: 0.5rem;">Reconstructive orthopedic surgery at <a
+                        href="https://www.limassolvet.com/" target="_blank"
+                        style="color: var(--color-primary); font-weight: 500;">Limassol Veterinary Clinic</a>.</li>
+                <li style="margin-bottom: 0.5rem;">6 weeks of post-op hospitalization and monitoring.</li>
+                <li style="margin-bottom: 0.5rem;">Physical therapy and hydrotherapy sessions.</li>
+            </ul>
+
+            <h3 style="margin-bottom: 1rem;">His Spirit</h3>
+            <p style="font-size: 1.1rem; margin-bottom: 2rem;">
+                Despite the pain, Oliver is incredibly sweet. He purrs when the nurses change his bandages and kneads
+                his blankets with his front paws. He hasn't given up on humans, and we won't give up on him.
+            </p>
+
+            <div class="stats-row" style="margin-top: 3rem;">
+                <div class="stat-card" style="flex: 1;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary);">1</div>
+                    <div style="font-size: 0.9rem; color: #6b7280;">Life at Stake</div>
+                </div>
+                <div class="stat-card" style="flex: 1;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary);">2</div>
+                    <div style="font-size: 0.9rem; color: #6b7280;">Surgeries Required</div>
+                </div>
+                <div class="stat-card" style="flex: 1;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary);">Urgent</div>
+                    <div style="font-size: 0.9rem; color: #6b7280;">Status</div>
+                </div>
+            </div>
+
+            <div id="donate-widget"
+                style="margin-top: 4rem; background: #fdfaf5; padding: 2.5rem; border-radius: 12px; border: 1px solid #fed7aa;">
+                <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--color-primary);">Fund Oliver's
+                    Surgery</h3>
+                <p style="text-align: center; margin-bottom: 2rem; color: #6b7280; font-size: 0.95rem;">One-time
+                    contributions go directly to medical bills.</p>
+
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <a href="checkout.html?amount=50&frequency=once&campaign=oliver" class="btn"
+                        style="background: white; border: 2px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 1rem; border-radius: 8px; font-weight: 700; transition: all 0.2s;">$50</a>
+                    <a href="checkout.html?amount=100&frequency=once&campaign=oliver" class="btn"
+                        style="background: white; border: 2px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 1rem; border-radius: 8px; font-weight: 700; transition: all 0.2s;">$100</a>
+                    <a href="checkout.html?amount=200&frequency=once&campaign=oliver" class="btn"
+                        style="background: white; border: 2px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 1rem; border-radius: 8px; font-weight: 700; transition: all 0.2s;">$200</a>
+                </div>
+
+                <div style="max-width: 400px; margin: 0 auto;">
+                    <label
+                        style="display: block; font-size: 0.9rem; margin-bottom: 0.5rem; color: #4b5563; text-align: center;">Or
+                        enter another amount:</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <span
+                            style="display: flex; align-items: center; background: #f3f4f6; padding: 0 1rem; border-radius: 6px; font-weight: 600; color: #6b7280;">$</span>
+                        <input type="number" id="custom-amount" placeholder="Other"
+                            style="flex: 1; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem;">
+                        <button onclick="donateCustom()" class="btn btn-primary"
+                            style="padding: 0.75rem 1.5rem;">Donate</button>
+                    </div>
+                </div>
+
+                <script>
+                    function donateCustom() {
+                        const amount = document.getElementById('custom-amount').value;
+                        if (amount && amount > 0) {
+                            window.location.href = `checkout.html?amount=${amount}&frequency=once&campaign=oliver`;
+                        } else {
+                            alert('Please enter a valid amount');
+                        }
+                    }
+                </script>
+            </div>
+        </div>
+    </section>
+
+    <footer style="background: #111827; color: white; padding: 4rem 0;">
+        <div class="container">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3rem;">
+                <div style="max-width: 300px;">
+                    <h4 style="color: white; margin-bottom: 1rem; font-size: 1.25rem;">Gardens of St. Gertrude</h4>
+                    <p style="color: #9ca3af; font-size: 0.9rem;">A sanctuary for the forgotten, a garden for the soul.
+                        501(c)(3) Nonprofit.</p>
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 1rem;">123 Catnap Lane, Purrington, NC</p>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Discover</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="index.html" style="color: #9ca3af;">Home</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="adoptions.html" style="color: #9ca3af;">The Cats</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="campaigns.html"
+                                style="color: #9ca3af;">Campaigns</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="volunteer.html"
+                                style="color: #9ca3af;">Volunteer</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Take Action</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="donate.html" style="color: #9ca3af;">Donate</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="sponsor.html" style="color: #9ca3af;">Sponsor</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="contact.html" style="color: #9ca3af;">Contact Us</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div
+                style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #374151; text-align: center; color: #6b7280; font-size: 0.85rem;">
+                &copy; 2024 Gardens of St. Gertrude. All rights reserved. Privacy Policy.
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Vets | Gardens of St. Gertrude</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Local overrides for the specific page layout */
+        .story-text {
+            background: #fff;
+            align-items: flex-start;
+            /* Left align text */
+            text-align: left;
+            padding: 4rem;
+        }
+
+        .story-text h1 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: var(--color-primary);
+        }
+
+        .story-text h2 {
+            font-size: 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: var(--color-accent-hover);
+            font-family: var(--font-body);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+
+        .story-text p {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+            color: var(--color-text-dark);
+        }
+
+        /* Ensure image covers fully */
+        .story-img {
+            min-height: 100%;
+        }
+
+        /* Mobile adjustment */
+        @media (max-width: 900px) {
+            .story-text {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="secondary-page">
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF4C00" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                    </svg>
+                    Gardens of St. Gertrude
+                </a>
+                <ul class="nav-links">
+                    
+                    <li><a href="adoptions.html">The Cats</a></li>
+                    <li><a href="the-vets.html" class="active">The Vets</a></li>
+                    <li><a href="campaigns.html">Campaigns</a></li>
+                    <li><a href="sponsor.html">Sponsor</a></li>
+                    <li><a href="donate.html">Donate</a></li>
+                    <li><a href="volunteer.html">Volunteer</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="login.html" style="font-weight: 600; color: var(--color-primary); font-size: 0.95rem;">Sign
+                        In</a>
+                    <a href="donate.html" class="btn btn-primary">Donate Now</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Split Layout Section -->
+    <section class="story-section">
+        <!-- Left: Image -->
+        <div class="story-img"
+            style="background-image: url('assets/dr_ktori.jpg'); box-shadow: inset -10px 0 20px -10px rgba(0,0,0,0.1);">
+        </div>
+
+        <!-- Right: Text Content -->
+        <div class="story-text">
+
+            <h1>Our Veterinary Partner</h1>
+
+            <h2>Medical Oversight</h2>
+            <p>At the Gardens of St. Gertrude, every cat in our care receives professional veterinary oversight. Medical
+                decisions are not improvised, delayed, or optional. They are guided by licensed clinical expertise and
+                delivered through an established local veterinary partnership in Limassol.</p>
+            <p>Our sanctuary works in close collaboration with <strong>Dr. Markos Ktori</strong> of the <a
+                    href="https://www.limassolvet.com/" target="_blank"
+                    style="color: var(--color-primary); text-decoration: underline; font-weight: 600;">Limassol
+                    Veterinary Clinic</a>, ensuring that all animals receive appropriate, timely, and humane medical
+                care.</p>
+
+            <h2>Expert Care</h2>
+            <p>
+                Dr. Ktori provides direct clinical oversight for cats supported by the Gardens. This includes routine
+                health assessments, emergency treatment, surgical procedures, and post-operative follow-up. His
+                involvement ensures that care decisions are medically sound and aligned with animal welfare best
+                practices.
+            </p>
+            <p>
+                In a country facing a severe overpopulation of abandoned cats and limited public resources, access to
+                consistent veterinary care is essential. This partnership allows us to respond not only to visible
+                injuries and illness, but also to underlying health issues that would otherwise go untreated.
+            </p>
+
+            <h2>Scope of Care Provided</h2>
+            <p>Cats under our protection receive veterinary services that include intake examinations, treatment of
+                infections and injuries, parasite control, spay and neuter procedures, pain management, and recovery
+                monitoring. Medical care is provided both for urgent cases and as part of long-term stabilization and
+                prevention efforts.</p>
+            <p>Spay and neuter services are a central component of our work. Preventative sterilization reduces future
+                suffering, lowers disease burden, and addresses the root causes of the crisis rather than reacting to
+                its consequences alone.</p>
+
+            <h2>Why This Matters</h2>
+            <p>Transparent veterinary partnerships are fundamental to ethical sanctuary operations. Naming our
+                veterinarian and clinic reflects our commitment to accountability, animal welfare, and responsible
+                stewardship of donor support.</p>
+            <p>When you give to the Gardens of St. Gertrude, you are directly funding professional medical care
+                delivered by a licensed veterinarian, not informal or unverified treatment.</p>
+            <p style="font-weight: 600; color: var(--color-primary); margin-top: 1rem; font-style: italic;">
+                This is how we protect individual cats today while working toward a more stable and humane future for
+                cats in Cyprus.
+            </p>
+
+        </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="section" style="background-color: #f3f4f6; text-align: center; padding: 5rem 0;">
+        <div class="container" style="max-width: 600px;">
+            <h2 style="font-size: 2rem; margin-bottom: 1rem;">Join the Garden Community</h2>
+            <p style="margin-bottom: 2rem;">Get distinct updates on the lives you're saving.</p>
+            <form style="display: flex; gap: 0.5rem;">
+                <input type="email" placeholder="Your email address"
+                    style="flex: 1; padding: 1rem; border: 1px solid #d1d5db; border-radius: 4px;" required>
+                <button type="submit" class="btn btn-primary"
+                    style="border-radius: 4px; padding: 1rem 1.5rem;">Subscribe</button>
+            </form>
+        </div>
+    </section>
+
+    <footer style="background: #111827; color: white; padding: 4rem 0;">
+        <div class="container">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3rem;">
+                <div style="max-width: 300px;">
+                    <h4 style="color: white; margin-bottom: 1rem; font-size: 1.25rem;">Gardens of St. Gertrude</h4>
+                    <p style="color: #9ca3af; font-size: 0.9rem;">A sanctuary for the forgotten, a garden for the soul.
+                        501(c)(3) Nonprofit.</p>
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 1rem;">123 Catnap Lane, Purrington, NC</p>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Discover</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="index.html" style="color: #9ca3af;">Home</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="adoptions.html" style="color: #9ca3af;">The Cats</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="the-vets.html" style="color: #9ca3af;">The Vets</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="campaigns.html"
+                                style="color: #9ca3af;">Campaigns</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="volunteer.html"
+                                style="color: #9ca3af;">Volunteer</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Take Action</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="donate.html" style="color: #9ca3af;">Donate</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="sponsor.html" style="color: #9ca3af;">Sponsor</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="contact.html" style="color: #9ca3af;">Contact Us</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div
+                style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #374151; text-align: center; color: #6b7280; font-size: 0.85rem;">
+                &copy; 2024 Gardens of St. Gertrude. All rights reserved. Privacy Policy.
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

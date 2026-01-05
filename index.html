@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gardens of St. Gertrude | Cat Rescue Sanctuary</title>
+
+    <!-- SEO & Meta -->
+    <meta name="description"
+        content="A 501(c)(3) nonprofit cat sanctuary dedicated to rescuing at-risk felines. Join us in cultivating love and saving lives. Donate or sponsor a cat today.">
+    <meta name="keywords" content="cat sanctuary, cat rescue, donate to cats, spay neuter, non-profit cat rescue">
+
+    <!-- OpenGraph / Social -->
+    <meta property="og:title" content="Gardens of St. Gertrude | A Sanctuary for Cats">
+    <meta property="og:description"
+        content="Help us provide a lush, loving home for cats in need. Every donation plants a seed of hope.">
+    <meta property="og:image" content="assets/hero_garden_cat.jpg">
+    <meta property="og:type" content="website">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Sticky Nav -->
+    <header id="main-header">
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <!-- Simple Text/Icon Logo -->
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF4C00" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                    </svg>
+                    Gardens of St. Gertrude
+                </a>
+                <ul class="nav-links">
+                    <li><a href="adoptions.html">The Cats</a></li>
+                    <li><a href="the-vets.html">The Vets</a></li>
+                    <li><a href="campaigns.html">Campaigns</a></li>
+                    <li><a href="sponsor.html">Sponsor</a></li>
+                    <li><a href="donate.html">Donate</a></li>
+                    <li><a href="volunteer.html">Volunteer</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="login.html" style="font-weight: 600; color: var(--color-primary); font-size: 0.95rem;">Sign
+                        In</a>
+                    <a href="donate.html" class="btn btn-primary">Donate Now</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section (V1.2 Clean & Bold) -->
+        <section class="hero">
+            <div class="container hero-container"
+                style="display: flex; align-items: center; justify-content: flex-start; height: 100%;">
+                <div style="max-width: 500px;">
+                    <div class="hero-text" style="text-align: left; margin-bottom: 2rem;">
+                        <h1
+                            style="color: white; font-size: 3.5rem; text-shadow: 0 4px 12px rgba(0,0,0,0.5); line-height: 1.1; margin-bottom: 0.5rem;">
+                            Protect Cyprus’<br>forgotten cats.</h1>
+                    </div>
+
+                    <!-- Donation Widget (Charity Water Style - Compact) -->
+                    <div class="hero-widget"
+                        style="position: relative; background: white; padding: 1.5rem; border-radius: 4px; width: 100%; max-width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+
+                        <p
+                            style="color: #333; font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
+                            In Cyprus, abandoned cats face hunger and illness every day. We provide sanctuary,
+                            veterinary care, and spay/neuter solutions that prevent suffering.
+                        </p>
+
+                        <!-- Tabs -->
+                        <div class="widget-tabs"
+                            style="display: flex; margin-bottom: 1rem; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden;">
+                            <button id="tab-once" class="tab" onclick="switchTab('once')"
+                                style="flex: 1; padding: 0.75rem; border: none; background: white; font-weight: 700; color: #333; font-size: 0.9rem; cursor: pointer;">GIVE
+                                ONCE</button>
+                            <button id="tab-monthly" class="tab active" onclick="switchTab('monthly')"
+                                style="flex: 1; padding: 0.75rem; border: none; background: #FF4C00; font-weight: 700; color: white; font-size: 0.9rem; cursor: pointer;">MONTHLY</button>
+                        </div>
+
+                        <p
+                            style="text-align: center; font-weight: 700; margin-bottom: 0.75rem; color: #333; font-size: 0.95rem;">
+                            Choose an
+                            amount</p>
+
+                        <!-- Amount Grid -->
+                        <div id="amount-grid" class="amount-grid"
+                            style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem;">
+                            <!-- Populated by JS -->
+                        </div>
+
+                        <a href="donate.html" class="btn btn-primary" onclick="handleDonateClick(event)"
+                            style="width: 100%; display: block; text-align: center; background: #FF4C00; color: white; border: none; font-weight: 800; padding: 1rem; font-size: 1rem; text-transform: uppercase; border-radius: 4px;">Make
+                            a Donation</a>
+
+                        <p id="impact-text"
+                            style="margin-top: 1rem; font-size: 0.85rem; color: #64748b; text-align: center; line-height: 1.4;">
+                            <!-- Populated by JS -->
+                        </p>
+
+                        <!-- Upsell Modal (Absolute Overlay) -->
+                        <div id="upsell-modal"
+                            style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #f8fafc; border-radius: 4px; z-index: 100; overflow: hidden; flex-direction: column; transform: none; box-shadow: none; max-width: none;">
+                            <div
+                                style="background: #f1f5f9; padding: 1rem; text-align: center; border-bottom: 1px solid #e2e8f0; position: relative;">
+                                <h3 id="upsell-header" style="margin: 0; font-size: 1.1rem; color: #334155;">Giving $100
+                                    USD
+                                </h3>
+                                <button onclick="closeUpsellModal()"
+                                    style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer;">&times;</button>
+                            </div>
+
+                            <div
+                                style="padding: 1.5rem; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                                <h2 style="margin-top: 0; font-size: 1.15rem; margin-bottom: 0.75rem; color: #1e293b;">
+                                    Would you consider something?</h2>
+                                <p style="color: #64748b; margin-bottom: 1.5rem; line-height: 1.5; font-size: 0.95rem;">
+                                    By making a monthly donation, you'll empower us to make long-term investments to
+                                    bring safety to more cats.
+                                </p>
+
+                                <div
+                                    style="background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; text-align: left; margin-bottom: 1rem;">
+                                    <div
+                                        style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+                                        <label class="switch"
+                                            style="position: relative; display: inline-block; width: 50px; height: 28px;">
+                                            <input type="checkbox" id="upsell-toggle" onchange="toggleUpsell()">
+                                            <span class="slider round"
+                                                style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px;"></span>
+                                            <style>
+                                                .slider:before {
+                                                    position: absolute;
+                                                    content: "";
+                                                    height: 20px;
+                                                    width: 20px;
+                                                    left: 4px;
+                                                    bottom: 4px;
+                                                    background-color: white;
+                                                    transition: .4s;
+                                                    border-radius: 50%;
+                                                }
+
+                                                input:checked+.slider {
+                                                    background-color: #FF4C00;
+                                                }
+
+                                                input:checked+.slider:before {
+                                                    transform: translateX(22px);
+                                                }
+                                            </style>
+                                        </label>
+                                        <span id="upsell-toggle-text"
+                                            style="font-weight: 700; color: #334155; font-size: 0.95rem;">Give $60/mo
+                                            instead</span>
+                                    </div>
+                                    <p style="font-size: 0.85rem; color: #475569; line-height: 1.4; margin: 0;">
+                                        Please consider joining our monthly giving community, The Gardeners.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div style="padding: 1rem 1.5rem 1.5rem;">
+                                <a id="upsell-confirm-btn" href="#" class="btn btn-primary"
+                                    style="width: 100%; display: block; text-align: center; background: #FF4C00; color: white; border: none; font-weight: 800; padding: 1rem; font-size: 1rem; text-transform: uppercase; border-radius: 4px; text-decoration: none;">
+                                    GIVE $100
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        const amounts = {
+                            monthly: [10, 20, 40, 100],
+                            once: [50, 100, 150, 200]
+                        };
+
+                        let currentFrequency = 'monthly';
+                        let selectedAmount = 40;
+                        let isCustom = false;
+
+                        function switchTab(frequency) {
+                            currentFrequency = frequency;
+                            const tabOnce = document.getElementById('tab-once');
+                            const tabMonthly = document.getElementById('tab-monthly');
+
+                            isCustom = false; // Reset custom on tab switch
+
+                            if (frequency === 'once') {
+                                tabOnce.style.background = '#FF4C00';
+                                tabOnce.style.color = 'white';
+                                tabMonthly.style.background = 'white';
+                                tabMonthly.style.color = '#333';
+                                selectedAmount = 100; // Default for once
+                            } else {
+                                tabMonthly.style.background = '#FF4C00';
+                                tabMonthly.style.color = 'white';
+                                tabOnce.style.background = 'white';
+                                tabOnce.style.color = '#333';
+                                selectedAmount = 40; // Default for monthly
+                            }
+                            renderAmounts();
+                        }
+
+                        function selectAmount(amount) {
+                            isCustom = false;
+                            selectedAmount = amount;
+                            renderAmounts();
+                        }
+
+                        function selectCustom() {
+                            isCustom = true;
+                            selectedAmount = ''; // Clear for input
+                            renderAmounts();
+                        }
+
+                        function updateCustomAmount(val) {
+                            selectedAmount = val;
+                            updateImpactText();
+                        }
+
+                        function renderAmounts() {
+                            const grid = document.getElementById('amount-grid');
+                            grid.innerHTML = '';
+
+                            const options = amounts[currentFrequency];
+                            options.forEach(amt => {
+                                const btn = document.createElement('button');
+                                btn.className = `amount-btn ${!isCustom && selectedAmount === amt ? 'selected' : ''}`;
+                                btn.onclick = () => selectAmount(amt);
+                                btn.innerText = `$${amt} USD`;
+                                btn.style.padding = '0.75rem';
+                                btn.style.border = (!isCustom && selectedAmount === amt) ? '2px solid #FF4C00' : '1px solid #e2e8f0';
+                                btn.style.background = (!isCustom && selectedAmount === amt) ? '#FF4C00' : '#f8fafc';
+                                btn.style.color = (!isCustom && selectedAmount === amt) ? 'white' : '#333';
+                                btn.style.borderRadius = '4px';
+                                btn.style.fontWeight = '600';
+                                if (!isCustom && selectedAmount === amt) btn.style.fontWeight = '700';
+                                btn.style.fontSize = '0.9rem';
+                                btn.style.cursor = 'pointer';
+                                grid.appendChild(btn);
+                            });
+
+                            if (isCustom) {
+                                // Render Input instead of button
+                                const input = document.createElement('input');
+                                input.type = 'number';
+                                input.placeholder = 'Enter Amount';
+                                input.value = selectedAmount;
+                                input.oninput = (e) => updateCustomAmount(e.target.value);
+                                input.style.padding = '0.75rem';
+                                input.style.border = '2px solid #FF4C00';
+                                input.style.background = 'white';
+                                input.style.borderRadius = '4px';
+                                input.style.fontSize = '0.95rem';
+                                input.style.gridColumn = 'span 2';
+                                input.style.width = '100%';
+                                // input.focus(); // Removed to prevent jitter
+                                grid.appendChild(input);
+                                input.focus();
+                            } else {
+                                // "Other Amount" Button
+                                const otherBtn = document.createElement('button');
+                                otherBtn.className = 'amount-btn';
+                                otherBtn.innerText = 'Other Amount';
+                                otherBtn.onclick = () => selectCustom();
+                                otherBtn.style.padding = '0.75rem';
+                                otherBtn.style.border = '1px solid #e2e8f0';
+                                otherBtn.style.background = '#f8fafc';
+                                otherBtn.style.borderRadius = '4px';
+                                otherBtn.style.fontWeight = '600';
+                                otherBtn.style.fontSize = '0.95rem';
+                                otherBtn.style.gridColumn = 'span 2';
+                                otherBtn.style.cursor = 'pointer';
+                                grid.appendChild(otherBtn);
+                            }
+
+                            // Sponsor Month Button (Only for Once)
+                            if (currentFrequency === 'once') {
+                                const sponsorBtn = document.createElement('a');
+                                sponsorBtn.href = 'sponsor-month.html';
+                                sponsorBtn.innerText = 'Sponsor an entire month';
+                                sponsorBtn.style.gridColumn = '1 / -1'; // Full width
+                                sponsorBtn.style.marginTop = '0.5rem';
+                                sponsorBtn.style.padding = '0.75rem';
+                                sponsorBtn.style.border = '1px solid #cbd5e1';
+                                sponsorBtn.style.background = 'white';
+                                sponsorBtn.style.color = '#333';
+                                sponsorBtn.style.borderRadius = '4px';
+                                sponsorBtn.style.fontWeight = '600';
+                                sponsorBtn.style.textAlign = 'center';
+                                sponsorBtn.style.textDecoration = 'none';
+                                sponsorBtn.style.fontSize = '0.9rem';
+                                sponsorBtn.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+                                sponsorBtn.style.transition = 'background-color 0.2s';
+                                sponsorBtn.onmouseover = () => { sponsorBtn.style.background = '#f1f5f9'; };
+                                sponsorBtn.onmouseout = () => { sponsorBtn.style.background = 'white'; };
+                                grid.appendChild(sponsorBtn);
+                            }
+
+                            updateImpactText();
+                        }
+
+                        function handleDonateClick(e) {
+                            e.preventDefault();
+                            if (currentFrequency === 'once') {
+                                // For One-Time donations, show upsell modal
+                                showUpsellModal();
+                            } else {
+                                // For Monthly, redirect to checkout with params
+                                const amount = selectedAmount || 40;
+                                window.location.href = `checkout.html?amount=${amount}&frequency=monthly`;
+                            }
+                        }
+
+                        function showUpsellModal() {
+                            const modal = document.getElementById('upsell-modal');
+                            const amount = Number(selectedAmount) || 0;
+                            const monthlyOffer = Math.floor(amount * 0.6); // 60% rule
+
+                            document.getElementById('upsell-header').innerText = `Giving $${amount} USD`;
+                            document.getElementById('upsell-toggle-text').innerText = `Give $${monthlyOffer}/mo instead`;
+
+                            // Reset state
+                            document.getElementById('upsell-toggle').checked = false;
+                            const btn = document.getElementById('upsell-confirm-btn');
+                            btn.innerText = `GIVE $${amount}`;
+                            btn.href = `checkout.html?amount=${amount}&frequency=once`;
+
+                            modal.style.display = 'flex'; // Use flex for column layout
+
+                            // Store offer amount for toggle logic
+                            modal.dataset.offerAmount = monthlyOffer;
+                            modal.dataset.originalAmount = amount;
+                        }
+
+                        function closeUpsellModal() {
+                            document.getElementById('upsell-modal').style.display = 'none';
+                        }
+
+                        function toggleUpsell() {
+                            const isChecked = document.getElementById('upsell-toggle').checked;
+                            const modal = document.getElementById('upsell-modal');
+                            const btn = document.getElementById('upsell-confirm-btn');
+                            const offerAmt = modal.dataset.offerAmount;
+                            const originalAmt = modal.dataset.originalAmount;
+
+                            if (isChecked) {
+                                btn.innerText = `GIVE $${offerAmt} MONTHLY`;
+                                btn.href = `checkout.html?amount=${offerAmt}&frequency=monthly`;
+                            } else {
+                                btn.innerText = `GIVE $${originalAmt}`;
+                                btn.href = `checkout.html?amount=${originalAmt}&frequency=once`;
+                            }
+                        }
+
+                        function updateImpactText() {
+                            const impactText = document.getElementById('impact-text');
+                            const amount = Number(selectedAmount) || 0;
+
+                            if (currentFrequency === 'monthly') {
+                                impactText.innerHTML = `Your <strong style="text-decoration: underline; text-decoration-color: #FF4C00; text-decoration-thickness: 2px;">$${amount.toFixed(2)}</strong> monthly donation can give <strong>${Math.floor(amount / 3.33) || 0}</strong> cats food and safety every year.`;
+                            } else {
+                                impactText.innerHTML = `Your <strong style="text-decoration: underline; text-decoration-color: #FF4C00; text-decoration-thickness: 2px;">$${amount.toFixed(2)}</strong> donation can provide <strong>${Math.floor(amount / 10) || 0}</strong> weeks of veterinary care.`;
+                            }
+                        }
+
+                        // Initialize
+                        renderAmounts();
+                    </script>
+
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <a href="adoptions.html"
+                            style="color: white; text-decoration: underline; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Meet
+                            the Cats</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Campaign Strip (New V1.2) -->
+        <div class="campaign-strip">
+            <div class="container campaign-strip-content" style="gap: 2rem; justify-content: center;">
+                <span
+                    style="font-weight: 600; color: #334155; font-size: 1.05rem; line-height: 1.5; text-align: right; max-width: 600px;">
+                    Thanks to generous private donors who fund our operational expenses, 100% of your donation directly
+                    funds cat welfare projects.
+                </span>
+
+                <div class="loader-100" style="position: relative; width: 60px; height: 60px; flex-shrink: 0;">
+                    <svg viewBox="0 0 36 36" style="width: 100%; height: 100%; transform: rotate(-90deg);">
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" stroke="#e2e8f0" stroke-width="4" />
+                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none" stroke="#FF4C00" stroke-width="4" stroke-dasharray="100, 100"
+                            stroke-dashoffset="100" style="animation: dash 1.5s ease-out forwards;" />
+                    </svg>
+                    <div
+                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.85rem; font-weight: 800; color: #FF4C00;">
+                        100%</div>
+                </div>
+
+                <style>
+                    @keyframes dash {
+                        to {
+                            stroke-dashoffset: 0;
+                        }
+                    }
+                </style>
+            </div>
+        </div>
+
+        <!-- Impact Stats (V1.2 Big Numbers) -->
+        <section class="stats-band">
+            <div class="container">
+                <div class="stats-row">
+                    <div class="stat-block">
+                        <h3>1,240</h3>
+                        <p>Visits Funded</p>
+                    </div>
+                    <div class="stat-block">
+                        <h3>120+</h3>
+                        <p>Sanctuary Residents</p>
+                    </div>
+                    <div class="stat-block">
+                        <h3>15</h3>
+                        <p>Years of Service</p>
+                    </div>
+                    <div class="stat-block">
+                        <h3>100%</h3>
+                        <p>No-Kill Promise</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Story Section (Split Layout) -->
+        <section class="story-section">
+            <div class="story-img"></div>
+            <div class="story-text">
+                <span
+                    style="text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: var(--color-accent-text); font-size: 0.9rem; margin-bottom: 1rem;">From
+                    the Ground Up</span>
+                <h2>It starts with you</h2>
+                <p style="font-size: 1.1rem; margin-bottom: 1.5rem; line-height: 1.7;">
+                    The cat crisis in Cyprus will not be solved by isolated rescues or one-time gestures. It will be
+                    resolved because people, like you, continue to show up for animals who have no voice, no protection,
+                    and no alternative. Day after day.
+                </p>
+                <p style="font-size: 1.1rem; margin-bottom: 2rem; line-height: 1.7;">
+                    That consistency is what provides food, medical care, sterilization, and safe shelter. That
+                    consistency prevents suffering before it begins. That consistency is what changes outcomes
+                    permanently.
+                </p>
+                <p style="font-size: 1.1rem; margin-bottom: 2rem; line-height: 1.7; font-weight: 600;">
+                    Give today to help protect, treat, and stabilize vulnerable cats across Cyprus.
+                </p>
+                <a href="donate.html" class="btn btn-primary" style="align-self: flex-start;">Give Now</a>
+            </div>
+        </section>
+
+        <!-- Ways to Give (Grid) -->
+        <section class="section" style="background: white;">
+            <div class="container">
+                <div class="text-center mb-md">
+                    <h2 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Ways to Help</h2>
+                    <p>Every gift seeds a brighter future.</p>
+                </div>
+
+                <div class="giving-grid">
+                    <!-- Card 1 -->
+                    <div class="give-card">
+                        <div class="give-icon">💧</div>
+                        <h3>Monthly Giving</h3>
+                        <p style="color: #666; margin-bottom: 1.5rem;">Join "The Gardeners" and provide steady support
+                            for
+                            daily medical care and food.</p>
+                        <a href="donate.html?frequency=monthly"
+                            style="color: var(--color-primary); font-weight: 700;">Become a Partner &rarr;</a>
+                    </div>
+
+                    <!-- Card 2 -->
+                    <div class="give-card">
+                        <div class="give-icon">🌻</div>
+                        <h3>Sponsor a Cat</h3>
+                        <p style="color: #666; margin-bottom: 1.5rem;">Directly support a specific resident who needs
+                            special medical attention.</p>
+                        <a href="adoptions.html" style="color: var(--color-primary); font-weight: 700;">Find a Friend
+                            &rarr;</a>
+                    </div>
+
+                    <!-- Card 3 -->
+                    <div class="give-card">
+                        <div class="give-icon">🌱</div>
+                        <h3>Legacy Gifts</h3>
+                        <p style="color: #666; margin-bottom: 1.5rem;">Include the Gardens in your will and leave a
+                            lasting legacy of compassion.</p>
+                        <a href="contact.html" style="color: var(--color-primary); font-weight: 700;">Learn More
+                            &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trust & Transparency Section (New) -->
+        <section class="section"
+            style="background-color: var(--color-primary); padding-top: 5rem; padding-bottom: 5rem; color: white;">
+            <div class="container" style="max-width: 800px; text-align: center;">
+                <h2 style="font-size: 2rem; margin-bottom: 1.5rem; color: white;">Give with confidence. Receive proof.
+                </h2>
+
+                <p style="font-size: 1.1rem; color: rgba(255,255,255,0.9); line-height: 1.8; margin-bottom: 1.5rem;">
+                    We believe trust is built through accountability, not promises. Donors deserve clarity about where
+                    their support goes and what it accomplishes. That transparency is central to our work.
+                </p>
+                <p style="font-size: 1.1rem; font-weight: 600; color: white; margin-bottom: 2rem;">
+                    It is not simply generosity. It is stewardship backed by action.
+                </p>
+
+                <div style="margin-bottom: 3rem;">
+                    <a href="#newsletter" class="btn"
+                        style="background-color: white; color: var(--color-primary); font-weight: 700; padding: 1rem 2rem; border-radius: 50px; text-decoration: none; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); display: inline-block;">
+                        Sign Up to See How
+                    </a>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 2rem; color: #a7f3d0; font-weight: 600;">
+                    <span style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                        </svg> 100% Tax Deductible
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                            <path
+                                d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+                        </svg> Secure & Verified
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Newsletter (Simplified V1.2) -->
+        <section class="section" style="background-color: #f3f4f6; text-align: center; padding: 5rem 0;">
+            <div class="container" style="max-width: 600px;">
+                <h2 style="font-size: 2rem; margin-bottom: 1rem;">Join the Garden Community</h2>
+                <p style="margin-bottom: 2rem;">Get distinct updates on the lives you're saving.</p>
+                <form style="display: flex; gap: 0.5rem;">
+                    <input type="email" placeholder="Your email address"
+                        style="flex: 1; padding: 1rem; border: 1px solid #d1d5db; border-radius: 4px;" required>
+                    <button type="submit" class="btn btn-primary"
+                        style="border-radius: 4px; padding: 1rem 1.5rem;">Subscribe</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer style="background: #111827; color: white; padding: 4rem 0;">
+        <div class="container">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3rem;">
+                <div style="max-width: 300px;">
+                    <h4 style="color: white; margin-bottom: 1rem; font-size: 1.25rem;">Gardens of St. Gertrude</h4>
+                    <p style="color: #9ca3af; font-size: 0.9rem;">A sanctuary for the forgotten, a garden for the soul.
+                        501(c)(3) Nonprofit.</p>
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 1rem;">123 Catnap Lane, Purrington, NC</p>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Discover</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="index.html" style="color: #9ca3af;">Home</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="adoptions.html" style="color: #9ca3af;">The Cats</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="campaigns.html"
+                                style="color: #9ca3af;">Campaigns</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="volunteer.html"
+                                style="color: #9ca3af;">Volunteer</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Take Action</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="donate.html" style="color: #9ca3af;">Donate</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="sponsor.html" style="color: #9ca3af;">Sponsor</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="contact.html" style="color: #9ca3af;">Contact Us</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div
+                style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #374151; text-align: center; color: #6b7280; font-size: 0.85rem;">
+                &copy; 2024 Gardens of St. Gertrude. All rights reserved. Privacy Policy.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Global Scripts -->
+    <script src="cats.js"></script>
+</body>
+
+</html>

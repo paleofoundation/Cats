@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donate | Gardens of St. Gertrude</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Updated Layout for Scrolling (matches sponsor-month logic) */
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            height: auto;
+            /* Override fixed height */
+        }
+
+        /* Re-using site header styles from style.css but ensuring valid layout */
+        header {
+            flex: 0 0 auto;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            z-index: 50;
+        }
+
+        /* Split Layout */
+        .split-main {
+            display: flex;
+            flex-wrap: wrap;
+            min-height: 90vh;
+            overflow: visible;
+            /* Allow scrolling */
+        }
+
+        .left-panel {
+            flex: 1;
+            min-width: 50%;
+            background-image: url('assets/hero_home_v3.jpg');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .right-panel {
+            flex: 1;
+            min-width: 50%;
+            background-color: #222520;
+            /* Updated Dark User Color */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            overflow: visible;
+        }
+
+        @media (max-width: 900px) {
+            .left-panel {
+                min-height: 300px;
+                width: 100%;
+                flex: none;
+            }
+
+            .right-panel {
+                width: 100%;
+                flex: none;
+            }
+        }
+
+        /* Card Styling */
+        .checkout-card {
+            background: white;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .amount-header {
+            background-color: #f3f4f6;
+            padding: 1rem;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #333;
+            font-weight: 500;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .edit-link {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #4b5563;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        /* Form Elements */
+        .section-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .express-btn {
+            background-color: #333;
+            color: white;
+            width: 100%;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            color: #9ca3af;
+            /* Lighter text on dark background? No, card is white */
+            color: #4b5563;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            flex: 1;
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #6b7280;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #FF4C00;
+            box-shadow: 0 0 0 2px rgba(255, 76, 0, 0.2);
+        }
+
+        .checkbox-row {
+            display: flex;
+            gap: 2rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            color: #374151;
+        }
+
+        .checkbox-item input {
+            width: 1.25rem;
+            height: 1.25rem;
+            accent-color: #FF4C00;
+        }
+
+        .small-text {
+            font-size: 0.8rem;
+            color: #4b5563;
+            line-height: 1.4;
+            margin-bottom: 1.5rem;
+        }
+
+        .next-btn {
+            background-color: #FF4C00;
+            /* Orange */
+            color: white;
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .next-btn:hover {
+            background-color: #e04300;
+        }
+
+        .footer-secure {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #9ca3af;
+            /* Light gray for visibility on dark background? No, this is inside white card width? NO, footer is usually outside. Let's check mockup. Mockup shows lock inside white area? No, typically below. Mockup text "Secure Payment..." is at bottom of white card. */
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Main Navigation -->
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF4C00" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                    </svg>
+                    Gardens of St. Gertrude
+                </a>
+                <ul class="nav-links">
+                    
+                    <li><a href="adoptions.html">The Cats</a></li>
+                    <li><a href="the-vets.html">The Vets</a></li>
+                    <li><a href="campaigns.html">Campaigns</a></li>
+                    <li><a href="sponsor.html">Sponsor</a></li>
+                    <li><a href="donate.html">Donate</a></li>
+                    <li><a href="volunteer.html">Volunteer</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="login.html" style="font-weight: 600; color: var(--color-primary); font-size: 0.95rem;">Sign
+                        In</a>
+                    <a href="donate.html" class="btn btn-primary">Donate Now</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <div class="split-main">
+        <!-- Left Panel: Content -->
+        <div class="left-panel"></div>
+
+        <!-- Right Panel: Form -->
+        <div class="right-panel">
+            <div class="checkout-card">
+                <!-- Header -->
+                <div class="amount-header">
+                    <div id="amount-display-container"
+                        style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;">
+                        <span id="amount-text">Giving $40 USD per month</span>
+                        <span id="edit-btn" class="edit-link" onclick="toggleEditMode()">EDIT</span>
+                    </div>
+                    <div id="amount-edit-container"
+                        style="display: none; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;">
+                        <span style="font-weight: 600; font-size: 0.9rem;">$</span>
+                        <input type="number" id="custom-amount-input"
+                            style="width: 80px; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 1rem;"
+                            min="5">
+                        <span style="font-weight: 600; font-size: 0.9rem;">USD</span>
+                        <button type="button" onclick="saveNewAmount()"
+                            style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; padding: 0.4rem 0.8rem; cursor: pointer; background: #333; color: white; border: none; border-radius: 4px;">Update</button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- Express Payment -->
+                    <div class="section-label">EXPRESS PAYMENT METHOD</div>
+                    <button class="express-btn">
+                        Express Donate &raquo;
+                    </button>
+
+                    <div class="divider">or enter your details manually below</div>
+
+                    <!-- Form -->
+                    <form id="checkout-form" onsubmit="handleCheckout(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">First Name</label>
+                                <input type="text" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" class="form-input" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-input" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Phone Number (Optional)</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <!-- Simple flag/code placeholder as dropdown -->
+                                <select class="form-input" style="width: 80px; padding: 0.5rem;">
+                                    <option>🇺🇸 +1</option>
+                                    <option>🇬🇧 +44</option>
+                                    <option>🇨🇦 +1</option>
+                                </select>
+                                <input type="tel" class="form-input" placeholder="(201) 555-0123">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 2rem;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                                Choose how you want to hear from us
+                                <span
+                                    style="background: #fbbf24; color: white; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; justify-content: center; align-items: center; font-size: 10px; cursor: help;">?</span>
+                            </label>
+                            <div class="checkbox-row">
+                                <label class="checkbox-item">
+                                    <input type="checkbox"> Email
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox"> Text message
+                                </label>
+                            </div>
+                        </div>
+
+                        <p class="small-text">
+                            Get occasional automated texts from Gardens of St. Gertrude with updates and ways to help.
+                            Reply STOP to unsubscribe or HELP for help. Msg & data rates may apply.
+                            Consent isn't required to donate. See Privacy Policy.
+                        </p>
+
+                        <button type="submit" class="next-btn">Next</button>
+                    </form>
+
+                    <div class="footer-secure">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+                        </svg>
+                        <span>Secure Payment - This site is protected by reCAPTCHA and the Google Privacy Policy and
+                            Terms of Service apply.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gardener Details Section (Hidden by default) -->
+    <section id="gardener-details" style="background: white; padding: 5rem 1rem; display: none;">
+        <div class="container" style="max-width: 800px; margin: 0 auto;">
+            <h2
+                style="font-family: 'Playfair Display', serif; font-size: 2.5rem; color: #1e293b; margin-bottom: 2rem; text-align: center;">
+                Gardener Membership Benefits</h2>
+
+            <div style="font-size: 1.05rem; line-height: 1.7; color: #334155;">
+                <p style="margin-bottom: 1.5rem;">
+                    As a Gardener, you receive access to a private supporter dashboard where you can view your past
+                    contributions, see the real-world impact of your support, and follow the progress of the sanctuary
+                    over time.
+                </p>
+                <p style="margin-bottom: 1.5rem;">
+                    Gardeners receive periodic behind-the-scenes updates, early insight into upcoming initiatives, and
+                    direct reporting on how funds are used. This is not marketing content. It is operational
+                    transparency designed to keep supporters informed and connected to the work they sustain.
+                </p>
+                <p style="margin-bottom: 0;">
+                    Your Gardener profile reflects cumulative impact rather than status. It shows the care you have
+                    helped fund, the initiatives you have supported, and the continuity you help provide to the animals
+                    in our care.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Parse URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const amount = urlParams.get('amount') || '40';
+        const frequency = urlParams.get('frequency') || 'monthly';
+        const campaign = urlParams.get('campaign');
+
+        const amountText = document.getElementById('amount-text');
+
+        // Format Amount
+        // Ensure amount is a valid number, default to 40 if not
+        let numAmount = Number(amount);
+        if (isNaN(numAmount)) numAmount = 40;
+
+        const formattedAmount = numAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+        const freqText = frequency === 'once' ? '' : 'per month';
+
+        // If frequency is 'once', usually we don't say 'once', just 'Giving $X USD'
+        amountText.innerText = `Giving ${formattedAmount} USD ${freqText}`;
+
+        // Update Button Text based on Frequency
+        const nextBtn = document.querySelector('.next-btn');
+        if (frequency === 'monthly') {
+            nextBtn.innerText = 'Become a Gardener';
+        } else {
+            nextBtn.innerText = 'Next';
+        }
+
+        function handleCheckout(e) {
+            e.preventDefault();
+            const btn = document.querySelector('.next-btn');
+            btn.innerText = 'Processing...';
+            btn.disabled = true;
+            btn.style.opacity = '0.8';
+
+            setTimeout(() => {
+                // If campaign is present, maybe redirect to campaign specific thank you? 
+                if (frequency === 'monthly') {
+                    window.location.href = 'portal.html';
+                } else {
+                    alert('Thank you! Redirecting to home.');
+                    window.location.href = 'index.html';
+                }
+            }, 1000);
+        }
+
+        // Inline Edit Logic
+        function toggleEditMode() {
+            const displayContainer = document.getElementById('amount-display-container');
+            const editContainer = document.getElementById('amount-edit-container');
+            const input = document.getElementById('custom-amount-input');
+
+            // Toggle visibility
+            if (editContainer.style.display === 'none') {
+                displayContainer.style.display = 'none';
+                editContainer.style.display = 'flex';
+                input.value = numAmount; // Pre-fill
+                input.focus();
+            } else {
+                editContainer.style.display = 'none';
+                displayContainer.style.display = 'flex';
+            }
+        }
+
+        function saveNewAmount() {
+            const input = document.getElementById('custom-amount-input');
+            const newVal = Number(input.value);
+
+            if (!newVal || newVal < 1) {
+                alert('Please enter a valid amount.');
+                return;
+            }
+
+            // Update Globals
+            numAmount = newVal;
+            const newFormatted = numAmount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+            // Update Display Text
+            const freqText = frequency === 'once' ? '' : 'per month';
+            document.getElementById('amount-text').innerText = `Giving ${newFormatted} USD ${freqText}`;
+
+            // Close Edit Mode
+            toggleEditMode();
+        }
+
+        // Initialize Page Content
+        if (frequency === 'monthly') {
+            const leftPanel = document.querySelector('.left-panel');
+            leftPanel.innerHTML = `
+                <div style="height: 100%; width: 100%; background: rgba(34, 37, 32, 0.85); display: flex; flex-direction: column; justify-content: center; padding: 4rem;">
+                    <h2 style="font-family: 'Playfair Display', serif; font-size: 2.5rem; margin-bottom: 2rem; color: #fed7aa;">The Gardeners</h2>
+                    <p style="color: rgba(255,255,255,0.9); margin-bottom: 1.5rem; line-height: 1.6; font-size: 1.05rem;">
+                        Gardeners are the people who make the work of the Gardens of St. Gertrude possible. By giving, you become part of the community that sustains daily care, medical treatment, and long-term protection for cats who would otherwise be left behind.
+                    </p>
+                    <p style="margin-bottom: 0; line-height: 1.6; font-size: 1.25rem; font-weight: 600; color: #fed7aa; font-family: 'Playfair Display', serif; font-style: italic;">
+                        "Gardening is not a one-time act. It is an ongoing commitment to stewardship, prevention, and protection."
+                    </p>
+                     <div style="margin-top: 2rem;">
+                     <a href="#gardener-details" style="color: white; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; font-size: 0.9rem; text-decoration: underline; text-underline-offset: 4px;">Read about Member Benefits &darr;</a>
+                 </div>
+                </div>
+            `;
+
+            // Show lower section
+            document.getElementById('gardener-details').style.display = 'block';
+        }
+    </script>
+</body>
+
+</html>

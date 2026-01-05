@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Profile | Gardens of St. Gertrude</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Profile Specific Styles */
+        .profile-header {
+            background-color: var(--color-bg-white);
+            padding: 4rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: start;
+        }
+
+        .profile-gallery-main {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 3/4;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .profile-gallery-main img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-thumbnails {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .thumbnail {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.2s;
+        }
+
+        .thumbnail:hover,
+        .thumbnail.active {
+            opacity: 1;
+            border: 2px solid var(--color-primary);
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-info h1 {
+            margin-bottom: 0.5rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #e6fffa;
+            color: var(--color-primary);
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            border: 1px solid #b2f5ea;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-item span {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--color-text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-item strong {
+            font-size: 1.1rem;
+            color: var(--color-text-dark);
+        }
+
+        .campaign-card {
+            background: #fff9f0;
+            border: 1px solid #fed7aa;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .campaign-progress {
+            height: 10px;
+            background: #fae8d4;
+            border-radius: 5px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .campaign-bar {
+            height: 100%;
+            background: var(--color-accent);
+            border-radius: 5px;
+        }
+
+        @media (max-width: 900px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="secondary-page">
+    <!-- Header/Nav -->
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF4C00" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                    </svg>
+                    Gardens of St. Gertrude
+                </a>
+                <ul class="nav-links">
+
+                    <li><a href="adoptions.html">The Cats</a></li>
+                    <li><a href="campaigns.html">Campaigns</a></li>
+                    <li><a href="sponsor.html">Sponsor</a></li>
+                    <li><a href="donate.html">Donate</a></li>
+                    <li><a href="volunteer.html">Volunteer</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="login.html" style="font-weight: 600; color: var(--color-primary); font-size: 0.95rem;">Sign
+                        In</a>
+                    <a href="donate.html" class="btn btn-primary">Donate Now</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main id="profile-content" style="min-height: 60vh; padding-bottom: 4rem;">
+        <!-- Content will be injected by JS -->
+        <div style="text-align: center; padding: 4rem;">Loading profile...</div>
+    </main>
+
+    <!-- Newsletter (Simplified V1.2) -->
+    <section class="section" style="background-color: #f3f4f6; text-align: center; padding: 5rem 0;">
+        <div class="container" style="max-width: 600px;">
+            <h2 style="font-size: 2rem; margin-bottom: 1rem;">Join the Garden Community</h2>
+            <p style="margin-bottom: 2rem;">Get distinct updates on the lives you're saving.</p>
+            <form style="display: flex; gap: 0.5rem;">
+                <input type="email" placeholder="Your email address"
+                    style="flex: 1; padding: 1rem; border: 1px solid #d1d5db; border-radius: 4px;" required>
+                <button type="submit" class="btn btn-primary"
+                    style="border-radius: 4px; padding: 1rem 1.5rem;">Subscribe</button>
+            </form>
+        </div>
+    </section>
+
+    <footer style="background: #111827; color: white; padding: 4rem 0;">
+        <div class="container">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3rem;">
+                <div style="max-width: 300px;">
+                    <h4 style="color: white; margin-bottom: 1rem; font-size: 1.25rem;">Gardens of St. Gertrude</h4>
+                    <p style="color: #9ca3af; font-size: 0.9rem;">A sanctuary for the forgotten, a garden for the soul.
+                        501(c)(3) Nonprofit.</p>
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 1rem;">123 Catnap Lane, Purrington, NC</p>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Discover</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="index.html" style="color: #9ca3af;">Home</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="adoptions.html" style="color: #9ca3af;">The Cats</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="campaigns.html"
+                                style="color: #9ca3af;">Campaigns</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="volunteer.html"
+                                style="color: #9ca3af;">Volunteer</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Take Action</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="donate.html" style="color: #9ca3af;">Donate</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="sponsor.html" style="color: #9ca3af;">Sponsor</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="contact.html" style="color: #9ca3af;">Contact Us</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div
+                style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #374151; text-align: center; color: #6b7280; font-size: 0.85rem;">
+                &copy; 2024 Gardens of St. Gertrude. All rights reserved. Privacy Policy.
+            </div>
+        </div>
+    </footer>
+
+    <script src="cats.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const catId = params.get('id');
+            const container = document.getElementById('profile-content');
+
+            if (!catId || !cats[catId]) {
+                container.innerHTML = `
+                    <div class="container" style="text-align: center; padding: 4rem;">
+                        <h2>Cat Not Found</h2>
+                        <p>We couldn't find the cat you're looking for. <a href="adoptions.html" style="color: var(--color-accent); text-decoration: underline;">View all cats</a>.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const cat = cats[catId];
+
+            // Build Campaign HTML if active
+            let campaignHtml = '';
+            const isSponsored = (JSON.parse(localStorage.getItem('sponsored_cats') || '[]')).includes(catId);
+            const sponsorBtnText = isSponsored ? "✅ You Sponsor " + cat.name : "❤️ Sponsor " + cat.name;
+            const sponsorBtnClass = isSponsored ? "btn btn-outline" : "btn btn-primary";
+
+            // Function to handle sponsorship click
+            window.toggleSponsor = function () {
+                let sponsored = JSON.parse(localStorage.getItem('sponsored_cats') || '[]');
+                if (sponsored.includes(catId)) {
+                    // Optional: remove sponsorship? For now let's just keep it simple.
+                    alert(`You are already sponsoring ${cat.name}!`);
+                } else {
+                    sponsored.push(catId);
+                    localStorage.setItem('sponsored_cats', JSON.stringify(sponsored));
+                    alert(`Thank you for sponsoring ${cat.name}! You will now receive updates about them.`);
+                    location.reload(); // Reload to update UI
+                }
+            }
+
+            if (cat.campaign) {
+                const percent = Math.min(100, Math.round((cat.campaign.raised / cat.campaign.goal) * 100));
+                campaignHtml = `
+                    <div class="campaign-card">
+                        <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">🚨 ${cat.campaign.title}</h3>
+                        <p style="font-size: 0.95rem; color: var(--color-text-light);">${cat.campaign.text}</p>
+                        <div class="campaign-progress">
+                            <div class="campaign-bar" style="width: ${percent}%"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 1rem; font-weight: 500;">
+                            <span>$${cat.campaign.raised.toLocaleString()} Raised</span>
+                            <span>Goal: $${cat.campaign.goal.toLocaleString()}</span>
+                        </div>
+                        <div style="display: grid; gap: 0.5rem;">
+                            <a href="${cat.campaign.link}" class="btn btn-primary" style="width: 100%;">Donate to Campaign</a>
+                            <button onclick="toggleSponsor()" class="btn btn-outline" style="width: 100%;">🔔 Follow Updates</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                campaignHtml = `
+                    <div style="margin-top: 2rem;">
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <button onclick="toggleSponsor()" class="${sponsorBtnClass}" style="flex: 1; padding: 1.2rem;">${sponsorBtnText}</button>
+                            <button onclick="openSponsorInfo()" style="background: none; border: none; cursor: pointer; color: #9ca3af; padding: 0.5rem;" title="What does it mean to sponsor?">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--color-text-light); text-align: center;">Processing donations securely via Stripe.</p>
+                    </div>
+
+                    <!-- Sponsor Info Modal -->
+                    <div id="sponsor-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+                        <div style="background: white; width: 90%; max-width: 500px; border-radius: 12px; padding: 2rem; position: relative; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+                            <button onclick="closeSponsorInfo()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">&times;</button>
+                            
+                            <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--color-primary);">What does it mean to sponsor a cat?</h3>
+                            
+                            <div style="font-size: 1rem; line-height: 1.6; color: #374151; space-y: 1rem;">
+                                <p style="margin-bottom: 1rem;">Sponsoring a cat connects your support to a specific animal while funding the sanctuary that cares for them. Your contribution helps cover food, veterinary care, shelter, and daily support, ensuring that all cats, including the one you sponsor, receive consistent, humane care.</p>
+                                
+                                <p style="margin-bottom: 1rem;">Sponsorship provides ongoing updates about your sponsored cat, such as photos and brief progress notes. It does not imply ownership or decision-making authority. Medical and welfare decisions remain with the sanctuary to ensure the best outcome for every animal.</p>
+                                
+                                <p>Sponsoring a cat creates connection and accountability while preserving ethical, collective care.</p>
+                            </div>
+                            
+                            <button onclick="closeSponsorInfo()" class="btn btn-primary" style="width: 100%; margin-top: 2rem;">Got it</button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Expose modal functions globally
+            window.openSponsorInfo = function () {
+                const modal = document.getElementById('sponsor-modal');
+                if (modal) {
+                    modal.style.display = 'flex';
+                    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+                }
+            }
+
+            window.closeSponsorInfo = function () {
+                const modal = document.getElementById('sponsor-modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = '';
+                }
+            }
+            // Close on outside click
+            window.onclick = function (event) {
+                const modal = document.getElementById('sponsor-modal');
+                if (event.target == modal) {
+                    closeSponsorInfo();
+                }
+            }
+
+            // Generate Gallery Thumbnails
+            const thumbsHtml = cat.images.map((img, index) => `
+                <div class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeImage('${img}', this)">
+                    <img src="${img}" alt="${cat.name}">
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="profile-header">
+                    <div class="container">
+                        <a href="javascript:history.back()" style="display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem; color: var(--color-text-light); font-weight: 500;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                            Back
+                        </a>
+                        <div class="profile-grid">
+                            <!-- Left: Gallery -->
+                            <div>
+                                <div class="profile-gallery-main">
+                                    <img id="main-image" src="${cat.img}" alt="${cat.name}">
+                                </div>
+                                <div class="profile-thumbnails">
+                                    ${thumbsHtml}
+                                </div>
+                            </div>
+
+                            <!-- Right: Info -->
+                            <div class="profile-info">
+                                <span class="status-badge">${cat.status}</span>
+                                <h1>Meet ${cat.name}</h1>
+                                <div class="profile-stats">
+                                    <div class="stat-item">
+                                        <span>Breed</span>
+                                        <strong>${cat.breed}</strong>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span>Age</span>
+                                        <strong>${cat.age}</strong>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span>Location</span>
+                                        <strong>Sanctuary</strong>
+                                    </div>
+                                </div>
+                                
+                                <h3 style="margin-bottom: 1rem;">My Story</h3>
+                                <div style="font-size: 1.1rem; color: var(--color-text-light); line-height: 1.8;">
+                                    ${cat.story}
+                                </div>
+
+                                ${campaignHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Global function for gallery switcher
+        window.changeImage = function (src, el) {
+            document.getElementById('main-image').src = src;
+            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+        }
+    </script>
+</body>
+
+</html>

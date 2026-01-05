@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adoptions | Gardens of St. Gertrude</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="secondary-page">
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF4C00" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                    </svg>
+                    Gardens of St. Gertrude
+                </a>
+                <ul class="nav-links">
+
+                    <li><a href="adoptions.html" class="active">The Cats</a></li>
+                    <li><a href="the-vets.html">The Vets</a></li>
+                    <li><a href="campaigns.html">Campaigns</a></li>
+                    <li><a href="sponsor.html">Sponsor</a></li>
+                    <li><a href="donate.html">Donate</a></li>
+                    <li><a href="volunteer.html">Volunteer</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="login.html" style="font-weight: 600; color: var(--color-primary); font-size: 0.95rem;">Sign
+                        In</a>
+                    <a href="donate.html" class="btn btn-primary">Donate Now</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container" style="padding: 4rem 0;">
+        <div style="text-align: center; margin-bottom: 3rem;">
+            <h1>Our Blooms</h1>
+            <p>These beautiful souls are waiting for their forever garden.</p>
+        </div>
+
+        <div class="adoption-grid">
+            <!-- Cat Card 1: Highlighted (Gold Border) -->
+            <div class="card highlighted-cat" onclick="openLightbox(this)" data-id="splotch" data-name="Splotch"
+                data-desc="He is red, radiant, and can never get enough pets. Splotch will find a way into your lap immediately."
+                data-img="assets/splotch.jpg">
+                <img src="assets/splotch.jpg" alt="Splotch" class="card-img" style="object-position: top;">
+                <div class="card-body">
+                    <h3 class="card-title">Splotch</h3>
+                    <div class="card-tags">
+                        <span class="tag">Staff Favorite</span>
+                        <span class="tag">Loves Pets</span>
+                    </div>
+                    <p class="card-text">He is red, he can never get enough pets.</p>
+                    <button class="btn btn-outline" style="width: 100%;">Meet Splotch</button>
+                </div>
+            </div>
+
+            <!-- Cat Card 2: Urgent (Red Badge) -->
+            <div class="card urgent-cat" onclick="openLightbox(this)" data-id="oliver" data-name="Oliver"
+                data-desc="Recovering from surgery and needs a special friend. Oliver is a brave soul who needs a quiet recovery space."
+                data-img="assets/oliver_xray.jpg">
+                <div class="urgent-badge">Urgent Medical Case</div>
+                <img src="assets/oliver_xray.jpg" alt="Oliver" class="card-img">
+                <div class="card-body">
+                    <h3 class="card-title">Oliver</h3>
+                    <p class="card-text">Recovering from surgery and needs a special friend.</p>
+                    <button class="btn btn-outline" style="width: 100%;">Meet Oliver</button>
+                </div>
+            </div>
+
+            <!-- Cat Card 3: Normal -->
+            <div class="card" onclick="openLightbox(this)" data-id="charlie" data-name="Charlie"
+                data-desc="Charlie was found as a ~2 month old with his 4 siblings living next to a football field, being fed next to a very busy street in Germasogeia. All kittens came to the sanctuary."
+                data-img="assets/charlie_v2.jpg">
+                <img src="assets/charlie_v2.jpg" alt="Charlie" class="card-img">
+                <div class="card-body">
+                    <h3 class="card-title">Charlie</h3>
+                    <div class="card-tags">
+                        <span class="tag">Kitten</span>
+                        <span class="tag">Rescued</span>
+                    </div>
+                    <p class="card-text">Charlie was found living next to a football field in Germasogeia.</p>
+                    <button class="btn btn-outline" style="width: 100%;">Meet Charlie</button>
+                </div>
+            </div>
+            <!-- Cat Card 4: Toshiba -->
+            <div class="card" onclick="openLightbox(this)" data-id="toshiba" data-name="Toshiba"
+                data-desc="Toshiba is a handsome male cat and Charlie's litter-mate. Sibling of Sabrina (RIP), Eminem, and Papa Doc."
+                data-img="assets/toshiba.jpg">
+                <img src="assets/toshiba.jpg" alt="Toshiba" class="card-img">
+                <div class="card-body">
+                    <h3 class="card-title">Toshiba</h3>
+                    <div class="card-tags">
+                        <span class="tag">Male</span>
+                        <span class="tag">Available</span>
+                    </div>
+                    <p class="card-text">Toshiba is Charlie's litter-mate and sibling to Eminem and Papa Doc.</p>
+                    <button class="btn btn-outline" style="width: 100%;">Meet Toshiba</button>
+                </div>
+            </div>
+
+            <!-- Cat Card 5: Tillie (Luna) -->
+            <div class="card" onclick="openLightbox(this)" data-id="luna" data-name="Tillie (aka Tillie Bird)"
+                data-desc="Tillie is the fan favorite at the sanctuary. She's currently in the kitty hospital but is a beloved fixture of our garden."
+                data-img="assets/tillie.jpg">
+                <img src="assets/tillie.jpg" alt="Tillie" class="card-img">
+                <div class="card-body">
+                    <h3 class="card-title">Tillie Bird</h3>
+                    <div class="card-tags">
+                        <span class="tag">Female</span>
+                        <span class="tag" style="background-color: #fee2e2; color: #991b1b;">Medical Care</span>
+                    </div>
+                    <p class="card-text">Our beloved "Tillie Bird" and resident couch potato. Currently recovering in
+                        hospital.</p>
+                    <button class="btn btn-outline" style="width: 100%;">Meet Tillie</button>
+                </div>
+            </div>
+
+            <!-- Cat Card 6: Chili Pepper (Ziggy) -->
+            <div class="card" onclick="openLightbox(this)" data-id="ziggy" data-name="Chili Pepper"
+                data-desc="Chili Pepper (aka Show Pony) is full of energy and loves to chase feather toys. She would be perfect for a family with active children."
+                data-img="assets/profile_ziggy.jpg">
+                <img src="assets/profile_ziggy.jpg" alt="Chili Pepper" class="card-img">
+                <div class="card-body">
+                    <h3 class="card-title">Chili Pepper</h3>
+                    <div class="card-tags">
+                        <span class="tag">Female</span>
+                        <span class="tag">Show Pony</span>
+                    </div>
+                    <p class="card-text">Full of energy and loves to chase feather toys all day long.</p>
+                    <button class="btn btn-outline" style="width: 100%;">Meet Chili Pepper</button>
+                </div>
+            </div>
+
+            <!-- Cat Card 7: Mabel -->
+            <div class="card" onclick="openLightbox(this)" data-id="mabel" data-name="Mabel (aka Mabel Fish)"
+                data-desc="Mabel (aka Mabel Fish) is a sweet, FIV+ soul. Theme song: 'Super Freak' (she's a very fishy girl)."
+                data-img="assets/mabel.jpg">
+                <img src="assets/mabel.jpg" alt="Mabel" class="card-img" style="filter: grayscale(20%);">
+                <div class="card-body">
+                    <h3 class="card-title">Mabel Fish</h3>
+                    <div class="card-tags">
+                        <span class="tag">Female</span>
+                        <span class="tag" style="background-color: #fce7f3; color: #be185d;">Special Needs</span>
+                    </div>
+                    <p class="card-text">"She's a very fishy girl." FIV+ sweetie who loves people.</p>
+                    <button class="btn btn-outline" style="width: 100%;">Meet Mabel Fish</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lightbox Modal -->
+        <div id="lightbox" class="lightbox hidden" onclick="closeLightbox(event)">
+            <div class="lightbox-content">
+                <span class="close-btn" onclick="closeLightbox(event)">&times;</span>
+                <img id="lb-img" src="" alt="Cat Image">
+                <div class="lb-details">
+                    <h2 id="lb-name"></h2>
+                    <p id="lb-desc"></p>
+                    <div class="lb-actions">
+                        <a id="lb-profile-link" href="#" class="btn btn-primary">View Full Profile</a>
+                        <a href="donate.html" class="btn btn-secondary-dark">Sponsor Me</a>
+                    </div>
+                </div>
+                <button class="nav-btn prev-btn" onclick="changeSlide(-1, event)">&#10094;</button>
+                <button class="nav-btn next-btn" onclick="changeSlide(1, event)">&#10095;</button>
+            </div>
+        </div>
+
+        <script src="cats.js"></script>
+    </main>
+
+    <!-- Newsletter (Simplified V1.2) -->
+    <section class="section" style="background-color: #f3f4f6; text-align: center; padding: 5rem 0;">
+        <div class="container" style="max-width: 600px;">
+            <h2 style="font-size: 2rem; margin-bottom: 1rem;">Join the Garden Community</h2>
+            <p style="margin-bottom: 2rem;">Get distinct updates on the lives you're saving.</p>
+            <form style="display: flex; gap: 0.5rem;">
+                <input type="email" placeholder="Your email address"
+                    style="flex: 1; padding: 1rem; border: 1px solid #d1d5db; border-radius: 4px;" required>
+                <button type="submit" class="btn btn-primary"
+                    style="border-radius: 4px; padding: 1rem 1.5rem;">Subscribe</button>
+            </form>
+        </div>
+    </section>
+
+    <footer style="background: #111827; color: white; padding: 4rem 0;">
+        <div class="container">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3rem;">
+                <div style="max-width: 300px;">
+                    <h4 style="color: white; margin-bottom: 1rem; font-size: 1.25rem;">Gardens of St. Gertrude</h4>
+                    <p style="color: #9ca3af; font-size: 0.9rem;">A sanctuary for the forgotten, a garden for the soul.
+                        501(c)(3) Nonprofit.</p>
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 1rem;">123 Catnap Lane, Purrington, NC</p>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Discover</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="index.html" style="color: #9ca3af;">Home</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="adoptions.html" style="color: #9ca3af;">The Cats</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="campaigns.html"
+                                style="color: #9ca3af;">Campaigns</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="volunteer.html"
+                                style="color: #9ca3af;">Volunteer</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Take Action</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="donate.html" style="color: #9ca3af;">Donate</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="sponsor.html" style="color: #9ca3af;">Sponsor</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="contact.html" style="color: #9ca3af;">Contact Us</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div
+                style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #374151; text-align: center; color: #6b7280; font-size: 0.85rem;">
+                &copy; 2024 Gardens of St. Gertrude. All rights reserved. Privacy Policy.
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

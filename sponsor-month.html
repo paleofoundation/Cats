@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sponsor an Entire Month | Gardens of St. Gertrude</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Updated Layout for Scrolling */
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            flex: 0 0 auto;
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
+            z-index: 50;
+        }
+
+        /* Split Layout */
+        .split-main {
+            /* Remove flex: 1 and overflow hidden to allow natural height and scrolling */
+            display: flex;
+            flex-wrap: wrap;
+            /* Allow wrapping on small screens naturally */
+            min-height: 90vh;
+            /* Keep hero feeling */
+        }
+
+        .left-panel {
+            flex: 1;
+            min-width: 50%;
+            /* Ensure it takes half width on desktop */
+            background-image: url('assets/hero_home_v3.jpg');
+            /* Consistent with checkout default */
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        /* Overlay for text readability if needed */
+        .left-panel-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(34, 37, 32, 0.6);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 4rem;
+            color: white;
+        }
+
+        .right-panel {
+            flex: 1;
+            min-width: 50%;
+            background-color: #222520;
+            /* Dark User Color */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            /* More padding for scrolling view */
+            overflow-y: auto;
+        }
+
+        @media (max-width: 900px) {
+            .left-panel {
+                min-height: 300px;
+                width: 100%;
+                flex: none;
+            }
+
+            .right-panel {
+                width: 100%;
+                flex: none;
+            }
+        }
+
+        /* Card Styling */
+        .checkout-card {
+            background: white;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 550px;
+            /* Slightly wider for address fields */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            /* Margin handled by container padding */
+        }
+
+        .amount-header {
+            background-color: #f3f4f6;
+            padding: 1.5rem;
+            /* Larger padding for significant amount */
+            text-align: center;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .amount-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .amount-header p {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        /* Form Elements */
+        .section-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .express-btn {
+            background-color: #333;
+            color: white;
+            width: 100%;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            font-size: 0.9rem;
+            color: #4b5563;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            flex: 1;
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #6b7280;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #FF4C00;
+            box-shadow: 0 0 0 2px rgba(255, 76, 0, 0.2);
+        }
+
+        .checkbox-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            color: #374151;
+        }
+
+        .checkbox-item input {
+            margin-top: 0.25rem;
+            width: 1.1rem;
+            height: 1.1rem;
+            accent-color: #FF4C00;
+        }
+
+        .small-text {
+            font-size: 0.8rem;
+            color: #4b5563;
+            line-height: 1.4;
+            margin-top: 0.2rem;
+        }
+
+        .next-btn {
+            background-color: #FF4C00;
+            color: white;
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .next-btn:hover {
+            background-color: #e04300;
+        }
+
+        .footer-secure {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #9ca3af;
+            margin-top: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Main Navigation -->
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF4C00" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                    </svg>
+                    Gardens of St. Gertrude
+                </a>
+                <ul class="nav-links">
+                    
+                    <li><a href="adoptions.html">The Cats</a></li>
+                    <li><a href="the-vets.html">The Vets</a></li>
+                    <li><a href="campaigns.html">Campaigns</a></li>
+                    <li><a href="sponsor.html">Sponsor</a></li>
+                    <li><a href="donate.html">Donate</a></li>
+                    <li><a href="volunteer.html">Volunteer</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="login.html" style="font-weight: 600; color: var(--color-primary); font-size: 0.95rem;">Sign
+                        In</a>
+                    <a href="donate.html" class="btn btn-primary">Donate Now</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <div class="split-main">
+        <!-- Left Panel: Content -->
+        <div class="left-panel">
+            <div class="left-panel-overlay"
+                style="padding: 4rem; justify-content: flex-start; background: rgba(34, 37, 32, 0.7);">
+                <h2
+                    style="font-family: 'Playfair Display', serif; font-size: 3rem; margin-bottom: 1.5rem; color: #fed7aa; line-height: 1.2;">
+                    Steward of the Garden</h2>
+                <p style="font-size: 1.15rem; line-height: 1.6; color: rgba(255,255,255,0.95); max-width: 550px;">
+                    This designation recognizes a donor whose contribution fully sustains one month of sanctuary
+                    operations, including food, veterinary care, shelter, and daily staffing. Stewards ensure continuity
+                    of care and stability for every cat we protect during that period.
+                </p>
+                <div style="margin-top: 2rem;">
+                    <a href="#steward-details"
+                        style="color: white; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; font-size: 0.9rem; text-decoration: underline; text-underline-offset: 4px;">Read
+                        about Steward Benefits &darr;</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Form -->
+        <div class="right-panel">
+            <div class="checkout-card">
+                <!-- Header -->
+                <div class="amount-header">
+                    <p>One-Time Donation</p>
+                    <h1>Giving $12,000 USD</h1>
+                </div>
+
+                <div class="card-body">
+                    <!-- Express Payment -->
+                    <div class="section-label">EXPRESS PAYMENT METHOD</div>
+                    <button class="express-btn">
+                        Express Donate &raquo;
+                    </button>
+
+                    <div class="divider">or enter your details manually below</div>
+
+                    <!-- Form -->
+                    <form id="sponsor-form" onsubmit="handleSponsor(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">First Name</label>
+                                <input type="text" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" class="form-input" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Mailing Address</label>
+                            <input type="text" class="form-input" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">City</label>
+                                <input type="text" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Zipcode</label>
+                                <input type="text" class="form-input" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Country</label>
+                            <select class="form-input">
+                                <option value="US" selected>United States</option>
+                                <option value="CA">Canada</option>
+                                <option value="UK">United Kingdom</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-input" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Phone Number (Optional)</label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <select class="form-input" style="width: 80px; padding: 0.5rem;">
+                                    <option>🇺🇸 +1</option>
+                                    <option>🇬🇧 +44</option>
+                                    <option>🇨🇦 +1</option>
+                                </select>
+                                <input type="tel" class="form-input" placeholder="(201) 555-0123">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 2rem;">
+                            <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                                Choose how you want to hear from us
+                                <span
+                                    style="background: #fbbf24; color: white; border-radius: 50%; width: 16px; height: 16px; display: inline-flex; justify-content: center; align-items: center; font-size: 10px; cursor: help;">?</span>
+                            </label>
+                            <div class="checkbox-row">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="contact_mail">
+                                    <span>Mail</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="contact_email" checked>
+                                    <span>Email</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="contact_text">
+                                    <div>
+                                        <span>Text message</span>
+                                        <p class="small-text">
+                                            Get occasional automated texts from Gardens of St. Gertrude.
+                                            Reply STOP to unsubscribe or HELP for help. Msg & data rates may apply.
+                                            Consent isn't required to donate. See Privacy Policy.
+                                        </p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="next-btn">Process Sponsorship</button>
+                    </form>
+
+                    <div class="security-footer">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+                        </svg>
+                        Secure Payment · This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of
+                        Service
+                        apply.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Section -->
+    <section id="steward-details" style="background: white; padding: 5rem 1rem;">
+        <div class="container" style="max-width: 800px; margin: 0 auto;">
+            <h2
+                style="font-family: 'Playfair Display', serif; font-size: 2.5rem; color: #1e293b; margin-bottom: 2rem; text-align: center;">
+                Steward Access & Reporting</h2>
+
+            <div style="font-size: 1.05rem; line-height: 1.7; color: #334155;">
+                <p style="margin-bottom: 1.5rem;">
+                    Stewards of the Garden receive direct visibility into the month they support. This includes a
+                    detailed financial summary showing how funds were applied across care categories, along with
+                    confirmation of expenses for food, veterinary services, and daily operations.
+                </p>
+                <p style="margin-bottom: 1.5rem;">
+                    During the sponsored month, Stewards receive periodic visual updates from the sanctuary, including
+                    photographs and short video footage documenting daily life, medical care, and recovery. These
+                    updates are not curated marketing materials, but authentic records of care in progress.
+                </p>
+                <p style="margin-bottom: 1.5rem;">
+                    Stewards are also provided with a month-end impact report summarizing the number of cats supported,
+                    veterinary interventions delivered, and stabilization outcomes achieved during the period they
+                    funded.
+                </p>
+                <p style="margin-bottom: 0;">
+                    Access to behind-the-scenes updates and advance insight into upcoming needs or initiatives is
+                    included, allowing Stewards to understand operational realities and long-term planning at the
+                    sanctuary. All standard donation receipts and documentation are, of course, provided for
+                    record-keeping and tax purposes.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="background-color: #1a1a1a; color: white; padding: 3rem 0; text-align: center; font-size: 0.9rem;">
+        <div class="container">
+            <p>&copy; 2026 Gardens of St. Gertrude. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        function handleSponsor(e) {
+            e.preventDefault();
+            const btn = document.querySelector('.next-btn');
+            btn.innerText = 'Processing...';
+            btn.disabled = true;
+            btn.style.opacity = '0.8';
+
+            setTimeout(() => {
+                alert('Thank you for your incredible generosity! We will be in touch shortly.');
+                window.location.href = 'index.html';
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

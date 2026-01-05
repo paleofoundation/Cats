@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaigns | Gardens of St. Gertrude</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: #eee;
+            border-radius: 50px;
+            margin: 1rem 0 0.5rem 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--color-success);
+            border-radius: 50px;
+            transition: width 1s ease-in-out;
+        }
+
+        .emergency-badge {
+            background-color: #e53e3e;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" />
+                        <path d="M7 10C7 11.1 7.9 12 9 12C10.1 12 11 11.1 11 10C11 8.9 10.1 8 9 8C7.9 8 7 8.9 7 10Z" />
+                        <path
+                            d="M13 10C13 11.1 13.9 12 15 12C16.1 12 17 11.1 17 10C17 8.9 16.1 8 15 8C13.9 8 13 8.9 13 10Z" />
+                        <path d="M12 17C14.33 17 16.31 15.6 17.11 13.5H6.89C7.69 15.6 9.67 17 12 17Z" />
+                    </svg>
+                    Gardens of St. Gertrude
+                </a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="adoptions.html">The Cats</a></li>
+                    <li><a href="campaigns.html" class="active">Campaigns</a></li>
+                    <li><a href="sponsor.html">Sponsor</a></li>
+                    <li><a href="donate.html">Donate</a></li>
+                    <li><a href="volunteer.html">Volunteer</a></li>
+                </ul>
+                <a href="donate.html" class="btn btn-primary">Donate Now</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Featured Campaign -->
+        <section class="section">
+            <div class="container">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start;">
+                    <img src="assets/hero_garden_cat.jpg" alt="Winter Shelter"
+                        style="width:100%; height: 400px; object-fit: cover; box-shadow: var(--shadow-float);">
+
+                    <div>
+                        <div class="emergency-badge">Urgent Need</div>
+                        <h1>Winter Warmth Fund</h1>
+                        <p style="font-size: 1.1rem; color: #555;">
+                            Winter is coming, and our outdoor sanctuary pods need heating upgrades.
+                            Help us install safe, insulated heaters for our 120+ residents before the first frost.
+                        </p>
+
+                        <div
+                            style="background: white; padding: 2rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid #eee; margin-top: 2rem;">
+                            <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                                <span>Raised: $8,450</span>
+                                <span style="color: var(--color-text-light);">Goal: $12,000</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 70%;"></div>
+                            </div>
+                            <p
+                                style="text-align: center; color: var(--color-primary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                                70% funded! Just $3,550 to go.
+                            </p>
+                            <a href="donate.html?campaign=winter" class="btn btn-primary" style="width: 100%;">Donate to
+                                This Fund</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Past Campaigns List -->
+        <section class="section" style="background: var(--color-bg-white);">
+            <div class="container">
+                <h2 style="margin-bottom: 2rem;">Other Active Funds</h2>
+
+                <div class="adoption-grid">
+                    <!-- Campaign 2 -->
+                    <div class="card">
+                        <div style="height: 200px; background: #eee;">
+                            <!-- Placeholder for medical image -->
+                            <img src="assets/hero_garden_cat.jpg" class="card-img" style="height: 100%;">
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title" style="font-size: 1.25rem;">Emergency Vet Bill: Oliver</h3>
+                            <p class="card-text">Oliver was found in critical condition after being shot. He needs
+                                life-saving care.</p>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 45%;"></div>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 1rem;">
+                                <span>$1,125 Raised</span>
+                                <span>Goal: $5,000</span>
+                            </div>
+                            <a href="profile.html?id=oliver" class="btn btn-secondary-dark" style="width: 100%;">See
+                                Oliver's Story</a>
+                        </div>
+                    </div>
+
+                    <!-- Campaign 3 -->
+                    <div class="card">
+                        <div style="height: 200px; background: #eee;">
+                            <img src="assets/hero_garden_cat.jpg" class="card-img" style="height: 100%;">
+                        </div>
+                        <div class="card-body">
+                            <h3 class="card-title" style="font-size: 1.25rem;">Kitten Season Formula</h3>
+                            <p class="card-text">Stocking up on KMR (kitten milk replacer) for the spring baby boom.</p>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 15%;"></div>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 1rem;">
+                                <span>$300 Raised</span>
+                                <span>Goal: $2,000</span>
+                            </div>
+                            <a href="donate.html?campaign=kittens" class="btn btn-secondary-dark"
+                                style="width: 100%;">Donate Milk</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Gardens of St. Gertrude</h4>
+                    <p>A 501(c)(3) Non-Profit Organization.</p>
+                    <p>123 Catnap Lane, Purrington, NC</p>
+                    <p style="margin-top: 0.5rem; opacity: 0.8;">EIN: 12-3456789</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="adoptions.html">The Cats</a></li>
+                        <li><a href="sponsor.html">Sponsor</a></li>
+                        <li><a href="campaigns.html">Campaigns</a></li>
+                        <li><a href="donate.html">Donate</a></li>
+                        <li><a href="volunteer.html">Volunteer</a></li>
+                        <li><a href="volunteer.html">Volunteer</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal & Contact</h4>
+                    <ul class="footer-links">
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2024 Gardens of St. Gertrude. All rights reserved.
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

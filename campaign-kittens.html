@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operation: Cuddleboxes | Gardens of St. Gertrude</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: #eee;
+            border-radius: 50px;
+            margin: 1.5rem 0 0.5rem 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--color-success);
+            border-radius: 50px;
+        }
+
+        .stat-card {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+
+        .story-text {
+            align-items: flex-start;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body class="secondary-page">
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF4C00" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                    </svg>
+                    Gardens of St. Gertrude
+                </a>
+                <ul class="nav-links">
+                    
+                    <li><a href="adoptions.html">The Cats</a></li>
+                    <li><a href="the-vets.html">The Vets</a></li>
+                    <li><a href="campaigns.html" class="active">Campaigns</a></li>
+                    <li><a href="sponsor.html">Sponsor</a></li>
+                    <li><a href="donate.html">Donate</a></li>
+                    <li><a href="volunteer.html">Volunteer</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="login.html" style="font-weight: 600; color: var(--color-primary); font-size: 0.95rem;">Sign
+                        In</a>
+                    <a href="donate.html" class="btn btn-primary">Donate Now</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Campaign Hero (Split Layout) -->
+    <section class="story-section">
+        <!-- Image Side -->
+        <div class="story-img" style="background-image: url('assets/hero_cuddleboxes.jpg');"></div>
+
+        <!-- Text Side -->
+        <div class="story-text">
+            <span
+                style="color: #e53e3e; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Comfort
+                Drive</span>
+            <h1 style="font-size: 3rem; margin-bottom: 1.5rem; line-height: 1.1;">Operation: Cuddleboxes</h1>
+
+            <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 1.5rem;">
+                Many of our rescues have never known a soft bed. Operation: Cuddleboxes aims to provide every single
+                resident with a dedicated, thermal-lined nesting bed for safety and warmth.
+            </p>
+
+            <!-- Progress Block -->
+            <div
+                style="width: 100%; background: white; padding: 1.5rem; border-radius: 8px; border: 1px solid #eee; margin-bottom: 2rem;">
+                <div
+                    style="display: flex; justify-content: space-between; font-weight: 600; font-size: 1.1rem; color: var(--color-primary);">
+                    <span>$825 Raised</span>
+                    <span style="color: #6b7280;">Goal: $2,861</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: 29%;"></div>
+                </div>
+                <p style="font-size: 0.9rem; color: #6b7280; margin-bottom: 1rem;">29% funded by 15 donors</p>
+                <a href="#donate-widget" class="btn btn-primary" style="width: 100%; text-align: center;">Sponsor a
+                    Cuddlebox</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Details Section -->
+    <section class="section">
+        <div class="container" style="max-width: 800px;">
+            <h2>More Than Just a Bed</h2>
+            <p style="font-size: 1.1rem; margin-bottom: 2rem;">
+                We have identified the perfect bed for our sanctuary: the <strong>Pawz & Pepper Donut Cuddle
+                    Bed</strong>. At just <strong>$23.84 per bed</strong>, we can provide all 120 cats with a warm,
+                washable, and incredibly soft place to sleep for a total of $2,860.80.
+            </p>
+
+            <h3 style="margin-bottom: 1rem;">The Cuddlebox Specs</h3>
+            <ul
+                style="list-style: disc; padding-left: 1.5rem; margin-bottom: 2rem; font-size: 1.05rem; line-height: 1.6;">
+                <li style="margin-bottom: 0.5rem;">Pawz & Pepper Donut Cuddle Bed (Round).</li>
+                <li style="margin-bottom: 0.5rem;">Extra-soft plush with high, secure edges.</li>
+                <li style="margin-bottom: 0.5rem;">Machine washable at 30°C for hygiene.</li>
+            </ul>
+
+            <div class="stats-row" style="margin-top: 3rem;">
+                <div class="stat-card" style="flex: 1;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary);">120</div>
+                    <div style="font-size: 0.9rem; color: #6b7280;">Beds Needed</div>
+                </div>
+                <div class="stat-card" style="flex: 1;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary);">$23.84</div>
+                    <div style="font-size: 0.9rem; color: #6b7280;">Cost Per Bed</div>
+                </div>
+                <div class="stat-card" style="flex: 1;">
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--color-primary);">Forever</div>
+                    <div style="font-size: 0.9rem; color: #6b7280;">Comfort Given</div>
+                </div>
+            </div>
+
+            <div id="donate-widget"
+                style="margin-top: 4rem; background: #fdfaf5; padding: 2.5rem; border-radius: 12px; border: 1px solid #fed7aa;">
+                <h3 style="text-align: center; margin-bottom: 1.5rem; color: var(--color-primary);">Give the Gift of
+                    Comfort</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <a href="checkout.html?amount=24&frequency=once&campaign=cuddleboxes" class="btn"
+                        style="background: white; border: 2px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 1.5rem 1rem; border-radius: 8px; transition: all 0.2s;">
+                        <span
+                            style="display: block; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">$24</span>
+                        <span style="font-size: 0.9rem;">Provide one bed</span>
+                    </a>
+                    <a href="checkout.html?amount=48&frequency=once&campaign=cuddleboxes" class="btn"
+                        style="background: white; border: 2px solid var(--color-primary); color: var(--color-primary); text-align: center; padding: 1.5rem 1rem; border-radius: 8px; transition: all 0.2s;">
+                        <span
+                            style="display: block; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">$48</span>
+                        <span style="font-size: 0.9rem;">Provide two beds</span>
+                    </a>
+                    <a href="checkout.html?amount=120&frequency=once&campaign=cuddleboxes" class="btn"
+                        style="background: var(--color-primary); color: white; text-align: center; padding: 1.5rem 1rem; border-radius: 8px; transition: all 0.2s;">
+                        <span
+                            style="display: block; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">$120</span>
+                        <span style="font-size: 0.9rem;">Provide five beds</span>
+                    </a>
+                </div>
+                <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: #666;">Choose an option to
+                    create an immediate impact.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer style="background: #111827; color: white; padding: 4rem 0;">
+        <div class="container">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3rem;">
+                <div style="max-width: 300px;">
+                    <h4 style="color: white; margin-bottom: 1rem; font-size: 1.25rem;">Gardens of St. Gertrude</h4>
+                    <p style="color: #9ca3af; font-size: 0.9rem;">A sanctuary for the forgotten, a garden for the soul.
+                        501(c)(3) Nonprofit.</p>
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 1rem;">123 Catnap Lane, Purrington, NC</p>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Discover</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="index.html" style="color: #9ca3af;">Home</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="adoptions.html" style="color: #9ca3af;">The Cats</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="campaigns.html"
+                                style="color: #9ca3af;">Campaigns</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="volunteer.html"
+                                style="color: #9ca3af;">Volunteer</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Take Action</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="donate.html" style="color: #9ca3af;">Donate</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="sponsor.html" style="color: #9ca3af;">Sponsor</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="contact.html" style="color: #9ca3af;">Contact Us</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div
+                style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #374151; text-align: center; color: #6b7280; font-size: 0.85rem;">
+                &copy; 2024 Gardens of St. Gertrude. All rights reserved. Privacy Policy.
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

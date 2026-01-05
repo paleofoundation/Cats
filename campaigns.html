@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaigns | Gardens of St. Gertrude</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: #eee;
+            border-radius: 50px;
+            margin: 1rem 0 0.5rem 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--color-success);
+            border-radius: 50px;
+            transition: width 1s ease-in-out;
+        }
+
+        .emergency-badge {
+            background-color: #e53e3e;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+
+<body class="secondary-page">
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF4C00" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
+                    </svg>
+                    Gardens of St. Gertrude
+                </a>
+                <ul class="nav-links">
+
+                    <li><a href="adoptions.html">The Cats</a></li>
+                    <li><a href="the-vets.html">The Vets</a></li>
+                    <li><a href="campaigns.html" class="active">Campaigns</a></li>
+                    <li><a href="sponsor.html">Sponsor</a></li>
+                    <li><a href="donate.html">Donate</a></li>
+                    <li><a href="volunteer.html">Volunteer</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="login.html" style="font-weight: 600; color: var(--color-primary); font-size: 0.95rem;">Sign
+                        In</a>
+                    <a href="donate.html" class="btn btn-primary">Donate Now</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <!-- Featured Campaign -->
+        <section class="section">
+            <div class="container">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: start;">
+                    <img src="assets/garden_expansion.jpg" alt="Garden Expansion"
+                        style="width:100%; height: 400px; object-fit: cover; border-radius: 12px; box-shadow: var(--shadow-float);">
+
+                    <div>
+                        <div class="emergency-badge" style="background-color: var(--color-primary);">Visionary Project
+                        </div>
+                        <h1>The Sanctuary Expansion</h1>
+                        <p style="font-size: 1.1rem; color: #555;">
+                            We have a once-in-a-lifetime opportunity to acquire a 750sqm plot of land directly adjacent
+                            to our sanctuary.
+                            This expansion will allow us to create a dedicated safe haven for 200+ more cats.
+                        </p>
+
+                        <div
+                            style="background: white; padding: 2rem; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid #eee; margin-top: 2rem;">
+                            <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                                <span>Raised: €11,000</span>
+                                <span style="color: var(--color-text-light);">Goal: €220,000</span>
+                            </div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 5%;"></div>
+                            </div>
+                            <p
+                                style="text-align: center; color: var(--color-primary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                                5% funded. Help us secure the land!
+                            </p>
+                            <a href="campaign-expansion.html" class="btn btn-primary" style="width: 100%;">Support the
+                                Expansion</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Past Campaigns List -->
+        <section class="section" style="background: var(--color-bg-white);">
+            <div class="container">
+                <h2 style="margin-bottom: 2rem;">Other Active Funds</h2>
+
+                <div class="adoption-grid">
+                    <!-- Campaign 2 -->
+                    <div class="card">
+                        <img src="assets/oliver_xray_cover.jpg" class="card-img">
+                        <div class="card-body">
+                            <h3 class="card-title" style="font-size: 1.25rem;">Emergency Vet Bill: Oliver</h3>
+                            <p class="card-text">Oliver was found in critical condition after being shot. He needs
+                                life-saving care.</p>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 45%;"></div>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 1rem;">
+                                <span>$1,125 Raised</span>
+                                <span>Goal: $5,000</span>
+                            </div>
+                            <a href="campaign-oliver.html" class="btn btn-secondary-dark" style="width: 100%;">See
+                                Oliver's Story</a>
+                        </div>
+                    </div>
+
+                    <!-- Campaign 3 -->
+                    <div class="card">
+                        <img src="assets/hero_cuddleboxes.jpg" class="card-img" style="object-fit: cover;">
+                        <div class="card-body">
+                            <h3 class="card-title" style="font-size: 1.25rem;">Operation: Cuddleboxes</h3>
+                            <p class="card-text">Every cat deserves a safe, soft place to land. Help us provide thermal
+                                nesting beds for our shyest residents.</p>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 15%;"></div>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 1rem;">
+                                <span>$300 Raised</span>
+                                <span>Goal: $2,861</span>
+                            </div>
+                            <a href="campaign-kittens.html" class="btn btn-secondary-dark" style="width: 100%;">View
+                                Campaign</a>
+                        </div>
+                    </div>
+
+                    <!-- Campaign: Buy Plants -->
+                    <div class="card">
+                        <img src="assets/plants_campaign.jpg" class="card-img" style="object-fit: cover;">
+                        <div class="card-body">
+                            <h3 class="card-title" style="font-size: 1.25rem;">Plants for the Garden</h3>
+                            <p class="card-text">Help us bring new life to the sanctuary with an influx of new plants
+                                for shade, shelter, and beauty.</p>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" style="width: 10%;"></div>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 1rem;">
+                                <span>$760 Raised</span>
+                                <span>Goal: $7,600</span>
+                            </div>
+                            <a href="donate.html?campaign=plants" class="btn btn-secondary-dark"
+                                style="width: 100%;">Donate Plants</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- Newsletter (Simplified V1.2) -->
+    <section class="section" style="background-color: #f3f4f6; text-align: center; padding: 5rem 0;">
+        <div class="container" style="max-width: 600px;">
+            <h2 style="font-size: 2rem; margin-bottom: 1rem;">Join the Garden Community</h2>
+            <p style="margin-bottom: 2rem;">Get distinct updates on the lives you're saving.</p>
+            <form style="display: flex; gap: 0.5rem;">
+                <input type="email" placeholder="Your email address"
+                    style="flex: 1; padding: 1rem; border: 1px solid #d1d5db; border-radius: 4px;" required>
+                <button type="submit" class="btn btn-primary"
+                    style="border-radius: 4px; padding: 1rem 1.5rem;">Subscribe</button>
+            </form>
+        </div>
+    </section>
+
+    <footer style="background: #111827; color: white; padding: 4rem 0;">
+        <div class="container">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3rem;">
+                <div style="max-width: 300px;">
+                    <h4 style="color: white; margin-bottom: 1rem; font-size: 1.25rem;">Gardens of St. Gertrude</h4>
+                    <p style="color: #9ca3af; font-size: 0.9rem;">A sanctuary for the forgotten, a garden for the soul.
+                        501(c)(3) Nonprofit.</p>
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 1rem;">123 Catnap Lane, Purrington, NC</p>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Discover</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="index.html" style="color: #9ca3af;">Home</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="adoptions.html" style="color: #9ca3af;">The Cats</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="campaigns.html"
+                                style="color: #9ca3af;">Campaigns</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="volunteer.html"
+                                style="color: #9ca3af;">Volunteer</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="color: white; margin-bottom: 1rem;">Take Action</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="donate.html" style="color: #9ca3af;">Donate</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="sponsor.html" style="color: #9ca3af;">Sponsor</a>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><a href="contact.html" style="color: #9ca3af;">Contact Us</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div
+                style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #374151; text-align: center; color: #6b7280; font-size: 0.85rem;">
+                &copy; 2024 Gardens of St. Gertrude. All rights reserved. Privacy Policy.
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

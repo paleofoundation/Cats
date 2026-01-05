@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Profile | Gardens of St. Gertrude</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Profile Specific Styles */
+        .profile-header {
+            background-color: var(--color-bg-white);
+            padding: 4rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: start;
+        }
+
+        .profile-gallery-main {
+            width: 100%;
+            height: 400px;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        .profile-gallery-main img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-thumbnails {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .thumbnail {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: all 0.2s;
+        }
+
+        .thumbnail:hover,
+        .thumbnail.active {
+            opacity: 1;
+            border: 2px solid var(--color-primary);
+        }
+
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-info h1 {
+            margin-bottom: 0.5rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #e6fffa;
+            color: var(--color-primary);
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            border: 1px solid #b2f5ea;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat-item span {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--color-text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-item strong {
+            font-size: 1.1rem;
+            color: var(--color-text-dark);
+        }
+
+        .campaign-card {
+            background: #fff9f0;
+            border: 1px solid #fed7aa;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .campaign-progress {
+            height: 10px;
+            background: #fae8d4;
+            border-radius: 5px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .campaign-bar {
+            height: 100%;
+            background: var(--color-accent);
+            border-radius: 5px;
+        }
+
+        @media (max-width: 900px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header/Nav -->
+    <header>
+        <div class="container">
+            <nav>
+                <a href="index.html" class="logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" />
+                        <path d="M7 10C7 11.1 7.9 12 9 12C10.1 12 11 11.1 11 10C11 8.9 10.1 8 9 8C7.9 8 7 8.9 7 10Z" />
+                        <path
+                            d="M13 10C13 11.1 13.9 12 15 12C16.1 12 17 11.1 17 10C17 8.9 16.1 8 15 8C13.9 8 13 8.9 13 10Z" />
+                        <path d="M12 17C14.33 17 16.31 15.6 17.11 13.5H6.89C7.69 15.6 9.67 17 12 17Z" />
+                    </svg>
+                    Gardens of St. Gertrude
+                </a>
+                <ul class="nav-links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="adoptions.html">The Cats</a></li>
+                    <li><a href="campaigns.html">Campaigns</a></li>
+                    <li><a href="sponsor.html">Sponsor</a></li>
+                    <li><a href="donate.html">Donate</a></li>
+                    <li><a href="volunteer.html">Volunteer</a></li>
+                </ul>
+                <a href="donate.html" class="btn btn-primary">Donate Now</a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="profile-content" style="min-height: 60vh; padding-bottom: 4rem;">
+        <!-- Content will be injected by JS -->
+        <div style="text-align: center; padding: 4rem;">Loading profile...</div>
+    </main>
+
+    <!-- Master Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Gardens of St. Gertrude</h4>
+                    <p>A 501(c)(3) Non-Profit Organization.</p>
+                    <p>123 Catnap Lane, Purrington, NC</p>
+                    <p style="margin-top: 0.5rem; opacity: 0.8;">EIN: 12-3456789</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="adoptions.html">The Cats</a></li>
+                        <li><a href="sponsor.html">Sponsor</a></li>
+                        <li><a href="campaigns.html">Campaigns</a></li>
+                        <li><a href="donate.html">Donate</a></li>
+                        <li><a href="volunteer.html">Volunteer</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal & Contact</h4>
+                    <ul class="footer-links">
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="contact.html">Contact Us</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2024 Gardens of St. Gertrude. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script src="cats.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const catId = params.get('id');
+            const container = document.getElementById('profile-content');
+
+            if (!catId || !cats[catId]) {
+                container.innerHTML = `
+                    <div class="container" style="text-align: center; padding: 4rem;">
+                        <h2>Cat Not Found</h2>
+                        <p>We couldn't find the cat you're looking for. <a href="adoptions.html" style="color: var(--color-accent); text-decoration: underline;">View all cats</a>.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const cat = cats[catId];
+
+            // Build Campaign HTML if active
+            let campaignHtml = '';
+            const isSponsored = (JSON.parse(localStorage.getItem('sponsored_cats') || '[]')).includes(catId);
+            const sponsorBtnText = isSponsored ? "✅ You Sponsor " + cat.name : "❤️ Sponsor " + cat.name;
+            const sponsorBtnClass = isSponsored ? "btn btn-outline" : "btn btn-primary";
+
+            // Function to handle sponsorship click
+            window.toggleSponsor = function () {
+                let sponsored = JSON.parse(localStorage.getItem('sponsored_cats') || '[]');
+                if (sponsored.includes(catId)) {
+                    // Optional: remove sponsorship? For now let's just keep it simple.
+                    alert(`You are already sponsoring ${cat.name}!`);
+                } else {
+                    sponsored.push(catId);
+                    localStorage.setItem('sponsored_cats', JSON.stringify(sponsored));
+                    alert(`Thank you for sponsoring ${cat.name}! You will now receive updates about them.`);
+                    location.reload(); // Reload to update UI
+                }
+            }
+
+            if (cat.campaign) {
+                const percent = Math.min(100, Math.round((cat.campaign.raised / cat.campaign.goal) * 100));
+                campaignHtml = `
+                    <div class="campaign-card">
+                        <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">🚨 ${cat.campaign.title}</h3>
+                        <p style="font-size: 0.95rem; color: var(--color-text-light);">${cat.campaign.text}</p>
+                        <div class="campaign-progress">
+                            <div class="campaign-bar" style="width: ${percent}%"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 1rem; font-weight: 500;">
+                            <span>$${cat.campaign.raised.toLocaleString()} Raised</span>
+                            <span>Goal: $${cat.campaign.goal.toLocaleString()}</span>
+                        </div>
+                        <div style="display: grid; gap: 0.5rem;">
+                            <a href="${cat.campaign.link}" class="btn btn-primary" style="width: 100%;">Donate to Campaign</a>
+                            <button onclick="toggleSponsor()" class="btn btn-outline" style="width: 100%;">🔔 Follow Updates</button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                campaignHtml = `
+                    <div style="margin-top: 2rem;">
+                        <button onclick="toggleSponsor()" class="${sponsorBtnClass}" style="width: 100%; padding: 1.2rem;">${sponsorBtnText}</button>
+                        <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--color-text-light); text-align: center;">Processing donations securely via Stripe.</p>
+                    </div>
+                `;
+            }
+
+            // Generate Gallery Thumbnails
+            const thumbsHtml = cat.images.map((img, index) => `
+                <div class="thumbnail ${index === 0 ? 'active' : ''}" onclick="changeImage('${img}', this)">
+                    <img src="${img}" alt="${cat.name}">
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="profile-header">
+                    <div class="container">
+                        <a href="javascript:history.back()" style="display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 2rem; color: var(--color-text-light); font-weight: 500;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                            Back
+                        </a>
+                        <div class="profile-grid">
+                            <!-- Left: Gallery -->
+                            <div>
+                                <div class="profile-gallery-main">
+                                    <img id="main-image" src="${cat.img}" alt="${cat.name}">
+                                </div>
+                                <div class="profile-thumbnails">
+                                    ${thumbsHtml}
+                                </div>
+                            </div>
+
+                            <!-- Right: Info -->
+                            <div class="profile-info">
+                                <span class="status-badge">${cat.status}</span>
+                                <h1>Meet ${cat.name}</h1>
+                                <div class="profile-stats">
+                                    <div class="stat-item">
+                                        <span>Breed</span>
+                                        <strong>${cat.breed}</strong>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span>Age</span>
+                                        <strong>${cat.age}</strong>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span>Location</span>
+                                        <strong>Sanctuary</strong>
+                                    </div>
+                                </div>
+                                
+                                <h3 style="margin-bottom: 1rem;">My Story</h3>
+                                <div style="font-size: 1.1rem; color: var(--color-text-light); line-height: 1.8;">
+                                    ${cat.story}
+                                </div>
+
+                                ${campaignHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Global function for gallery switcher
+        window.changeImage = function (src, el) {
+            document.getElementById('main-image').src = src;
+            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+        }
+    </script>
+</body>
+
+</html>
