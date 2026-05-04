@@ -37,7 +37,7 @@ const cats = {
         id: "oliver",
         name: "Oliver",
         type: "sponsor_only",
-        status: "Medical Emergency",
+        status: "In Memory",
         availableForAdoption: false,
         breed: "Tabby",
         age: "2 Years",
@@ -46,18 +46,12 @@ const cats = {
             "assets/oliver_xray.jpg",
             "assets/oliver_xray_2.jpg"
         ],
-        story: `Oliver is a survivor in the truest sense. He is a two year old giant fluffball who was found in a critical state after being shot twice, requiring immediate, life-saving surgery.
+        story: `Oliver is remembered as a beloved regular visitor to the Gardens: a gentle giant who came for food, safety, and affection.
         <br><br>
-        Despite his trauma, Oliver has a gentle soul. He is currently recovering in our medical wing and requires daily red light (photobiomodulation) interventions and pain management. We are determined to help him walk again and live the pain-free life he deserves.
+        He survived a violent injury and received emergency veterinary care through the sanctuary's support network. We later lost Oliver under circumstances we believe involved human harm, and his page is now kept as a memorial and a record of why protection matters.
         <br><br>
-        His doctor is Markos Ktori at <a href="https://www.limassolvet.com/" target="_blank">Limassol Veterinary Clinic</a>.`,
-        campaign: {
-            title: "Emergency Surgery Fund",
-            goal: 5000,
-            raised: 1200,
-            link: "campaign-oliver.html",
-            text: "Help cover Oliver's surgical costs and rehabilitation."
-        }
+        Gifts made in Oliver's memory support emergency veterinary care, protection, and prevention work for cats still at risk.`,
+        campaign: null
     },
     "mittens": {
         id: "mittens",
@@ -127,17 +121,17 @@ const cats = {
         id: "luna",
         name: "Tillie (aka Tillie Bird)",
         type: "sponsor_only",
-        status: "Medical Care",
+        status: "In Memory",
         availableForAdoption: false,
         breed: "Domestic Short Hair",
         age: "Unknown",
         img: "assets/tillie.jpg",
         images: ["assets/tillie.jpg"],
-        story: `Tillie (aka "Tillie Bird") is the fan favorite at the sanctuary. Neighbors often ask about her, as she has been a fixture here for 4 years.
+        story: `Tillie (aka "Tillie Bird") was a fan favorite at the sanctuary and a fixture of the Gardens for years. Neighbors asked about her, visitors remembered her, and she had a way of making herself the center of every room.
         <br><br>
-        She arrived with her ear already clipped, indicating she was already spayed. She walked in, made herself comfortable on the couch, and has pretty much stayed there ever since.
+        She arrived with her ear already clipped, indicating she was already spayed. She walked in, made herself comfortable on the couch, and more or less claimed it as her own.
         <br><br>
-        Currently, Tillie is in the kitty hospital suffering from acute diarrhea and chronic kidney disease. She is not available for adoption due to her medical needs, otherwise, she would make the greatest companion ever.`,
+        Tillie died on January 14. Her profile remains here as a memorial to a deeply loved cat and as part of the sanctuary's living history.`,
         campaign: null
     },
     "mabel": {

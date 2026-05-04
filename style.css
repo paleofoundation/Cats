@@ -209,6 +209,13 @@ nav {
   transition: color 0.3s;
 }
 
+.logo-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  flex: 0 0 auto;
+}
+
 .nav-links {
   display: flex;
   gap: var(--space-md);
@@ -880,9 +887,28 @@ footer {
   font-size: 1.5rem;
 }
 
+.crisis-intro-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.85fr);
+  gap: 4rem;
+  align-items: center;
+}
+
+.founder-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr);
+  gap: 3rem;
+  align-items: center;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .story-section {
+    grid-template-columns: 1fr;
+  }
+
+  .crisis-intro-grid,
+  .founder-grid {
     grid-template-columns: 1fr;
   }
 

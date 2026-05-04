@@ -13,6 +13,9 @@
         rel="stylesheet">
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 </head>
 
 <body class="secondary-page">
@@ -20,14 +23,13 @@
         <div class="container">
             <nav>
                 <a href="index.html" class="logo">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF4C00" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 2L2 12h3v8h6v-6h2v6h6v-8h3L12 2z" />
-                    </svg>
+                    <img src="assets/cat-gardens-icon.png" alt="" class="logo-mark">
                     Gardens of St. Gertrude
                 </a>
                 <ul class="nav-links">
 
                     <li><a href="adoptions.html" class="active">The Cats</a></li>
+                    <li><a href="cat-crisis.html">The Crisis</a></li>
                     <li><a href="the-vets.html">The Vets</a></li>
                     <li><a href="campaigns.html">Campaigns</a></li>
                     <li><a href="sponsor.html">Sponsor</a></li>
@@ -67,15 +69,15 @@
             </div>
 
             <!-- Cat Card 2: Urgent (Red Badge) -->
-            <div class="card urgent-cat" onclick="openLightbox(this)" data-id="oliver" data-name="Oliver"
-                data-desc="Recovering from surgery and needs a special friend. Oliver is a brave soul who needs a quiet recovery space."
+            <div class="card" onclick="openLightbox(this)" data-id="oliver" data-name="Oliver"
+                data-desc="Oliver is remembered as a beloved visitor to the Gardens. His page is now kept as a memorial and a record of why protection matters."
                 data-img="assets/oliver_xray.jpg">
-                <div class="urgent-badge">Urgent Medical Case</div>
+                <div class="urgent-badge" style="background: #374151;">In Memory</div>
                 <img src="assets/oliver_xray.jpg" alt="Oliver" class="card-img">
                 <div class="card-body">
                     <h3 class="card-title">Oliver</h3>
-                    <p class="card-text">Recovering from surgery and needs a special friend.</p>
-                    <button class="btn btn-outline" style="width: 100%;">Meet Oliver</button>
+                    <p class="card-text">Remembered as a gentle visitor whose story still asks us to protect others.</p>
+                    <button class="btn btn-outline" style="width: 100%;">Remember Oliver</button>
                 </div>
             </div>
 
@@ -112,18 +114,17 @@
 
             <!-- Cat Card 5: Tillie (Luna) -->
             <div class="card" onclick="openLightbox(this)" data-id="luna" data-name="Tillie (aka Tillie Bird)"
-                data-desc="Tillie is the fan favorite at the sanctuary. She's currently in the kitty hospital but is a beloved fixture of our garden."
+                data-desc="Tillie died on January 14. She remains a beloved part of the Gardens' story."
                 data-img="assets/tillie.jpg">
                 <img src="assets/tillie.jpg" alt="Tillie" class="card-img">
                 <div class="card-body">
                     <h3 class="card-title">Tillie Bird</h3>
                     <div class="card-tags">
                         <span class="tag">Female</span>
-                        <span class="tag" style="background-color: #fee2e2; color: #991b1b;">Medical Care</span>
+                        <span class="tag" style="background-color: #f3f4f6; color: #374151;">In Memory</span>
                     </div>
-                    <p class="card-text">Our beloved "Tillie Bird" and resident couch potato. Currently recovering in
-                        hospital.</p>
-                    <button class="btn btn-outline" style="width: 100%;">Meet Tillie</button>
+                    <p class="card-text">Our beloved "Tillie Bird," resident couch potato, and forever part of the Gardens.</p>
+                    <button class="btn btn-outline" style="width: 100%;">Remember Tillie</button>
                 </div>
             </div>
 
@@ -200,9 +201,9 @@
             <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 3rem;">
                 <div style="max-width: 300px;">
                     <h4 style="color: white; margin-bottom: 1rem; font-size: 1.25rem;">Gardens of St. Gertrude</h4>
-                    <p style="color: #9ca3af; font-size: 0.9rem;">A sanctuary for the forgotten, a garden for the soul.
+                    <p style="color: #9ca3af; font-size: 0.9rem;">A sanctuary for Parekklisia cats, rooted in care and prevention.
                         501(c)(3) Nonprofit.</p>
-                    <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 1rem;">123 Catnap Lane, Purrington, NC</p>
+                    <p style="color: #9ca3af; font-size: 0.9rem; margin-top: 1rem;">Parekklisia, Cyprus</p>
                 </div>
                 <div>
                     <h4 style="color: white; margin-bottom: 1rem;">Discover</h4>
