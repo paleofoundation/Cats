@@ -2,45 +2,61 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import {
   ArrowRight,
   Box,
+  CalendarDays,
   CircleHelp,
   ExternalLink,
   Heart,
   Home,
+  MousePointer2,
+  PawPrint,
   RotateCcw,
   Shield,
   Sparkles,
+  UserRound,
   Utensils,
   X,
 } from 'lucide-react'
 import catGardensMark from '../assets/cat-gardens-icon.png'
-import splotchPortrait from '../assets/splotch.jpg'
 import { playBuild, playPurr } from './game/audio'
-import { getObjective, useGame } from './game/store'
+import { getObjective, getRelationshipText, useGame } from './game/store'
 
 const CatGardenWorld = lazy(() => import('./World').then((module) => ({ default: module.CatGardenWorld })))
 
 const foodMarkers = [[0, -3.2], [6.8, .5], [-5.8, 4.9]]
 const partMarkers = [[10.4, 3.2], [-9.2, 2.4], [-8.1, 11.1], [8.8, 11.4]]
+const bondMoments = [
+  { title: 'Do less. Stay longer.', detail: 'Your caretaker has left the rover, lowered to Splotch’s level, and offered a hand. Press and hold. Trust is time—not tapping.', action: 'Hold to sit with Splotch', result: 'You stayed after the urgent work was over.' },
+  { title: 'Let him see your hand.', detail: 'No food crate this time. Approach slowly, stop short, and give Splotch the choice to close the last distance.', action: 'Hold your hand still', result: 'You gave him control of the distance.' },
+  { title: 'Learn his rhythm.', detail: 'Watch his ears, shoulders, and breathing. A relationship starts when the person notices what the animal is already saying.', action: 'Hold to observe quietly', result: 'You paid attention to his body language.' },
+  { title: 'Make comfort familiar.', detail: 'Return without an emergency to solve. Familiar footsteps, a familiar posture, and an unhurried hand become their own kind of care.', action: 'Hold to keep the routine', result: 'Your return became part of the garden’s routine.' },
+  { title: 'Stay for the ordinary.', detail: 'Nothing dramatic is happening. That is the point. Sit through the quiet part and let safety become boring.', action: 'Hold through the quiet', result: 'You stayed when there was nothing to collect.' },
+  { title: 'Let him come to you.', detail: 'The last visit reverses the first: wait without summoning him. The relationship arc ends when Splotch chooses the final step.', action: 'Hold and wait for Splotch', result: 'He knew where to find you.' },
+]
 
 function StartMission({ onStart }: { onStart: () => void }) {
   return (
     <div className="mission-start">
       <section className="mission-card">
-        <div className="mission-cat-photo">
-          <img src={splotchPortrait} alt="Splotch, a real resident of Cat Gardens" />
-          <span><i /> REAL CAT · CYPRUS</span>
+        <div className="mission-cat-stage">
+          <div className="splotch-monogram"><PawPrint /><b>S</b></div>
+          <div className="likeness-note">
+            <span><i /> REAL CAT · CYPRUS</span>
+            <strong>Splotch is a big adult male.</strong>
+            <p>His accurate 3D likeness is being built from real references. The orange cat in the garden is a temporary game proxy—not Splotch’s final model.</p>
+          </div>
+          <div className="visit-strip"><b>01</b><i /><span>07 visits begin here</span></div>
         </div>
         <div className="mission-copy">
-          <p className="eyebrow">DAY ONE · SPLOTCH</p>
-          <h1>She is hungry.<br />She does not know you yet.</h1>
-          <p className="mission-lede">Drive the caretaker rover. Find food. Earn Splotch’s trust. Then build her somewhere dry to sleep.</p>
+          <p className="eyebrow">VISIT ONE · SPLOTCH</p>
+          <h1>He is hungry.<br />He does not know you yet.</h1>
+          <p className="mission-lede">Drive the caretaker rover. Find food. Earn Splotch’s trust. Build him somewhere dry—then come back as a person and let a relationship begin.</p>
           <ol className="mission-steps">
             <li><span>01</span><div><strong>Recover</strong><small>Find 3 food crates</small></div></li>
-            <li><span>02</span><div><strong>Care</strong><small>Feed her and stay</small></div></li>
-            <li><span>03</span><div><strong>Build</strong><small>Make a real shelter</small></div></li>
+            <li><span>02</span><div><strong>Care</strong><small>Feed him and stay</small></div></li>
+            <li><span>03</span><div><strong>Return</strong><small>Seven saved visits</small></div></li>
           </ol>
           <button className="primary-button" onClick={onStart}>Start the caretaker rover <ArrowRight size={18} /></button>
-          <p className="free-note"><Shield size={14} /> The complete first day is free. Caring is not a paywall.</p>
+          <p className="free-note"><Shield size={14} /> The relationship path is free. Caring is not a paywall.</p>
         </div>
       </section>
     </div>
@@ -61,11 +77,12 @@ function CatCard() {
   const hunger = useGame((state) => state.hunger)
   const trust = useGame((state) => state.trust)
   const safety = useGame((state) => state.safety)
+  const bondVisits = useGame((state) => state.bondVisits)
   return (
     <aside className="cat-status game-panel">
       <div className="cat-status-head">
-        <img src={splotchPortrait} alt="Splotch" />
-        <div><span>YOUR FIRST CAT</span><strong>Splotch</strong><small>{trust >= 70 ? 'She remembers you.' : trust > 0 ? 'She is learning your sound.' : 'She is watching from a distance.'}</small></div>
+        <span className="cat-status-avatar"><PawPrint size={24} /></span>
+        <div><span>YOUR FIRST RELATIONSHIP · {bondVisits + 1}/7</span><strong>Splotch</strong><small>{getRelationshipText(trust)}</small></div>
       </div>
       <Vitals label="FULL" value={hunger} color="#efb55f" />
       <Vitals label="TRUST" value={trust} color="#dfff6c" />
@@ -80,7 +97,9 @@ function ObjectiveCard() {
   const hasBonded = useGame((state) => state.hasBonded)
   const partsFound = useGame((state) => state.partsFound)
   const shelterStage = useGame((state) => state.shelterStage)
-  const objective = getObjective({ foodFound, hasFed, hasBonded, partsFound, shelterStage })
+  const bondVisits = useGame((state) => state.bondVisits)
+  const nextBondAt = useGame((state) => state.nextBondAt)
+  const objective = getObjective({ foodFound, hasFed, hasBonded, partsFound, shelterStage, bondVisits, nextBondAt })
   return (
     <section className="objective-hud game-panel">
       <div className="objective-copy">
@@ -114,6 +133,7 @@ function MiniMap() {
   const foodFound = useGame((state) => state.foodFound)
   const partsFound = useGame((state) => state.partsFound)
   const hasBonded = useGame((state) => state.hasBonded)
+  const shelterStage = useGame((state) => state.shelterStage)
   const mapPoint = (px: number, pz: number) => ({ left: `${50 + (px / 44) * 100}%`, top: `${50 + (pz / 44) * 100}%` })
   return (
     <aside className="mini-map game-panel" aria-label="Garden map">
@@ -121,7 +141,7 @@ function MiniMap() {
       <div className="map-field">
         <i className="map-road map-road-one" />
         <i className="map-road map-road-two" />
-        <span className="map-marker map-cat" style={mapPoint(.2, 4.2)} title="Splotch"><Heart size={10} /></span>
+        <span className="map-marker map-cat" style={mapPoint(shelterStage === 4 ? 4.55 : .2, shelterStage === 4 ? 7.05 : 4.2)} title="Splotch"><Heart size={10} /></span>
         <span className="map-marker map-build" style={mapPoint(5.4, 7.2)} title="Shelter"><Home size={10} /></span>
         {foodMarkers.map(([px, pz], index) => !foodFound.includes(['food-olive', 'food-well', 'food-road'][index]) && (
           <span key={`food-${index}`} className="map-marker map-food" style={mapPoint(px, pz)} />
@@ -189,11 +209,16 @@ function ActionButton({ onAction }: { onAction: () => void }) {
   const hasFed = useGame((state) => state.hasFed)
   const hasBonded = useGame((state) => state.hasBonded)
   const shelterStage = useGame((state) => state.shelterStage)
+  const bondVisits = useGame((state) => state.bondVisits)
+  const nextBondAt = useGame((state) => state.nextBondAt)
   const label = useMemo(() => {
     if (nearby === 'cat') {
       if (!hasFed) return food >= 3 ? 'Feed Splotch' : `Find ${3 - food} more food`
       if (!hasBonded) return 'Stay & pet Splotch'
-      return 'Pet Splotch'
+      if (shelterStage < 4) return 'Leave rover · sit with Splotch'
+      if (bondVisits >= 6) return 'Sit with Splotch again'
+      if (nextBondAt && Date.now() < nextBondAt) return 'Sit together—no points needed'
+      return `Begin visit ${bondVisits + 2} on foot`
     }
     if (nearby === 'shelter') {
       if (!hasBonded) return 'Splotch needs you first'
@@ -201,7 +226,7 @@ function ActionButton({ onAction }: { onAction: () => void }) {
       return parts > 0 ? `Build shelter · ${shelterStage + 1}/4` : 'Find shelter parts'
     }
     return null
-  }, [food, hasBonded, hasFed, nearby, parts, shelterStage])
+  }, [bondVisits, food, hasBonded, hasFed, nearby, nextBondAt, parts, shelterStage])
   const enabled = nearby === 'cat'
     ? (hasFed || food >= 3)
     : nearby === 'shelter' && hasBonded && parts > 0 && shelterStage < 4
@@ -216,35 +241,120 @@ function ActionButton({ onAction }: { onAction: () => void }) {
 function MemoryModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="story-backdrop" role="presentation">
-      <article className="story-card" role="dialog" aria-modal="true" aria-labelledby="story-title">
+      <article className="story-card relationship-story" role="dialog" aria-modal="true" aria-labelledby="story-title">
         <button className="close-button" onClick={onClose} aria-label="Close Splotch's story"><X size={19} /></button>
-        <div className="story-photo"><img src={splotchPortrait} alt="The real Splotch at the Cyprus sanctuary" /><span>MEMORY UNLOCKED · REAL SPLOTCH</span></div>
+        <div className="story-relationship-map">
+          <span className="story-paw"><PawPrint size={38} /></span>
+          <p>THE RELATIONSHIP HAS STARTED</p>
+          <ol className="relationship-steps compact">
+            <li className="complete"><b>01</b><span>Food + shelter</span></li>
+            <li className="active"><b>02</b><span>Sit together</span></li>
+            <li><b>03</b><span>Familiar hand</span></li>
+            <li><b>04</b><span>Choose comfort</span></li>
+            <li><b>05</b><span>Garden route</span></li>
+            <li><b>06</b><span>Care journal</span></li>
+            <li><b>07</b><span>He greets you</span></li>
+          </ol>
+        </div>
         <div className="story-copy">
           <p className="eyebrow">TRUST · 48</p>
-          <h2 id="story-title">She learned the sound of your rover.</h2>
-          <p>Splotch is red, radiant, and never finished being petted. Sit in the real garden and she will consider your lap public infrastructure.</p>
-          <p>Food solved the immediate need. Staying is what started the relationship.</p>
-          <button className="primary-button" onClick={onClose}>Build her somewhere dry <ArrowRight size={17} /></button>
+          <h2 id="story-title">He learned the sound of your rover.</h2>
+          <p>Splotch is a big orange boy. Food solved the immediate need. Staying is what starts the relationship.</p>
+          <p>After the shelter is built, the rover stops being the hero. You step out, approach slowly, and sit with him yourself.</p>
+          <button className="primary-button" onClick={onClose}>Build him somewhere dry <ArrowRight size={17} /></button>
         </div>
       </article>
     </div>
   )
 }
 
-function CompletionModal({ onClose }: { onClose: () => void }) {
+function CompletionModal({ onClose, onBeginBond }: { onClose: () => void; onBeginBond: () => void }) {
   return (
     <div className="story-backdrop" role="presentation">
       <article className="complete-card" role="dialog" aria-modal="true" aria-labelledby="complete-title">
         <button className="close-button" onClick={onClose} aria-label="Keep playing"><X size={19} /></button>
         <span className="complete-mark"><Sparkles /></span>
-        <p className="eyebrow">FIRST DAY COMPLETE</p>
-        <h2 id="complete-title">You gave Splotch a better simulated day—for free.</h2>
-        <p>The cat, the need for food, and the shelter work are real. A donation is optional. If you choose it, $10 supports daily care through Gardens of St. Gertrude, the legal nonprofit behind Cat Gardens.</p>
+        <p className="eyebrow">TUTORIAL COMPLETE · RELATIONSHIP BEGINS</p>
+        <h2 id="complete-title">Now leave the rover and meet him.</h2>
+        <p>One completed checklist is not trust. Visit two puts a human caretaker on the ground beside Splotch. Sit still, stay with him, and begin a relationship saved across visits.</p>
+        <div className="seven-visit-preview"><b>1</b><i /><b>2</b><i /><span>3</span><i /><span>4</span><i /><span>5</span><i /><span>6</span><i /><span>7</span></div>
         <div className="complete-actions">
-          <a className="primary-button" href="/checkout.html?amount=10&frequency=once&campaign=daily-care">Help a real cat today · $10 <ArrowRight size={17} /></a>
-          <button className="secondary-button" onClick={onClose}>Keep exploring</button>
+          <button className="primary-button" onClick={onBeginBond}><UserRound size={17} /> Begin visit two on foot</button>
+          <button className="secondary-button" onClick={onClose}>Return to the garden</button>
         </div>
-        <small>No virtual shelter is represented as a completed real-world outcome without verification.</small>
+        <small>Donation remains optional and separate. First, the game earns the player’s care.</small>
+      </article>
+    </div>
+  )
+}
+
+function BondingHUD({ onComplete, onCancel }: { onComplete: (result: { advanced: boolean; visit: number }) => void; onCancel: () => void }) {
+  const bondVisits = useGame((state) => state.bondVisits)
+  const moment = bondMoments[Math.min(bondVisits, bondMoments.length - 1)]
+  const [holding, setHolding] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const finishing = useRef(false)
+
+  useEffect(() => {
+    if (!holding) return
+    const timer = window.setInterval(() => setProgress((value) => Math.min(100, value + 1.25)), 70)
+    return () => window.clearInterval(timer)
+  }, [holding])
+
+  useEffect(() => {
+    if (progress < 100 || finishing.current) return
+    finishing.current = true
+    setHolding(false)
+    playPurr()
+    const result = useGame.getState().completeBondVisit()
+    if (result) window.setTimeout(() => onComplete(result), 450)
+  }, [onComplete, progress])
+
+  return (
+    <section className="bonding-hud" aria-label="Sit with Splotch">
+      <button className="bonding-close" onClick={() => { useGame.getState().cancelBonding(); onCancel() }} aria-label="Return to rover"><X size={18} /></button>
+      <div className="bonding-copy">
+        <span>VISIT {String(bondVisits + 2).padStart(2, '0')} · ON FOOT</span>
+        <h2>{moment.title}</h2>
+        <p>{moment.detail}</p>
+      </div>
+      <button
+        className={`stay-button ${holding ? 'holding' : ''}`}
+        onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); setHolding(true) }}
+        onPointerUp={() => setHolding(false)}
+        onPointerCancel={() => setHolding(false)}
+        onPointerLeave={() => setHolding(false)}
+      >
+        <span className="stay-progress" style={{ '--stay': `${progress}%` } as React.CSSProperties}><MousePointer2 size={19} /></span>
+        <strong>{progress >= 100 ? 'Moment saved.' : holding ? 'Stay…' : moment.action}</strong>
+        <small>{Math.round(progress)}%</small>
+      </button>
+      <p className="bonding-note"><Shield size={13} /> Splotch remains safe if you leave. The game never manufactures neglect.</p>
+    </section>
+  )
+}
+
+function BondResultModal({ result, onClose }: { result: { advanced: boolean; visit: number }; onClose: () => void }) {
+  const nextBondAt = useGame((state) => state.nextBondAt)
+  const bondVisits = useGame((state) => state.bondVisits)
+  const completedMoment = bondMoments[Math.max(0, Math.min(result.visit - 2, bondMoments.length - 1))]
+  const unlockLabel = nextBondAt ? new Intl.DateTimeFormat(undefined, { weekday: 'long', hour: 'numeric', minute: '2-digit' }).format(nextBondAt) : null
+  return (
+    <div className="story-backdrop" role="presentation">
+      <article className="bond-result-card" role="dialog" aria-modal="true" aria-labelledby="bond-result-title">
+        <button className="close-button" onClick={onClose} aria-label="Return to garden"><X size={19} /></button>
+        <span className="result-paw"><PawPrint /></span>
+        <p className="eyebrow">{result.advanced ? `VISIT ${bondVisits + 1} SAVED · +35 CARE` : 'YOU STAYED ANYWAY'}</p>
+        <h2 id="bond-result-title">{result.advanced ? completedMoment.result : 'Splotch had your attention, not another transaction.'}</h2>
+        <p>{result.advanced ? 'The relationship now persists in this browser. His trust changed because you gave him time after the urgent work was over.' : 'There were no new points to collect. You sat with him because the relationship itself was worth returning to.'}</p>
+        <div className="return-promise">
+          <CalendarDays size={20} />
+          <div><span>NEXT BOND MOMENT</span><strong>{bondVisits >= 6 ? 'The seven-visit arc is complete' : unlockLabel ?? 'Ready now'}</strong><small>Nothing bad happens while you are away.</small></div>
+        </div>
+        <div className="complete-actions">
+          <button className="primary-button" onClick={onClose}>Return to the garden <ArrowRight size={17} /></button>
+          <a className="secondary-button" href="/gallery.html">Meet the real cats</a>
+        </div>
       </article>
     </div>
   )
@@ -285,8 +395,11 @@ export default function App() {
   const setInput = useGame((state) => state.setInput)
   const start = useGame((state) => state.start)
   const resetRover = useGame((state) => state.resetRover)
+  const bondingMode = useGame((state) => state.bondingMode)
+  const bondVisits = useGame((state) => state.bondVisits)
   const [memoryOpen, setMemoryOpen] = useState(false)
   const [completionOpen, setCompletionOpen] = useState(false)
+  const [bondResult, setBondResult] = useState<{ advanced: boolean; visit: number } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
   const handleAction = useCallback(() => {
     const game = useGame.getState()
@@ -301,8 +414,7 @@ export default function App() {
         return
       }
       if (game.hasBonded) {
-        playPurr()
-        game.setNotification('Splotch leans into your hand.')
+        game.beginBonding()
       }
     }
     if (game.nearby === 'shelter') {
@@ -356,7 +468,7 @@ export default function App() {
   }, [notification, setNotification])
 
   return (
-    <main className={`game-shell ${!started || memoryOpen || completionOpen || helpOpen ? 'is-paused' : ''}`}>
+    <main className={`game-shell ${!started || memoryOpen || completionOpen || bondResult || helpOpen ? 'is-paused' : ''} ${bondingMode ? 'is-bonding' : ''}`}>
       <div className="world-canvas">
         <Suspense fallback={<div className="world-loading"><i /><span>Loading the real first day…</span></div>}>
           <CatGardenWorld />
@@ -364,7 +476,7 @@ export default function App() {
       </div>
 
       <header className="game-header game-panel">
-        <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>FIRST DAY</small></a>
+        <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>SPLOTCH · VISIT {bondVisits + 1}/7</small></a>
         <nav>
           <a href="/gallery.html">Real cats</a>
           <a href="/cat-crisis.html">Why Cyprus?</a>
@@ -373,7 +485,7 @@ export default function App() {
         </nav>
       </header>
 
-      {started && (
+      {started && !bondingMode && (
         <>
           <CatCard />
           <ObjectiveCard />
@@ -386,9 +498,25 @@ export default function App() {
         </>
       )}
 
+      {bondingMode && (
+        <BondingHUD
+          onCancel={() => undefined}
+          onComplete={(result) => setBondResult(result)}
+        />
+      )}
+
       {!started && <StartMission onStart={start} />}
       {memoryOpen && <MemoryModal onClose={() => setMemoryOpen(false)} />}
-      {completionOpen && <CompletionModal onClose={() => setCompletionOpen(false)} />}
+      {completionOpen && (
+        <CompletionModal
+          onClose={() => setCompletionOpen(false)}
+          onBeginBond={() => {
+            setCompletionOpen(false)
+            useGame.getState().beginBonding()
+          }}
+        />
+      )}
+      {bondResult && <BondResultModal result={bondResult} onClose={() => setBondResult(null)} />}
       {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
     </main>
   )

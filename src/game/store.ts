@@ -26,6 +26,10 @@ type GameState = {
   hasFed: boolean
   hasBonded: boolean
   shelterStage: number
+  bondVisits: number
+  lastBondAt: number | null
+  nextBondAt: number | null
+  bondingMode: boolean
   nearby: NearbyAction
   catAnimation: CatAnimation
   playerPosition: [number, number, number]
@@ -38,6 +42,9 @@ type GameState = {
   feed: () => boolean
   bond: () => boolean
   build: () => boolean
+  beginBonding: () => boolean
+  cancelBonding: () => void
+  completeBondVisit: () => { advanced: boolean; visit: number } | null
   setNearby: (nearby: NearbyAction) => void
   setCatAnimation: (animation: CatAnimation) => void
   setPlayerPosition: (position: [number, number, number]) => void
@@ -71,6 +78,10 @@ export const useGame = create<GameState>()(
       hasFed: false,
       hasBonded: false,
       shelterStage: 0,
+      bondVisits: 0,
+      lastBondAt: null,
+      nextBondAt: null,
+      bondingMode: false,
       nearby: null,
       catAnimation: 'idle',
       playerPosition: [0, 0, -9],
@@ -106,7 +117,7 @@ export const useGame = create<GameState>()(
           trust: 15,
           carePoints: state.carePoints + 50,
           catAnimation: 'eat',
-          notification: 'Splotch is eating. Stay with her a moment. · +50 care',
+          notification: 'Splotch is eating. Stay with him a moment. · +50 care',
         })
         return true
       },
@@ -118,7 +129,7 @@ export const useGame = create<GameState>()(
           trust: 48,
           carePoints: state.carePoints + 75,
           catAnimation: 'dance',
-          notification: 'Splotch knows your rover now. Her story is unlocked. · +75 care',
+          notification: 'Splotch knows your rover now. His story is unlocked. · +75 care',
         })
         return true
       },
@@ -136,6 +147,37 @@ export const useGame = create<GameState>()(
           notification: nextStage === 4 ? 'A warm, dry place—built by you. · +100 care' : `Shelter built ${nextStage}/4 · +25 care`,
         })
         return true
+      },
+      beginBonding: () => {
+        const state = get()
+        if (!state.hasBonded) return false
+        set({
+          bondingMode: true,
+          input: emptyInput,
+          catAnimation: 'idle',
+          notification: null,
+        })
+        return true
+      },
+      cancelBonding: () => set({ bondingMode: false, input: emptyInput, catAnimation: 'idle' }),
+      completeBondVisit: () => {
+        const state = get()
+        if (!state.bondingMode || !state.hasBonded) return null
+        const now = Date.now()
+        const canAdvance = state.bondVisits < 6 && (!state.nextBondAt || now >= state.nextBondAt)
+        const nextVisits = canAdvance ? state.bondVisits + 1 : state.bondVisits
+        const nextVisit = Math.min(7, nextVisits + 1)
+        set({
+          bondingMode: false,
+          bondVisits: nextVisits,
+          lastBondAt: now,
+          nextBondAt: canAdvance && nextVisits < 6 ? now + 20 * 60 * 60 * 1000 : state.nextBondAt,
+          trust: canAdvance ? Math.min(100, state.trust + 7) : state.trust,
+          carePoints: canAdvance ? state.carePoints + 35 : state.carePoints,
+          catAnimation: 'idle',
+          notification: canAdvance ? `Visit ${nextVisit} saved · +35 care` : 'You stayed without turning it into a transaction.',
+        })
+        return { advanced: canAdvance, visit: nextVisit }
       },
       setNearby: (nearby) => {
         if (get().nearby !== nearby) set({ nearby })
@@ -158,6 +200,10 @@ export const useGame = create<GameState>()(
         hasFed: false,
         hasBonded: false,
         shelterStage: 0,
+        bondVisits: 0,
+        lastBondAt: null,
+        nextBondAt: null,
+        bondingMode: false,
         nearby: null,
         catAnimation: 'idle',
         playerPosition: [0, 0, -9],
@@ -168,7 +214,17 @@ export const useGame = create<GameState>()(
     }),
     {
       name: 'cat-gardens-first-day-v2',
-      version: 1,
+      version: 2,
+      migrate: (persistedState) => {
+        const state = persistedState as Partial<GameState>
+        return {
+          ...state,
+          bondVisits: state.bondVisits ?? 0,
+          lastBondAt: state.lastBondAt ?? null,
+          nextBondAt: state.nextBondAt ?? null,
+          bondingMode: false,
+        } as GameState
+      },
       partialize: (state) => ({
         started: state.started,
         foodFound: state.foodFound,
@@ -182,12 +238,19 @@ export const useGame = create<GameState>()(
         hasFed: state.hasFed,
         hasBonded: state.hasBonded,
         shelterStage: state.shelterStage,
+        bondVisits: state.bondVisits,
+        lastBondAt: state.lastBondAt,
+        nextBondAt: state.nextBondAt,
       }),
     },
   ),
 )
 
-export const getObjective = (state: Pick<GameState, 'foodFound' | 'hasFed' | 'hasBonded' | 'partsFound' | 'shelterStage'>) => {
+if (import.meta.env.DEV) {
+  ;(window as typeof window & { __CAT_GARDENS_GAME__?: typeof useGame }).__CAT_GARDENS_GAME__ = useGame
+}
+
+export const getObjective = (state: Pick<GameState, 'foodFound' | 'hasFed' | 'hasBonded' | 'partsFound' | 'shelterStage' | 'bondVisits' | 'nextBondAt'>) => {
   if (state.foodFound.length < 3) return {
     chapter: '01 · FOOD RUN',
     title: 'Recover three food crates',
@@ -198,7 +261,7 @@ export const getObjective = (state: Pick<GameState, 'foodFound' | 'hasFed' | 'ha
   if (!state.hasFed) return {
     chapter: '02 · DELIVER',
     title: 'Bring the food to Splotch',
-    detail: 'Find the green cat marker, stop nearby, and feed her.',
+    detail: 'Find the green cat marker, stop nearby, and feed him.',
     progress: 0,
     total: 1,
   }
@@ -223,11 +286,32 @@ export const getObjective = (state: Pick<GameState, 'foodFound' | 'hasFed' | 'ha
     progress: state.shelterStage,
     total: 4,
   }
-  return {
-    chapter: 'FIRST DAY COMPLETE',
-    title: 'Splotch remembers you',
-    detail: 'Explore the garden or return tomorrow. Her care state is saved here.',
-    progress: 1,
-    total: 1,
+  if (state.bondVisits < 6) {
+    const nextVisit = state.bondVisits + 2
+    const waiting = Boolean(state.nextBondAt && Date.now() < state.nextBondAt)
+    return {
+      chapter: `RELATIONSHIP · VISIT ${String(nextVisit).padStart(2, '0')}`,
+      title: waiting ? `Splotch is safe. Visit ${nextVisit} opens tomorrow.` : 'Leave the rover and sit with Splotch',
+      detail: waiting
+        ? 'Nothing bad happens while you are away. A new moment—not a new emergency—will be waiting.'
+        : 'Return to his marker. This time, meet him as a person rather than a vehicle.',
+      progress: state.bondVisits + 1,
+      total: 7,
+    }
   }
+  return {
+    chapter: 'RELATIONSHIP · ALWAYS CONTINUES',
+    title: 'Splotch comes to greet you',
+    detail: 'The seven-visit arc is complete. His saved relationship with you is not.',
+    progress: 7,
+    total: 7,
+  }
+}
+
+export const getRelationshipText = (trust: number) => {
+  if (trust >= 100) return 'He comes to greet you.'
+  if (trust >= 90) return 'He looks for you at the gate.'
+  if (trust >= 78) return 'He remembers you.'
+  if (trust > 0) return 'He is learning your sound.'
+  return 'He is watching from a distance.'
 }

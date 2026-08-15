@@ -11,6 +11,7 @@ import { useGame } from './game/store'
 const CAT_POSITION = new THREE.Vector3(0.2, 0, 4.2)
 const CAT_FEEDING_POSITION = new THREE.Vector3(0.2, .04, 4.2)
 const CAT_SHELTER_POSITION = new THREE.Vector3(4.55, .04, 7.05)
+const CAT_BOND_POSITION = new THREE.Vector3(2.2, .04, 2.0)
 const SHELTER_POSITION = new THREE.Vector3(5.4, 0, 7.2)
 const START_POSITION: [number, number, number] = [0, 0.75, -9]
 
@@ -151,7 +152,7 @@ function Landscape() {
         <mesh castShadow position={[-2.15, .32, 0]}><boxGeometry args={[.2, 2.6, .2]} /><meshStandardMaterial color="#d8d1b9" /></mesh>
         <mesh castShadow position={[2.15, .32, 0]}><boxGeometry args={[.2, 2.6, .2]} /><meshStandardMaterial color="#d8d1b9" /></mesh>
         <Text position={[0, 1.55, .15]} fontSize={.52} color="#e2ff70" anchorX="center">CAT GARDENS</Text>
-        <Text position={[0, .95, .15]} fontSize={.2} color="#f7f3e8" anchorX="center" letterSpacing={.18}>FIRST DAY</Text>
+        <Text position={[0, .95, .15]} fontSize={.2} color="#f7f3e8" anchorX="center" letterSpacing={.18}>CARE JOURNEY</Text>
       </group>
     </group>
   )
@@ -267,7 +268,7 @@ function CaretakerRover() {
     const boost = input.boost > 0 ? 1.35 : 1
     const cappedDelta = Math.min(delta, .034)
 
-    if (started) {
+    if (started && !game.bondingMode) {
       const lateralSpeed = linear.dot(right)
       const maxSpeed = 8 * boost
       const targetSpeed = throttle * maxSpeed
@@ -289,6 +290,17 @@ function CaretakerRover() {
       rigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true)
     }
 
+    if (game.bondingMode) {
+      const bondTarget = CAT_BOND_POSITION
+      driveSpeed.current = 0
+      rigidBody.setLinvel({ x: 0, y: velocity.y, z: 0 }, true)
+      rigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true)
+      camera.position.lerp(bondTarget.clone().add(new THREE.Vector3(2.9, 1.78, -2.2)), 1 - Math.exp(-delta * 3.2))
+      smoothTarget.current.lerp(bondTarget.clone().add(new THREE.Vector3(.28, .75, 0)), 1 - Math.exp(-delta * 4.8))
+      camera.lookAt(smoothTarget.current)
+      return
+    }
+
     speedRef.current = THREE.MathUtils.lerp(speedRef.current, driveSpeed.current, .18)
     steerRef.current = THREE.MathUtils.lerp(steerRef.current, steer, .18)
     const position = new THREE.Vector3(translation.x, translation.y, translation.z)
@@ -301,7 +313,8 @@ function CaretakerRover() {
     if (frame.current % 5 === 0) {
       setPlayerPosition([translation.x, translation.y, translation.z])
       const flat = new THREE.Vector3(translation.x, 0, translation.z)
-      const catDistance = flat.distanceTo(CAT_POSITION)
+      const activeCatPosition = game.shelterStage === 4 ? CAT_SHELTER_POSITION : CAT_POSITION
+      const catDistance = flat.distanceTo(activeCatPosition)
       const shelterDistance = flat.distanceTo(SHELTER_POSITION)
       const nearby = catDistance < 2.65 ? 'cat' : shelterDistance < 3.1 ? 'shelter' : null
       setNearby(nearby)
@@ -421,6 +434,7 @@ function CatActor() {
   const hasFed = useGame((state) => state.hasFed)
   const hasBonded = useGame((state) => state.hasBonded)
   const shelterStage = useGame((state) => state.shelterStage)
+  const bondingMode = useGame((state) => state.bondingMode)
   const setCatAnimation = useGame((state) => state.setCatAnimation)
 
   useEffect(() => {
@@ -451,21 +465,55 @@ function CatActor() {
 
   useFrame((_, delta) => {
     if (!group.current) return
-    const target = shelterStage === 4 ? CAT_SHELTER_POSITION : CAT_FEEDING_POSITION
+    const target = bondingMode ? CAT_BOND_POSITION : shelterStage === 4 ? CAT_SHELTER_POSITION : CAT_FEEDING_POSITION
     group.current.position.lerp(target, 1 - Math.exp(-delta * .8))
     if (shelterStage === 4) group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, -1.35, .03)
   })
 
   return (
     <group ref={group} position={[CAT_POSITION.x, .04, CAT_POSITION.z]} rotation={[0, Math.PI, 0]}>
-      <primitive object={clone} scale={1.08} />
-      <Html center position={[0, 2.25, 0]} distanceFactor={9} zIndexRange={[8, 0]}>
-        <div className={`cat-world-tag ${hasFed ? 'is-fed' : ''}`}>
-          <strong>Splotch</strong>
-          <span>{shelterStage === 4 ? 'safe + warm' : hasBonded ? 'trusting you' : hasFed ? 'eating' : 'hungry'}</span>
-        </div>
-      </Html>
+      <primitive object={clone} scale={.52} />
+      {!bondingMode && (
+        <Html center position={[0, 1.35, 0]} distanceFactor={9} zIndexRange={[8, 0]}>
+          <div className={`cat-world-tag ${hasFed ? 'is-fed' : ''}`}>
+            <strong>Splotch · game proxy</strong>
+            <span>{shelterStage === 4 ? 'safe + warm' : hasBonded ? 'trusting you' : hasFed ? 'eating' : 'hungry'}</span>
+          </div>
+        </Html>
+      )}
       {hasBonded && <Sparkles count={12} scale={[2.3, 2, 2.3]} size={4} speed={.35} color="#e2ff70" position={[0, .9, 0]} />}
+    </group>
+  )
+}
+
+function GroundCaretaker() {
+  const group = useRef<THREE.Group>(null)
+  const { scene, animations } = useGLTF('/models/quaternius/caretaker.glb')
+  const clone = useMemo(() => SkeletonUtils.clone(scene), [scene])
+  const { actions } = useAnimations(animations, group)
+  const bondingMode = useGame((state) => state.bondingMode)
+
+  useEffect(() => {
+    clone.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.castShadow = true
+        object.receiveShadow = true
+      }
+    })
+  }, [clone])
+
+  useEffect(() => {
+    if (!bondingMode) return
+    const action = actions.Interact ?? actions.Idle_Neutral ?? actions.Idle
+    action?.reset().setEffectiveTimeScale(.72).fadeIn(.25).play()
+    return () => { action?.fadeOut(.2) }
+  }, [actions, bondingMode])
+
+  if (!bondingMode) return null
+  const catTarget = CAT_BOND_POSITION
+  return (
+    <group ref={group} position={[catTarget.x + .85, -.03, catTarget.z]} rotation={[0, -Math.PI / 2, 0]} scale={.9}>
+      <primitive object={clone} />
     </group>
   )
 }
@@ -598,6 +646,7 @@ function Scene() {
       <Landscape />
       <BoundaryColliders />
       <FeedingGarden />
+      <GroundCaretaker />
       <Shelter />
       {FOOD_CRATES.map((item) => <FoodCrate key={item.id} {...item} />)}
       {SHELTER_PARTS.map((item, index) => <ShelterPart key={item.id} {...item} index={index} />)}
@@ -636,5 +685,6 @@ export function CatGardenWorld() {
 useGLTF.preload('/models/bruno/rescue-rover.glb')
 useGLTF.preload('/models/bruno/oak-tree.glb')
 useGLTF.preload('/models/kenney/animal-cat.glb')
+useGLTF.preload('/models/quaternius/caretaker.glb')
 
 export default CatGardenWorld
