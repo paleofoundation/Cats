@@ -60,7 +60,7 @@ module.exports = async function handler(req, res) {
 
     const session = await stripe.checkout.sessions.create({
       mode: isMonthly ? 'subscription' : 'payment',
-      ui_mode: 'embedded',
+      ui_mode: 'embedded_page',
       integration_identifier: integrationIdentifier,
       ...(email ? { customer_email: email } : {}),
       billing_address_collection: 'auto',
