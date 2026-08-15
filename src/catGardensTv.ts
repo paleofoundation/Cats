@@ -16,7 +16,7 @@ export type TvChannel = {
 const cleanYouTubeId = (value: string | undefined) => {
   if (!value) return ''
   const trimmed = value.trim()
-  const match = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|live\/))([A-Za-z0-9_-]{11})/)
+  const match = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|live\/|shorts\/))([A-Za-z0-9_-]{11})/)
   const candidate = match?.[1] || trimmed
   return /^[A-Za-z0-9_-]{11}$/.test(candidate) ? candidate : ''
 }
@@ -38,12 +38,12 @@ export const tvChannels: TvChannel[] = [
     kind: 'episode',
   },
   {
-    id: 'mabel-sunbeam',
-    label: 'MABEL IN THE SUN',
-    title: 'A quiet morning with Mabel.',
-    description: 'The real Mabel grooms herself in a warm sunbeam. She is an FIV-positive Cat Gardens resident whose advanced care routine helps protect ordinary moments like this one.',
-    schedule: 'REAL CAT · 00:11 · CYPRUS',
-    youtubeId: cleanYouTubeId(import.meta.env.VITE_YOUTUBE_MABEL),
+    id: 'mabel-fishy-girl',
+    label: 'MABEL FISH REPORT',
+    title: 'Mabel is a very fishy girl.',
+    description: 'A new real-life dispatch from Mabel Fish, an FIV-positive Cat Gardens resident whose special food, supportive care, and daily observation help her keep being unmistakably Mabel.',
+    schedule: 'NEW YOUTUBE SHORT · CYPRUS',
+    youtubeId: cleanYouTubeId(import.meta.env.VITE_YOUTUBE_MABEL || 'aH2YusZRidI'),
     localVideo: '/videos/mabel-sunbeam.mp4',
     poster: '/videos/mabel-sunbeam.jpg',
     watchPage: '/watch-mabel.html',

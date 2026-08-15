@@ -317,6 +317,48 @@ async function ensureSchema() {
           )
         `
       }
+
+      const mabelDispatchRows = await sql`
+        INSERT INTO garden_care_events (
+          event_key, event_type, cat_id, need_id, title, detail, metadata, public, occurred_at, created_by
+        ) VALUES (
+          'mabel-youtube-2026-08-15', 'dispatch.published', 'mabel', NULL,
+          'Mabel is a very fishy girl',
+          'A new real-life Mabel Fish update was published by Cat Gardens on YouTube.',
+          ${JSON.stringify({ world_artifact: 'mabel-fishy-girl-dispatch', source: 'Cat Gardens YouTube channel', youtube_id: 'aH2YusZRidI' })}::jsonb,
+          TRUE, '2026-08-15T22:00:00+03:00'::timestamptz, 'sanctuary'
+        )
+        ON CONFLICT (event_key) DO UPDATE SET
+          title = EXCLUDED.title,
+          detail = EXCLUDED.detail,
+          metadata = EXCLUDED.metadata,
+          public = TRUE
+        RETURNING event_id
+      `
+      const mabelDispatch = mabelDispatchRows[0] || (await sql`SELECT event_id FROM garden_care_events WHERE event_key = 'mabel-youtube-2026-08-15' LIMIT 1`)[0]
+      if (mabelDispatch) {
+        await sql`
+          INSERT INTO garden_proof_assets (
+            proof_key, event_id, need_id, cat_id, kind, title, url, source, public, published_at, verified_by
+          ) VALUES (
+            'mabel-youtube-aH2YusZRidI', ${mabelDispatch.event_id}, NULL, 'mabel', 'video',
+            'Watch Mabel is a Very Fishy Girl', 'https://www.youtube.com/shorts/aH2YusZRidI', 'Cat Gardens YouTube channel', TRUE,
+            '2026-08-15T22:00:00+03:00'::timestamptz, 'Karen Pendergrass'
+          )
+          ON CONFLICT (proof_key) DO UPDATE SET
+            title = EXCLUDED.title,
+            url = EXCLUDED.url,
+            source = EXCLUDED.source,
+            public = TRUE
+        `
+        await sql`
+          INSERT INTO garden_notifications (event_id, cat_id, title, body, action_url)
+          SELECT ${mabelDispatch.event_id}, 'mabel', 'A new Mabel dispatch arrived', 'Mabel Fish has a new real-life video from Cat Gardens.', '/Mabel'
+          WHERE NOT EXISTS (
+            SELECT 1 FROM garden_notifications WHERE event_id = ${mabelDispatch.event_id} AND user_id IS NULL
+          )
+        `
+      }
     })().catch((error) => {
       schemaPromise = undefined
       throw error
