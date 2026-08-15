@@ -2,6 +2,8 @@ const Stripe = require('stripe');
 
 const MINIMUM_AMOUNT_CENTS = 500;
 const MAXIMUM_AMOUNT_CENTS = 50000000;
+const STEWARD_AMOUNT_CENTS = 1200000;
+const STEWARD_CAMPAIGN = 'Steward of the Garden';
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -32,6 +34,9 @@ module.exports = async function handler(req, res) {
     const safeCampaign = typeof campaign === 'string'
       ? campaign.replace(/[^a-zA-Z0-9 _-]/g, '').slice(0, 100)
       : '';
+    if (safeCampaign === STEWARD_CAMPAIGN && (isMonthly || amountCents !== STEWARD_AMOUNT_CENTS)) {
+      return res.status(400).json({ error: 'Steward sponsorships are one-time gifts of $12,000.' });
+    }
     const donorName = [firstName, lastName]
       .filter(value => typeof value === 'string')
       .map(value => value.trim().slice(0, 100))
