@@ -11,6 +11,8 @@ const SPLOTCH_HOME = new THREE.Vector3(0, 0, 4.4)
 const PLANT_POSITION = new THREE.Vector3(-3.2, 0, 3.6)
 const REALITY_PORTAL_POSITION = new THREE.Vector3(9.4, 0, -2.1)
 const DREAM_PORTAL_POSITION = new THREE.Vector3(-9.2, 0, 7.2)
+const SCREEN_FORWARD = new THREE.Vector3(0, 0, 1)
+const CAMERA_OFFSET = new THREE.Vector3(0, 3.35, -6.3)
 const PEOPLE: Record<PersonId, { position: [number, number, number]; color: string; label: string; subtitle: string }> = {
   chanda: { position: [-4.8, 0, .6], color: '#dd8b52', label: 'Chanda', subtitle: 'daily caretaker' },
   karen: { position: [6.8, 0, 4.6], color: '#b7cc68', label: 'Karen', subtitle: 'co-founder · Cat Gardens' },
@@ -157,8 +159,11 @@ function CaretakerPlayer() {
     const game = useGame.getState()
     const position = body.current.translation()
     const velocity = body.current.linvel()
-    const x = game.input.right - game.input.left
-    const z = game.input.backward - game.input.forward
+    // The camera looks toward +Z, so screen-left is +X and screen-up is +Z.
+    // Keep movement locked to those visible axes so keyboard and pad never
+    // change meaning as the caretaker turns.
+    const x = game.input.left - game.input.right
+    const z = game.input.forward - game.input.backward
     const magnitude = Math.min(1, Math.hypot(x, z))
     const running = game.input.boost > 0
     const speed = running ? 5.6 : 3.25
@@ -184,14 +189,13 @@ function CaretakerPlayer() {
     }
 
     const flat = new THREE.Vector3(position.x, 0, position.z)
-    const forward = new THREE.Vector3(Math.sin(facing.current), 0, Math.cos(facing.current))
     if (game.bondingMode) {
       camera.position.lerp(SPLOTCH_HOME.clone().add(new THREE.Vector3(3.5, 2.15, -3.2)), 1 - Math.exp(-delta * 3.5))
       smoothTarget.current.lerp(SPLOTCH_HOME.clone().add(new THREE.Vector3(0, .75, 0)), 1 - Math.exp(-delta * 5))
     } else {
-      const desiredCamera = flat.clone().addScaledVector(forward, -6.3).add(new THREE.Vector3(0, 3.35, 0))
+      const desiredCamera = flat.clone().add(CAMERA_OFFSET)
       camera.position.lerp(desiredCamera, 1 - Math.exp(-delta * 4.4))
-      smoothTarget.current.lerp(flat.clone().addScaledVector(forward, 2.1).add(new THREE.Vector3(0, 1.15, 0)), 1 - Math.exp(-delta * 6.5))
+      smoothTarget.current.lerp(flat.clone().addScaledVector(SCREEN_FORWARD, 2.1).add(new THREE.Vector3(0, 1.15, 0)), 1 - Math.exp(-delta * 6.5))
     }
     camera.lookAt(smoothTarget.current)
 

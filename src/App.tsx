@@ -183,7 +183,8 @@ function DayEndButton({ onDream }: { onDream: () => void }) {
 function MiniMap() {
   const [x, , z] = useGame((state) => state.playerPosition)
   const dreamReady = useGame((state) => state.hasFed && state.blanketLevel > 0 && state.waterBowlLevel > 0)
-  const mapPoint = (px: number, pz: number) => ({ left: `${50 + (px / 44) * 100}%`, top: `${50 + (pz / 44) * 100}%` })
+  // Match the fixed game camera: +Z is screen-up and +X is screen-left.
+  const mapPoint = (px: number, pz: number) => ({ left: `${50 - (px / 44) * 100}%`, top: `${50 - (pz / 44) * 100}%` })
   return (
     <aside className="mini-map game-panel" aria-label="Garden map">
       <div className="map-title"><span>GARDEN MAP</span><small>N</small></div>
@@ -246,7 +247,7 @@ function DrivePad() {
         <span className="drive-cross">↑<i>←</i><b>→</b><em>↓</em></span>
         <span className="drive-knob" style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }}><i /></span>
       </div>
-      <small>WALK WITH<br />TRACKPAD OR WASD</small>
+      <small>SCREEN-RELATIVE<br />ARROWS · WASD · PAD</small>
     </div>
   )
 }
