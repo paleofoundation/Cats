@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useGardenAccount } from './account'
 import { useGame, type DonationBadge, type GameState } from './game/store'
 
-const allowedBadges: DonationBadge[] = ['bowl-bringer', 'gentle-hands', 'storykeeper', 'bright-bite', 'safe-passage', 'dream-builder', 'garden-keeper']
+const allowedBadges: DonationBadge[] = ['bowl-bringer', 'gentle-hands', 'storykeeper', 'bright-bite', 'safe-passage', 'dream-builder', 'garden-keeper', 'broadcast-builder', 'trust-keeper', 'fluff-crew']
 
 type SavedGame = Partial<Pick<GameState,
   'started' | 'foodFound' | 'partsFound' | 'food' | 'parts' | 'hunger' | 'trust' | 'safety' | 'carePoints' |
@@ -10,6 +10,7 @@ type SavedGame = Partial<Pick<GameState,
   'lastDailyClaim' | 'lastChandaVisitDate' | 'lastDayCompleted' | 'completedDays' | 'loginDays' | 'lastFedDate' | 'lastWateredDate' | 'plantStage' | 'plantHydration' |
   'blanketLevel' | 'waterBowlLevel' | 'cuddleboxLevel' | 'benchPlaced' | 'pathStyle' | 'collarName' |
   'npcVisits' | 'chandaHelped' | 'shareRewardClaimed' | 'realityVisits' | 'dreamVisits' | 'dreamDiscoveries'
+  | 'tvVisits' | 'lastTvVisitDate' | 'tvChannelsVisited'
 >>
 
 function snapshot(state: GameState): SavedGame {
@@ -52,6 +53,9 @@ function snapshot(state: GameState): SavedGame {
     realityVisits: state.realityVisits,
     dreamVisits: state.dreamVisits,
     dreamDiscoveries: state.dreamDiscoveries,
+    tvVisits: state.tvVisits,
+    lastTvVisitDate: state.lastTvVisitDate,
+    tvChannelsVisited: state.tvChannelsVisited,
   }
 }
 
@@ -104,6 +108,9 @@ function mergeProgress(local: GameState, remote: SavedGame | null): SavedGame {
     realityVisits: Math.max(local.realityVisits, remote.realityVisits || 0),
     dreamVisits: Math.max(local.dreamVisits, remote.dreamVisits || 0),
     dreamDiscoveries: union(local.dreamDiscoveries, remote.dreamDiscoveries),
+    tvVisits: Math.max(local.tvVisits, remote.tvVisits || 0),
+    lastTvVisitDate: [local.lastTvVisitDate, remote.lastTvVisitDate].filter((value): value is string => Boolean(value)).sort().at(-1) || null,
+    tvChannelsVisited: union(local.tvChannelsVisited, remote.tvChannelsVisited),
   }
 }
 

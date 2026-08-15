@@ -1,7 +1,7 @@
 const { authenticateGardenRequest } = require('./_auth')
 const { database, ensureSchema } = require('./_db')
 
-const STRING_ARRAY_FIELDS = ['foodFound', 'partsFound', 'dreamDiscoveries']
+const STRING_ARRAY_FIELDS = ['foodFound', 'partsFound', 'dreamDiscoveries', 'tvChannelsVisited']
 const BOOLEAN_FIELDS = ['started', 'hasFed', 'hasBonded', 'benchPlaced', 'chandaHelped', 'shareRewardClaimed']
 const NUMBER_LIMITS = {
   food: [0, 20],
@@ -24,6 +24,7 @@ const NUMBER_LIMITS = {
   cuddleboxLevel: [0, 2],
   realityVisits: [0, 100000],
   dreamVisits: [0, 100000],
+  tvVisits: [0, 100000],
   lastBondAt: [0, Number.MAX_SAFE_INTEGER],
 }
 
@@ -38,7 +39,7 @@ function sanitizeState(input) {
     if (source[field] === null && field === 'lastBondAt') state[field] = null
     else if (Number.isFinite(source[field])) state[field] = Math.max(minimum, Math.min(maximum, Math.round(source[field])))
   }
-  for (const field of ['lastDailyClaim', 'lastChandaVisitDate', 'lastDayCompleted', 'lastFedDate', 'lastWateredDate']) {
+  for (const field of ['lastDailyClaim', 'lastChandaVisitDate', 'lastDayCompleted', 'lastFedDate', 'lastWateredDate', 'lastTvVisitDate']) {
     if (source[field] === null) state[field] = null
     else if (typeof source[field] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(source[field])) state[field] = source[field]
   }

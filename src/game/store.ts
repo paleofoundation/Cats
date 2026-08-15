@@ -13,7 +13,7 @@ export type InputState = {
 export type PersonId = 'chanda' | 'karen' | 'kimberly'
 export type NearbyAction = 'cat' | 'plant' | 'chanda' | 'karen' | 'kimberly' | 'reality' | 'dream' | null
 export type CatAnimation = 'idle' | 'eat' | 'walk' | 'dance'
-export type DonationBadge = 'bowl-bringer' | 'gentle-hands' | 'storykeeper' | 'bright-bite' | 'safe-passage' | 'dream-builder' | 'garden-keeper'
+export type DonationBadge = 'bowl-bringer' | 'gentle-hands' | 'storykeeper' | 'bright-bite' | 'safe-passage' | 'dream-builder' | 'garden-keeper' | 'broadcast-builder' | 'trust-keeper' | 'fluff-crew'
 export type GardenUpgrade = 'blanket' | 'simple-bowl' | 'automatic-bowl' | 'cuddlebox' | 'bench' | 'gravel' | 'collar'
 
 export const upgradeCatalog: Record<GardenUpgrade, { title: string; detail: string; cost: number }> = {
@@ -67,6 +67,9 @@ export type GameState = {
   realityVisits: number
   dreamVisits: number
   dreamDiscoveries: string[]
+  tvVisits: number
+  lastTvVisitDate: string | null
+  tvChannelsVisited: string[]
   donationBadges: DonationBadge[]
   verifiedDonationTotal: number
   nearby: NearbyAction
@@ -91,6 +94,7 @@ export type GameState = {
   cancelBonding: () => void
   completeBondVisit: () => { advanced: boolean; visit: number } | null
   visitReality: () => void
+  visitTv: (channelId?: string) => void
   enterDream: () => boolean
   completeDay: () => boolean
   discoverDream: (id: string) => void
@@ -149,6 +153,9 @@ const initialPersistentState = {
   realityVisits: 0,
   dreamVisits: 0,
   dreamDiscoveries: [] as string[],
+  tvVisits: 0,
+  lastTvVisitDate: null as string | null,
+  tvChannelsVisited: [] as string[],
   donationBadges: [] as DonationBadge[],
   verifiedDonationTotal: 0,
 }
@@ -287,6 +294,17 @@ export const useGame = create<GameState>()(
         return { advanced: canAdvance, visit: Math.min(7, nextVisits + 1) }
       },
       visitReality: () => set((state) => ({ realityVisits: state.realityVisits + 1, carePoints: state.carePoints + (state.realityVisits === 0 ? 40 : 0), notification: state.realityVisits === 0 ? 'Reality Portal opened · +40 care' : null })),
+      visitTv: (channelId = 'cat-gardens-tv') => set((state) => {
+        const today = localDay()
+        const firstToday = state.lastTvVisitDate !== today
+        return {
+          tvVisits: state.tvVisits + 1,
+          lastTvVisitDate: today,
+          tvChannelsVisited: state.tvChannelsVisited.includes(channelId) ? state.tvChannelsVisited : [...state.tvChannelsVisited, channelId],
+          carePoints: state.carePoints + (firstToday ? 20 : 0),
+          notification: firstToday ? 'Cat Gardens TV check-in · +20 care' : null,
+        }
+      }),
       enterDream: () => {
         const state = get()
         if (!state.hasFed || state.blanketLevel < 1 || state.waterBowlLevel < 1) {
@@ -351,13 +369,13 @@ export const useGame = create<GameState>()(
     }),
     {
       name: 'cat-gardens-splotch-relationship-v4',
-      version: 4,
+      version: 5,
       migrate: (persistedState) => {
         const state = persistedState as Partial<GameState>
         return {
           ...initialPersistentState,
           ...state,
-          started: false,
+          started: state.started ?? false,
           food: Math.min(3, state.food ?? 0),
           shelterStage: 1,
           nextBondAt: null,
@@ -405,6 +423,9 @@ export const useGame = create<GameState>()(
         realityVisits: state.realityVisits,
         dreamVisits: state.dreamVisits,
         dreamDiscoveries: state.dreamDiscoveries,
+        tvVisits: state.tvVisits,
+        lastTvVisitDate: state.lastTvVisitDate,
+        tvChannelsVisited: state.tvChannelsVisited,
         donationBadges: state.donationBadges,
         verifiedDonationTotal: state.verifiedDonationTotal,
       }),

@@ -4,6 +4,7 @@ import {
   BadgeCheck,
   Box,
   CalendarDays,
+  Camera,
   Check,
   CircleDollarSign,
   CircleHelp,
@@ -13,6 +14,7 @@ import {
   Gift,
   Heart,
   Home,
+  Eye,
   Landmark,
   Leaf,
   LockKeyhole,
@@ -20,10 +22,13 @@ import {
   MessageCircle,
   MousePointer2,
   PawPrint,
+  Play,
+  Radio,
   RotateCcw,
   Shield,
   Sparkles,
   UserRound,
+  Users,
   Utensils,
   Video,
   WalletCards,
@@ -34,6 +39,7 @@ import { loadStripe, type Stripe } from '@stripe/stripe-js'
 import catGardensMark from '../assets/cat-gardens-icon.png'
 import splotchImage from '../assets/splotch.jpg'
 import { badgeLabels, cats, dreamGardenConcept, dreamSpaces, splotchNeeds, type SplotchNeed } from './data'
+import { tvChannels, tvFundingNeeds } from './catGardensTv'
 import { useGardenAccount } from './account'
 import { GameSync } from './GameSync'
 import { playPurr } from './game/audio'
@@ -625,6 +631,108 @@ function RealityPortal({ onClose, onDonate }: { onClose: () => void; onDonate: (
   )
 }
 
+type FundingSummary = Record<string, { total: number; gifts: number; lastFundedAt: string | null }>
+
+function CatGardensTv({ onClose, onDonate }: { onClose: () => void; onDonate: (need: SplotchNeed) => void }) {
+  const [activeId, setActiveId] = useState(tvChannels[0].id)
+  const [funding, setFunding] = useState<FundingSummary>({})
+  const visitTv = useGame((state) => state.visitTv)
+  const active = tvChannels.find((channel) => channel.id === activeId) || tvChannels[0]
+
+  useEffect(() => {
+    let cancelled = false
+    visitTv(tvChannels[0].id)
+    fetch('/api/funding-summary')
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload) => { if (!cancelled && payload?.campaigns) setFunding(payload.campaigns) })
+      .catch(() => undefined)
+    return () => { cancelled = true }
+  }, [visitTv])
+
+  const chooseChannel = (channelId: string) => {
+    setActiveId(channelId)
+    visitTv(channelId)
+  }
+
+  return (
+    <div className="portal-backdrop tv-backdrop" role="presentation">
+      <article className="cat-tv" role="dialog" aria-modal="true" aria-labelledby="cat-tv-title">
+        <button className="close-button" onClick={onClose} aria-label="Close Cat Gardens TV"><X size={19} /></button>
+        <header className="tv-header">
+          <div>
+            <p className="eyebrow">CAT GARDENS TV · VIRTUAL PET, REAL LIFE</p>
+            <h2 id="cat-tv-title">Watch care happen.</h2>
+            <p>Meet the cats in the game, then return here for sanctuary-reviewed windows into their real lives. Live channels, scheduled rituals, care alerts, and proof of fulfilled support all share one durable home.</p>
+          </div>
+          <div className="tv-safety"><Eye size={19} /><span>PUBLIC-SAFE BY DESIGN</span><strong>Delayed · no audio · privacy masked</strong><small>People, access points, roads, plates, and private rooms stay out of frame.</small></div>
+        </header>
+
+        <section className="tv-studio">
+          <nav className="tv-channel-list" aria-label="Cat Gardens TV channels">
+            {tvChannels.map((channel) => (
+              <button className={active.id === channel.id ? 'active' : ''} key={channel.id} onClick={() => chooseChannel(channel.id)}>
+                <span>{channel.kind === 'live' ? <Radio size={16} /> : <Play size={16} />}</span>
+                <div><b>{channel.label}</b><small>{channel.schedule}</small></div>
+                <i>{channel.youtubeId ? 'READY' : 'SLOT'}</i>
+              </button>
+            ))}
+          </nav>
+          <div className="tv-player-column">
+            <div className="tv-player">
+              {active.youtubeId ? (
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${active.youtubeId}?rel=0`}
+                  title={active.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="tv-holding">
+                  <span><Camera size={42} /></span>
+                  <p>{active.kind === 'live' ? 'LIVE CHANNEL CONNECTION' : 'VERIFIED EPISODE SLOT'}</p>
+                  <h3>{active.title}</h3>
+                  <small>This production-ready player will connect automatically when its YouTube URL or ID is added. Until then, it will never pretend that recorded or missing footage is live.</small>
+                </div>
+              )}
+              <div className="tv-player-status"><i className={active.youtubeId ? 'connected' : ''} /><span>{active.youtubeId ? active.kind === 'live' ? 'CHANNEL CONNECTED' : 'LATEST VERIFIED EPISODE' : 'AWAITING FIRST SAFE FEED'}</span><b>{active.label}</b></div>
+            </div>
+            <div className="tv-program-copy">
+              <div><p className="eyebrow">{active.label}</p><h3>{active.title}</h3><p>{active.description}</p></div>
+              <span><b>+20 CARE</b> for today’s first Cat Gardens TV check-in</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="tv-schedule">
+          <div><span>01</span><b>Breakfast Live</b><small>Feeding, fresh water, supplements, observation</small></div>
+          <div><span>02</span><b>Fluff Forecast</b><small>Gabriel + Poly trust, brushing, cooling</small></div>
+          <div><span>03</span><b>Care Alerts</b><small>Reviewed needs, updates, and fulfilled support</small></div>
+          <div><span>04</span><b>Today at Cat Gardens</b><small>A short human-approved daily dispatch</small></div>
+        </section>
+
+        <section className="tv-funding">
+          <header><div><p className="eyebrow">FUND THE WINDOW · VERIFY THE RESULT</p><h3>Help Cat Gardens TV become real.</h3><p>Every campaign accepts secure support now. Verified totals come from the donation ledger; installation costs, purchases, completed work, and evidence remain separate so nothing fictional becomes a fundraising claim.</p></div><span><Users size={18} /> Public aggregate totals only—never donor identities</span></header>
+          <div className="tv-funding-grid">
+            {tvFundingNeeds.map((need) => {
+              const summary = funding[need.id]
+              return (
+                <article key={need.id}>
+                  <span>{need.eyebrow}</span>
+                  <h4>{need.title}</h4>
+                  <p>{need.detail}</p>
+                  <div className="funding-proof"><b>${(summary?.total || 0).toLocaleString()}</b><small>{summary ? `${summary.gifts} verified ${summary.gifts === 1 ? 'gift' : 'gifts'}` : 'verified support will appear here'}</small></div>
+                  <button onClick={() => onDonate(need)}>Support from ${need.suggestedAmount} <ArrowRight size={14} /></button>
+                </article>
+              )
+            })}
+          </div>
+          <footer><Shield size={15} /><span>Cat Gardens is the public project. Gardens of St. Gertrude remains the legal nonprofit receiving donations. “Live,” “funded,” and “completed” labels appear only when the underlying state is verified.</span></footer>
+        </section>
+      </article>
+    </div>
+  )
+}
+
 function DreamGarden({ onClose, onDonate }: { onClose: () => void; onDonate: (need: SplotchNeed) => void }) {
   const discoveries = useGame((state) => state.dreamDiscoveries)
   const discoverDream = useGame((state) => state.discoverDream)
@@ -702,7 +810,7 @@ function CareRoster({ onClose }: { onClose: () => void }) {
         <section className="roster-grid">
           {cats.map((cat) => (
             <article className={`roster-cat roster-${cat.difficulty}`} key={cat.id}>
-              <img src={cat.image} alt={`${cat.name}, a real Cat Gardens cat`} />
+              {cat.image ? <img src={cat.image} alt={`${cat.name}, a real Cat Gardens cat`} /> : <div className="roster-photo-pending" style={{ '--cat-color': cat.color } as React.CSSProperties}><PawPrint size={35} /><b>{cat.name.charAt(0)}</b><span>REAL PHOTO PENDING</span></div>}
               <div><span>{cat.status === 'active' ? 'CURRENTLY ACTIVE' : 'MEMORIAL'} · {cat.difficulty.toUpperCase()} MODE</span><h3>{cat.name}</h3><b>{cat.nickname}</b><p>{cat.careSummary}</p><ul>{cat.careTasks.map((task) => <li key={task}><Check size={12} />{task}</li>)}</ul><button disabled={cat.id !== 'splotch'}>{cat.id === 'splotch' ? 'Your current sidekick' : cat.id === 'mabel' ? 'Advanced-care chapter in preparation' : 'Care profile in review'}</button></div>
             </article>
           ))}
@@ -782,6 +890,8 @@ function DonationDrawer({ need, onClose }: { need: SplotchNeed; onClose: () => v
         needId: need.id,
         needTitle: need.title,
         badge: need.badge,
+        catId: need.catId || 'splotch',
+        program: need.program || 'cat-care',
         email: account.email || undefined,
         donorName: account.signedIn ? account.name : undefined,
       }),
@@ -863,6 +973,7 @@ export default function App() {
   const [bondResult, setBondResult] = useState<{ advanced: boolean; visit: number } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
   const [realityOpen, setRealityOpen] = useState(false)
+  const [tvOpen, setTvOpen] = useState(false)
   const [dreamOpen, setDreamOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [rosterOpen, setRosterOpen] = useState(false)
@@ -981,6 +1092,7 @@ export default function App() {
 
   const openDonation = useCallback((need: SplotchNeed) => {
     setRealityOpen(false)
+    setTvOpen(false)
     setDreamOpen(false)
     setProfileOpen(false)
     setRosterOpen(false)
@@ -988,7 +1100,7 @@ export default function App() {
     setDonationNeed(need)
   }, [])
 
-  const paused = !started || bondResult || helpOpen || realityOpen || dreamOpen || profileOpen || rosterOpen || designerOpen || morningOpen || personOpen || donationNeed
+  const paused = !started || bondResult || helpOpen || realityOpen || tvOpen || dreamOpen || profileOpen || rosterOpen || designerOpen || morningOpen || personOpen || donationNeed
 
   return (
     <main className={`game-shell ${paused ? 'is-paused' : ''} ${bondingMode ? 'is-bonding' : ''}`}>
@@ -1002,6 +1114,7 @@ export default function App() {
       <header className="game-header game-panel">
         <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>SPLOTCH · DAY {Math.max(1, loginDays)} · MEMORY {Math.min(7, bondVisits + 1)}/7</small></a>
         <nav>
+          <button className="tv-nav" onClick={() => setTvOpen(true)}><Radio size={17} /><span>Cat Gardens TV</span></button>
           <button onClick={() => setRealityOpen(true)}><Video size={17} /><span>Reality</span></button>
           <button onClick={() => setRosterOpen(true)}><PawPrint size={17} /><span>Cats</span></button>
           <button onClick={() => setDesignerOpen(true)}><Leaf size={17} /><span>Design Garden</span></button>
@@ -1038,6 +1151,7 @@ export default function App() {
       {personOpen && <PersonDialogue person={personOpen} onClose={() => setPersonOpen(null)} />}
       {bondResult && <BondResultModal result={bondResult} onClose={() => setBondResult(null)} />}
       {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
+      {tvOpen && <CatGardensTv onClose={() => setTvOpen(false)} onDonate={openDonation} />}
       {realityOpen && <RealityPortal onClose={() => setRealityOpen(false)} onDonate={openDonation} />}
       {dreamOpen && <DreamGarden onClose={() => setDreamOpen(false)} onDonate={openDonation} />}
       {rosterOpen && <CareRoster onClose={() => setRosterOpen(false)} />}

@@ -73,11 +73,14 @@ async function recordDonation(session) {
   const metadata = session.metadata || {}
   const amountCents = Number(session.amount_total || 0)
   if (!Number.isSafeInteger(amountCents) || amountCents <= 0) return false
+  const recordId = session.mode === 'subscription' && typeof session.invoice === 'string'
+    ? `invoice:${session.invoice}`
+    : session.id
   await sql`
     INSERT INTO garden_donations (
       session_id, user_id, stripe_customer_id, amount_cents, currency, badge, need_id, frequency, payment_status
     ) VALUES (
-      ${session.id}, ${metadata.app_user_id || null}, ${typeof session.customer === 'string' ? session.customer : null},
+      ${recordId}, ${metadata.app_user_id || null}, ${typeof session.customer === 'string' ? session.customer : null},
       ${amountCents}, ${session.currency || 'usd'}, ${metadata.badge || 'garden-keeper'},
       ${metadata.need_id || null}, ${metadata.donation_frequency || 'once'}, ${session.payment_status}
     )

@@ -11,7 +11,7 @@ export type Cat = {
   id: string
   name: string
   nickname: string
-  image: string
+  image?: string
   color: string
   role: string
   story: string
@@ -37,7 +37,7 @@ export type Place = {
   actions: Array<{ label: string; href: string; primary?: boolean; external?: boolean }>
 }
 
-export type SplotchNeed = {
+export type CareNeed = {
   id: string
   category: 'completed' | 'recurring' | 'preventive' | 'enrichment' | 'story' | 'safety' | 'dream'
   eyebrow: string
@@ -46,7 +46,11 @@ export type SplotchNeed = {
   status: string
   suggestedAmount: number
   badge: DonationBadge
+  catId?: string
+  program?: 'cat-care' | 'cat-gardens-tv' | 'sanctuary'
 }
+
+export type SplotchNeed = CareNeed
 
 export type DreamSpace = {
   id: string
@@ -144,6 +148,9 @@ export const badgeLabels: Record<DonationBadge, string> = {
   'safe-passage': 'Safe Passage',
   'dream-builder': 'Dream Builder',
   'garden-keeper': 'Garden Keeper',
+  'broadcast-builder': 'Broadcast Builder',
+  'trust-keeper': 'Trust Keeper',
+  'fluff-crew': 'Fluff Crew',
 }
 
 export { dreamGardenConcept }
@@ -161,6 +168,30 @@ export const cats: Cat[] = [
     status: 'active',
     careSummary: 'Social, stable, and reported to have no current health crisis. His routine focuses on food, safety, dental prevention, and human attention.',
     careTasks: ['Daily food and fresh water', 'Unhurried petting time', 'Road-safety planning', 'Preventive dental care'],
+  },
+  {
+    id: 'gabriel',
+    name: 'Gabriel',
+    nickname: 'The Trust Graduate',
+    color: '#b79a7c',
+    role: 'Patient relationship companion',
+    story: 'Gabriel once made petting nearly impossible. Karen “cracked” the code with patience; today this long-haired boy sits in her lap.',
+    difficulty: 'easy',
+    status: 'active',
+    careSummary: 'Gabriel has no reported special medical needs. His relationship journey simply requires more trust-building sessions than most cats, plus extra summer brushing.',
+    careTasks: ['Slow, consent-based trust sessions', 'Supervised volunteer petting', 'Frequent summer brushing', 'Cooling, water, and coat observation'],
+  },
+  {
+    id: 'poly',
+    name: 'Poly',
+    nickname: 'The Instant Friend',
+    color: '#9b826c',
+    role: 'Affection-first companion',
+    story: 'Gabriel’s equally flufftastic sister wanted pets immediately. Her challenge is not trust—it is keeping that glorious coat comfortable through the Cyprus summer.',
+    difficulty: 'easy',
+    status: 'active',
+    careSummary: 'Poly is socially easy and immediately affectionate. Her recurring care journey centers on brushing, cooling, water, enrichment, and human company.',
+    careTasks: ['Daily affection and social time', 'Frequent summer brushing', 'Cooling and fresh water', 'Long-coat observation'],
   },
   {
     id: 'show-pony',
