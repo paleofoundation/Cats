@@ -7,14 +7,18 @@ import {
   Check,
   CircleDollarSign,
   CircleHelp,
+  Coins,
+  Droplets,
   ExternalLink,
+  Gift,
   Heart,
   Home,
   Landmark,
+  Leaf,
   LockKeyhole,
+  MessageCircle,
   MousePointer2,
   PawPrint,
-  Play,
   RotateCcw,
   Shield,
   Sparkles,
@@ -27,16 +31,15 @@ import {
 import { EmbeddedCheckout, EmbeddedCheckoutProvider } from '@stripe/react-stripe-js'
 import { loadStripe, type Stripe } from '@stripe/stripe-js'
 import catGardensMark from '../assets/cat-gardens-icon.png'
+import splotchImage from '../assets/splotch.jpg'
 import { badgeLabels, dreamGardenConcept, dreamSpaces, splotchNeeds, type SplotchNeed } from './data'
 import { useGardenAccount } from './account'
 import { GameSync } from './GameSync'
-import { playBuild, playPurr } from './game/audio'
-import { getObjective, getRelationshipText, useGame, type DonationBadge } from './game/store'
+import { playPurr } from './game/audio'
+import { getObjective, getRelationshipText, localDay, upgradeCatalog, useGame, type DonationBadge, type GardenUpgrade, type PersonId } from './game/store'
 
 const CatGardenWorld = lazy(() => import('./World').then((module) => ({ default: module.CatGardenWorld })))
 
-const foodMarkers = [[0, -3.2], [6.8, .5], [-5.8, 4.9]]
-const partMarkers = [[10.4, 3.2], [-9.2, 2.4], [-8.1, 11.1], [8.8, 11.4]]
 const bondMoments = [
   { title: 'Do less. Stay longer.', detail: 'Your caretaker has left the rover, lowered to Splotch’s level, and offered a hand. Press and hold. Trust is time—not tapping.', action: 'Hold to sit with Splotch', result: 'You stayed after the urgent work was over.' },
   { title: 'Let him see your hand.', detail: 'No food crate this time. Approach slowly, stop short, and give Splotch the choice to close the last distance.', action: 'Hold your hand still', result: 'You gave him control of the distance.' },
@@ -50,26 +53,26 @@ function StartMission({ onStart }: { onStart: () => void }) {
   return (
     <div className="mission-start">
       <section className="mission-card">
-        <div className="mission-cat-stage">
-          <div className="splotch-monogram"><PawPrint /><b>S</b></div>
+        <div className="mission-cat-stage mission-splotch-photo">
+          <img src={splotchImage} alt="Splotch, the real orange male cat in Cyprus" />
           <div className="likeness-note">
             <span><i /> REAL CAT · CYPRUS</span>
-            <strong>Splotch is a big adult male.</strong>
-            <p>His accurate 3D likeness is being built from real references. The orange cat in the garden is a temporary game proxy—not Splotch’s final model.</p>
+            <strong>Splotch is a big orange adult male.</strong>
+            <p>You will care for a stylized orange likeness, then open a portal to Splotch’s real photographs, updates, expenses, and dreams.</p>
           </div>
-          <div className="visit-strip"><b>∞</b><i /><span>A relationship begins here</span></div>
+          <div className="visit-strip"><b>01</b><i /><span>Your first living garden</span></div>
         </div>
         <div className="mission-copy">
-          <p className="eyebrow">SPLOTCH · EASY MODE · REAL CAT IN CYPRUS</p>
-          <h1>Meet him now.<br />Keep knowing him.</h1>
-          <p className="mission-lede">Splotch is a big, healthy adult boy who lives too close to a busy road. Care for him freely, meet him as a person, open his real-world portal—and, when he is warm enough to sleep, enter his dream.</p>
+          <p className="eyebrow">A LIVING GARDEN · ONE REAL CAT · CYPRUS</p>
+          <h1>Wake up in<br />Splotch’s garden.</h1>
+          <p className="mission-lede">Walk in as yourself. Meet Chanda, Karen, and Kimberly. Feed Splotch, grow something, make his little house feel like his—and return tomorrow to continue.</p>
           <ol className="mission-steps">
-            <li><span>01</span><div><strong>Care</strong><small>Food, warmth, attention</small></div></li>
-            <li><span>02</span><div><strong>Know</strong><small>Real updates + expenses</small></div></li>
-            <li><span>03</span><div><strong>Dream</strong><small>A safer Mathikoloni</small></div></li>
+            <li><span>01</span><div><strong>Return</strong><small>A free morning basket each day</small></div></li>
+            <li><span>02</span><div><strong>Care</strong><small>Food, water, plants, attention</small></div></li>
+            <li><span>03</span><div><strong>Build</strong><small>A garden that remembers you</small></div></li>
           </ol>
-          <button className="primary-button" onClick={onStart}>Start the caretaker rover <ArrowRight size={18} /></button>
-          <p className="free-note"><Shield size={14} /> The entire relationship and dream path are free. Donations fund real care, never access to Splotch.</p>
+          <button className="primary-button" onClick={onStart}>Enter Splotch’s garden <ArrowRight size={18} /></button>
+          <p className="free-note"><Shield size={14} /> Splotch’s real care never depends on a player logging in. Your daily ritual grows the virtual garden; optional gifts support the real sanctuary.</p>
         </div>
       </section>
     </div>
@@ -105,15 +108,16 @@ function CatCard() {
 }
 
 function ObjectiveCard() {
-  const foodFound = useGame((state) => state.foodFound)
-  const hasFed = useGame((state) => state.hasFed)
+  const lastDailyClaim = useGame((state) => state.lastDailyClaim)
+  const npcVisits = useGame((state) => state.npcVisits)
+  const lastFedDate = useGame((state) => state.lastFedDate)
+  const lastWateredDate = useGame((state) => state.lastWateredDate)
+  const blanketLevel = useGame((state) => state.blanketLevel)
+  const waterBowlLevel = useGame((state) => state.waterBowlLevel)
   const hasBonded = useGame((state) => state.hasBonded)
-  const partsFound = useGame((state) => state.partsFound)
-  const shelterStage = useGame((state) => state.shelterStage)
-  const bondVisits = useGame((state) => state.bondVisits)
   const realityVisits = useGame((state) => state.realityVisits)
   const dreamVisits = useGame((state) => state.dreamVisits)
-  const objective = getObjective({ foodFound, hasFed, hasBonded, partsFound, shelterStage, bondVisits, realityVisits, dreamVisits })
+  const objective = getObjective({ lastDailyClaim, npcVisits, lastFedDate, lastWateredDate, blanketLevel, waterBowlLevel, hasBonded, realityVisits, dreamVisits })
   return (
     <section className="objective-hud game-panel">
       <div className="objective-copy">
@@ -129,25 +133,26 @@ function ObjectiveCard() {
 
 function Inventory() {
   const food = useGame((state) => state.food)
-  const parts = useGame((state) => state.parts)
+  const water = useGame((state) => state.waterUnits)
+  const treats = useGame((state) => state.treats)
+  const tokens = useGame((state) => state.gardenTokens)
   const carePoints = useGame((state) => state.carePoints)
   return (
     <aside className="inventory-hud game-panel">
-      <div className="care-score"><span>CARE</span><strong>{carePoints.toLocaleString()}</strong></div>
+      <div className="care-score"><span>GARDEN TOKENS</span><strong>{tokens.toLocaleString()}</strong><Coins size={15} /></div>
       <div className="inventory-items">
         <span><Utensils size={14} /> Food <b>{food}</b></span>
-        <span><Box size={14} /> Parts <b>{parts}</b></span>
+        <span><Droplets size={14} /> Water <b>{water}</b></span>
+        <span><Heart size={14} /> Treats <b>{treats}</b></span>
       </div>
+      <small className="care-points-line">{carePoints.toLocaleString()} care points</small>
     </aside>
   )
 }
 
 function MiniMap() {
   const [x, , z] = useGame((state) => state.playerPosition)
-  const foodFound = useGame((state) => state.foodFound)
-  const partsFound = useGame((state) => state.partsFound)
-  const hasBonded = useGame((state) => state.hasBonded)
-  const shelterStage = useGame((state) => state.shelterStage)
+  const dreamReady = useGame((state) => state.hasFed && state.blanketLevel > 0 && state.waterBowlLevel > 0)
   const mapPoint = (px: number, pz: number) => ({ left: `${50 + (px / 44) * 100}%`, top: `${50 + (pz / 44) * 100}%` })
   return (
     <aside className="mini-map game-panel" aria-label="Garden map">
@@ -155,16 +160,14 @@ function MiniMap() {
       <div className="map-field">
         <i className="map-road map-road-one" />
         <i className="map-road map-road-two" />
-        <span className="map-marker map-cat" style={mapPoint(shelterStage === 4 ? 4.55 : .2, shelterStage === 4 ? 7.05 : 4.2)} title="Splotch"><Heart size={10} /></span>
-        <span className="map-marker map-build" style={mapPoint(5.4, 7.2)} title="Shelter"><Home size={10} /></span>
-        <span className="map-marker map-reality" style={mapPoint(10.8, -4.8)} title="Reality Portal"><Video size={10} /></span>
-        {shelterStage === 4 && <span className="map-marker map-dream" style={mapPoint(-7.9, 8.7)} title="Dream Garden"><Sparkles size={10} /></span>}
-        {foodMarkers.map(([px, pz], index) => !foodFound.includes(['food-olive', 'food-well', 'food-road'][index]) && (
-          <span key={`food-${index}`} className="map-marker map-food" style={mapPoint(px, pz)} />
-        ))}
-        {hasBonded && partMarkers.map(([px, pz], index) => !partsFound.includes(['part-timber', 'part-roof', 'part-wall', 'part-cushion'][index]) && (
-          <span key={`part-${index}`} className="map-marker map-part" style={mapPoint(px, pz)} />
-        ))}
+        <span className="map-marker map-cat" style={mapPoint(0, 4.4)} title="Splotch"><Heart size={10} /></span>
+        <span className="map-marker map-build" style={mapPoint(3.25, 6.1)} title="Splotch’s house"><Home size={10} /></span>
+        <span className="map-marker map-food" style={mapPoint(-3.2, 3.6)} title="Young plant"><Leaf size={10} /></span>
+        <span className="map-marker map-reality" style={mapPoint(9.4, -2.1)} title="Reality Portal"><Video size={10} /></span>
+        {dreamReady && <span className="map-marker map-dream" style={mapPoint(-9.2, 7.2)} title="Dream Garden"><Sparkles size={10} /></span>}
+        <span className="map-marker map-person" style={mapPoint(-4.8, .6)} title="Chanda"><UserRound size={10} /></span>
+        <span className="map-marker map-person" style={mapPoint(6.8, 4.6)} title="Karen"><UserRound size={10} /></span>
+        <span className="map-marker map-person" style={mapPoint(6.8, 8.1)} title="Kimberly"><UserRound size={10} /></span>
         <span className="map-player" style={mapPoint(x, z)}><i /></span>
       </div>
     </aside>
@@ -213,7 +216,7 @@ function DrivePad() {
         <span className="drive-cross">↑<i>←</i><b>→</b><em>↓</em></span>
         <span className="drive-knob" style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }}><i /></span>
       </div>
-      <small>CLICK + DRAG<br />OR WASD</small>
+      <small>WALK WITH<br />TRACKPAD OR WASD</small>
     </div>
   )
 }
@@ -221,40 +224,177 @@ function DrivePad() {
 function ActionButton({ onAction }: { onAction: () => void }) {
   const nearby = useGame((state) => state.nearby)
   const food = useGame((state) => state.food)
-  const parts = useGame((state) => state.parts)
-  const hasFed = useGame((state) => state.hasFed)
+  const water = useGame((state) => state.waterUnits)
+  const lastFedDate = useGame((state) => state.lastFedDate)
+  const lastWateredDate = useGame((state) => state.lastWateredDate)
   const hasBonded = useGame((state) => state.hasBonded)
-  const shelterStage = useGame((state) => state.shelterStage)
   const bondVisits = useGame((state) => state.bondVisits)
-  const nextBondAt = useGame((state) => state.nextBondAt)
   const label = useMemo(() => {
     if (nearby === 'cat') {
-      if (!hasFed) return food >= 3 ? 'Feed Splotch' : `Find ${3 - food} more food`
-      if (!hasBonded) return 'Stay & pet Splotch'
-      if (shelterStage < 4) return 'Leave rover · sit with Splotch'
-      if (bondVisits >= 6) return 'Sit with Splotch again'
-      if (nextBondAt && Date.now() < nextBondAt) return 'Sit together—no points needed'
-      return `Begin visit ${bondVisits + 2} on foot`
+      if (lastFedDate !== localDay()) return food > 0 ? 'Feed virtual Splotch' : 'Open the morning basket first'
+      if (!hasBonded) return 'Sit down & pet Splotch'
+      return bondVisits >= 6 ? 'Sit with Splotch again' : `Spend time together · memory ${bondVisits + 2}`
     }
-    if (nearby === 'shelter') {
-      if (!hasBonded) return 'Splotch needs you first'
-      if (shelterStage === 4) return 'Shelter complete'
-      return parts > 0 ? `Build shelter · ${shelterStage + 1}/4` : 'Find shelter parts'
-    }
+    if (nearby === 'plant') return lastWateredDate === localDay() ? 'Plant watered today' : water > 0 ? 'Water the young plant' : 'Open the morning basket first'
+    if (nearby === 'chanda') return 'Talk with Chanda'
+    if (nearby === 'karen') return 'Talk with Karen'
+    if (nearby === 'kimberly') return 'Talk with Kimberly'
     if (nearby === 'reality') return 'Open Splotch’s Reality Portal'
     if (nearby === 'dream') return 'Enter Splotch’s Dream Garden'
     return null
-  }, [bondVisits, food, hasBonded, hasFed, nearby, nextBondAt, parts, shelterStage])
+  }, [bondVisits, food, hasBonded, lastFedDate, lastWateredDate, nearby, water])
   const enabled = nearby === 'cat'
-    ? (hasFed || food >= 3)
-    : nearby === 'shelter'
-      ? hasBonded && parts > 0 && shelterStage < 4
-      : nearby === 'reality' || nearby === 'dream'
+    ? (lastFedDate === localDay() || food > 0)
+    : nearby === 'plant'
+      ? lastWateredDate !== localDay() && water > 0
+      : Boolean(nearby)
   if (!label) return null
   return (
     <button className={`action-button ${enabled ? 'enabled' : ''}`} disabled={!enabled} onClick={onAction}>
       <span>{enabled ? 'E' : '!'}</span>{label}
     </button>
+  )
+}
+
+function MorningBasketModal({ onClose }: { onClose: () => void }) {
+  const claimed = useGame((state) => state.lastDailyClaim === localDay())
+  const loginDays = useGame((state) => state.loginDays)
+  const claim = useGame((state) => state.claimDailyBasket)
+  return (
+    <div className="story-backdrop morning-backdrop" role="presentation">
+      <article className="morning-card" role="dialog" aria-modal="true" aria-labelledby="morning-title">
+        <button className="close-button" onClick={onClose} aria-label="Close morning basket"><X size={19} /></button>
+        <span className="morning-sun"><Gift /></span>
+        <p className="eyebrow">MORNING BASKET · DAY {Math.max(1, loginDays + (claimed ? 0 : 1))}</p>
+        <h2 id="morning-title">A little care,<br />waiting for you.</h2>
+        <p>Every new local day brings enough to do something kind without paying: food for virtual Splotch, water for one plant, a happiness treat, and ten garden tokens.</p>
+        <div className="basket-items">
+          <span><Utensils /> <b>1 food</b></span>
+          <span><Droplets /> <b>1 water</b></span>
+          <span><Heart /> <b>1 treat</b></span>
+          <span><Coins /> <b>10 tokens</b></span>
+        </div>
+        <button className="primary-button" disabled={claimed} onClick={() => { claim(); onClose() }}>{claimed ? 'Today’s basket is already open' : 'Open today’s basket'} <ArrowRight size={17} /></button>
+        <small><Shield size={13} /> Miss a day and nothing bad happens. Real Splotch’s food, water, and safety never depend on this game.</small>
+      </article>
+    </div>
+  )
+}
+
+const personCopy: Record<PersonId, { eyebrow: string; title: string; body: (name: string) => string; request: string }> = {
+  chanda: {
+    eyebrow: 'CHANDA · DAILY CARETAKER · FROM NEPAL',
+    title: 'The bowls do not fill themselves.',
+    body: (name) => `Hi, ${name}. I feed and pet the cats every day. Sometimes it is much more work than it looks—but it is easier when somebody notices what still needs doing.`,
+    request: 'Could you water the young plant while I finish the bowls?',
+  },
+  karen: {
+    eyebrow: 'KAREN · CO-FOUNDER · AMERICAN IN CYPRUS',
+    title: 'Thank you for becoming part of this story.',
+    body: (name) => `${name}, Kimberly and I have spent nearly half a million dollars caring for cats over the years. What matters here is that the real animals become knowable—not anonymous numbers.`,
+    request: 'Meet Splotch. Then open his Reality Portal and see what is true today.',
+  },
+  kimberly: {
+    eyebrow: 'KIMBERLY · CO-FOUNDER · AMERICAN IN CYPRUS',
+    title: 'A safe garden is built by people who return.',
+    body: (name) => `We are glad you are here, ${name}. Every visit, share, volunteer hour, and carefully directed gift can become part of a real cat’s safer life.`,
+    request: 'Make this little garden yours, then come back tomorrow and keep growing it.',
+  },
+}
+
+function PersonDialogue({ person, onClose }: { person: PersonId; onClose: () => void }) {
+  const account = useGardenAccount()
+  const visits = useGame((state) => state.npcVisits[person])
+  const copy = personCopy[person]
+  const firstName = account.name && account.name !== 'Garden Friend' ? account.name.split(' ')[0] : 'friend'
+  return (
+    <div className="story-backdrop person-backdrop" role="presentation">
+      <article className={`person-dialogue person-${person}`} role="dialog" aria-modal="true" aria-labelledby="person-title">
+        <button className="close-button" onClick={onClose} aria-label={`Close ${person} conversation`}><X size={19} /></button>
+        <div className="person-portrait"><UserRound /><span>{person.charAt(0).toUpperCase()}</span><i /></div>
+        <div className="person-copy">
+          <p className="eyebrow">{copy.eyebrow}</p>
+          <h2 id="person-title">{copy.title}</h2>
+          <p>“{copy.body(firstName)}”</p>
+          <div className="person-request"><MessageCircle size={18} /><span>{copy.request}</span></div>
+          <button className="primary-button" onClick={onClose}>{person === 'chanda' ? 'I’ll help with the plant' : 'Keep walking'} <ArrowRight size={17} /></button>
+          <small>Garden conversation {visits}. Dialogue is an in-game introduction based on each person’s real care role.</small>
+        </div>
+      </article>
+    </div>
+  )
+}
+
+const upgrades = Object.keys(upgradeCatalog) as GardenUpgrade[]
+
+function GardenDesigner({ onClose, onDonate }: { onClose: () => void; onDonate: (need: SplotchNeed) => void }) {
+  const tokens = useGame((state) => state.gardenTokens)
+  const blanket = useGame((state) => state.blanketLevel)
+  const waterBowl = useGame((state) => state.waterBowlLevel)
+  const cuddlebox = useGame((state) => state.cuddleboxLevel)
+  const bench = useGame((state) => state.benchPlaced)
+  const path = useGame((state) => state.pathStyle)
+  const collar = useGame((state) => state.collarName)
+  const shareRewardClaimed = useGame((state) => state.shareRewardClaimed)
+  const purchase = useGame((state) => state.purchaseUpgrade)
+  const claimShareReward = useGame((state) => state.claimShareReward)
+  const owned = (id: GardenUpgrade) => id === 'blanket' ? blanket > 0
+    : id === 'simple-bowl' ? waterBowl > 0
+      : id === 'automatic-bowl' ? waterBowl > 1
+        : id === 'cuddlebox' ? cuddlebox > 1
+          : id === 'bench' ? bench
+            : id === 'gravel' ? path === 'gravel'
+              : Boolean(collar)
+  const share = async () => {
+    const link = `${window.location.origin}/?invited_to=splotch`
+    if (navigator.share) await navigator.share({ title: 'Meet Splotch in Cat Gardens', text: 'Come help me grow Splotch’s garden.', url: link }).catch(() => undefined)
+    else await navigator.clipboard.writeText(link).catch(() => undefined)
+    claimShareReward()
+  }
+  return (
+    <div className="profile-backdrop designer-backdrop" role="presentation">
+      <article className="garden-designer" role="dialog" aria-modal="true" aria-labelledby="designer-title">
+        <button className="close-button" onClick={onClose} aria-label="Close garden designer"><X size={19} /></button>
+        <header>
+          <div><p className="eyebrow">GARDEN DESIGNER · SPLOTCH’S HOME</p><h2 id="designer-title">Make the garden remember you.</h2><p>Spend free garden tokens on visible upgrades. Starter tokens cover the blanket and simple water bowl.</p></div>
+          <div className="token-wallet"><Coins size={20} /><span>AVAILABLE</span><strong>{tokens}</strong><small>garden tokens</small></div>
+        </header>
+        <section className="upgrade-grid">
+          {upgrades.map((id) => {
+            const item = upgradeCatalog[id]
+            const isOwned = owned(id)
+            return (
+              <article className={isOwned ? 'owned' : ''} key={id}>
+                <span>{id.includes('bowl') ? <Droplets /> : id === 'blanket' || id === 'cuddlebox' ? <Home /> : id === 'gravel' || id === 'bench' ? <Leaf /> : <Heart />}</span>
+                <div><p>{isOwned ? 'IN YOUR GARDEN' : `${item.cost} TOKENS`}</p><h3>{item.title}</h3><small>{item.detail}</small></div>
+                <button disabled={isOwned} onClick={() => {
+                  if (id === 'collar') {
+                    const name = window.prompt('What should the virtual collar say?', 'Garden Friend')
+                    if (name) purchase(id, name)
+                    return
+                  }
+                  purchase(id)
+                }}>{isOwned ? <><Check size={14} /> Added</> : tokens >= item.cost ? 'Add to garden' : `Need ${item.cost - tokens} more`}</button>
+              </article>
+            )
+          })}
+        </section>
+        <section className="designer-bottom">
+          <div className="friendship-grove">
+            <p className="eyebrow">FRIENDSHIP GROVE · FIRST STEP</p>
+            <h3>Splotch’s next friend begins with an invitation.</h3>
+            <p>Share one real invite for two treats and 15 garden tokens. Account-linked cat friendships and visits are the next multiplayer release.</p>
+            <button disabled={shareRewardClaimed} onClick={share}>{shareRewardClaimed ? 'Invitation reward collected' : 'Share Splotch’s garden'}</button>
+          </div>
+          <div className="supporter-upgrade">
+            <p className="eyebrow">OPTIONAL REAL-WORLD GIFT</p>
+            <h3>A verified $10 gift adds 250 thank-you tokens.</h3>
+            <p>The gift supports real sanctuary care. Virtual tokens have no cash value and are a supporter thank-you—not a purchase of care for the real Splotch.</p>
+            <button onClick={() => onDonate(splotchNeeds.find((need) => need.id === 'food')!)}>Support real daily care</button>
+          </div>
+        </section>
+      </article>
+    </div>
   )
 }
 
@@ -332,9 +472,9 @@ function BondingHUD({ onComplete, onCancel }: { onComplete: (result: { advanced:
 
   return (
     <section className="bonding-hud" aria-label="Sit with Splotch">
-      <button className="bonding-close" onClick={() => { useGame.getState().cancelBonding(); onCancel() }} aria-label="Return to rover"><X size={18} /></button>
+      <button className="bonding-close" onClick={() => { useGame.getState().cancelBonding(); onCancel() }} aria-label="Stand up"><X size={18} /></button>
       <div className="bonding-copy">
-        <span>VISIT {String(bondVisits + 2).padStart(2, '0')} · ON FOOT</span>
+        <span>SPLOTCH MEMORY {String(bondVisits + 1).padStart(2, '0')} · AT HIS LEVEL</span>
         <h2>{moment.title}</h2>
         <p>{moment.detail}</p>
       </div>
@@ -396,12 +536,12 @@ function RealityPortal({ onClose, onDonate }: { onClose: () => void; onDonate: (
 
         <section className="reality-grid">
           <div className="real-media-slot">
-            <span className="media-orbit"><PawPrint size={42} /></span>
+            <span className="media-orbit real-splotch-orbit"><img src={splotchImage} alt="The real Splotch, an orange male cat in Cyprus" /></span>
             <div>
-              <b>REAL SPLOTCH MEDIA SLOT</b>
-              <h3>No substitute cat.</h3>
-              <p>The current 3D orange cat remains labeled as a game proxy. Splotch’s actual photographs, video, body references and updates will appear here after Karen’s sanctuary upload.</p>
-              <span className="truth-chip"><Shield size={13} /> Documentary evidence only</span>
+              <b>REAL SPLOTCH · FIRST VERIFIED PHOTOGRAPH</b>
+              <h3>This is the cat in your garden.</h3>
+              <p>Splotch is a big orange adult male. New sanctuary-reviewed photographs, videos, dental history, and daily-life updates will join this portrait as they are published.</p>
+              <span className="truth-chip"><Shield size={13} /> Real-life updates remain separate from game state</span>
             </div>
           </div>
           <div className="known-today">
@@ -426,6 +566,14 @@ function RealityPortal({ onClose, onDonate }: { onClose: () => void; onDonate: (
                 <div><small>{need.status}</small>{need.category !== 'completed' && <button onClick={() => onDonate(need)}>Support from ${need.suggestedAmount}</button>}</div>
               </article>
             ))}
+          </div>
+          <div className="fulfillment-register">
+            <div><p className="eyebrow">YOU FUNDED IT · WE DID IT</p><h3>Real-world fulfillment register</h3><span>A supporter sees the whole path: funded → assigned → purchased → delivered → completed → proof reviewed → supporter notified.</span></div>
+            <ol>
+              <li className="active"><b>01</b><span><strong>Safety tracker</strong>Device selection pending Markos and sanctuary review.</span><small>NOT YET FUNDED</small></li>
+              <li><b>02</b><span><strong>One need, one cap</strong>After the approved tracker is funded, the need closes.</span><small>NO DUPLICATE PROMISE</small></li>
+              <li><b>03</b><span><strong>Choice before rerouting</strong>Any alternate use requires clear supporter consent.</span><small>TRANSPARENT ROUTING</small></li>
+            </ol>
           </div>
         </section>
       </article>
@@ -556,7 +704,7 @@ function DonationDrawer({ need, onClose }: { need: SplotchNeed; onClose: () => v
             <div className="frequency-switch"><button className={frequency === 'once' ? 'active' : ''} onClick={() => setFrequency('once')}>Give once</button><button className={frequency === 'monthly' ? 'active' : ''} onClick={() => setFrequency('monthly')}>Monthly keeper</button></div>
             <label><span>Donation amount · USD</span><div><b>$</b><input value={amount} min="5" max="500000" type="number" onChange={(event) => setAmount(Math.max(5, Number(event.target.value)))} /></div></label>
             <div className="amount-options">{[10, 25, 50, 100].map((value) => <button className={amount === value ? 'active' : ''} key={value} onClick={() => setAmount(value)}>${value}</button>)}</div>
-            <div className="donation-reward"><BadgeCheck size={24} /><div><span>YOU WILL EARN</span><strong>{badgeLabels[frequency === 'monthly' ? 'garden-keeper' : need.badge]}</strong><small>The badge lights only after Stripe confirms payment.</small></div></div>
+            <div className="donation-reward"><BadgeCheck size={24} /><div><span>SUPPORTER THANK-YOU AFTER VERIFICATION</span><strong>{badgeLabels[frequency === 'monthly' ? 'garden-keeper' : need.badge]} · {Math.max(0, Math.floor(amount / 10) * 250)} garden tokens</strong><small>Every complete $10 adds 250 no-cash-value virtual tokens after Stripe confirms payment.</small></div></div>
             <button className="launch-checkout" disabled={!stripePromise || Boolean(error)} onClick={() => setCheckoutReady(true)}><WalletCards size={18} /> Continue to secure donation</button>
             {error && <p className="checkout-error">{error}</p>}
             <small className="wallet-note">Eligible devices will see Apple Pay. Stripe dynamically displays the available secure wallet and payment options.</small>
@@ -569,7 +717,7 @@ function DonationDrawer({ need, onClose }: { need: SplotchNeed; onClose: () => v
             </EmbeddedCheckoutProvider>
           </section>
         )}
-        <footer><Shield size={14} /> Donations support the legal nonprofit. Final expense allocation and charitable acknowledgment language remain subject to sanctuary review.</footer>
+        <footer><Shield size={14} /> Donations support Gardens of St. Gertrude, the legal nonprofit. Virtual thank-you items are not cash, do not determine real Splotch’s care, and are shown separately from real-world fulfillment.</footer>
       </aside>
     </div>
   )
@@ -583,16 +731,16 @@ function HelpPanel({ onClose }: { onClose: () => void }) {
       <aside className="help-panel" role="dialog" aria-modal="true" aria-label="Game controls">
         <button className="close-button" onClick={onClose} aria-label="Close help"><X size={19} /></button>
         <p className="eyebrow">CARETAKER MANUAL</p>
-        <h2>Drive. Care. Know him.</h2>
+        <h2>Walk. Care. Return.</h2>
         <div className="control-list">
-          <span><b>WASD / ARROWS</b> Drive and steer</span>
-          <span><b>CLICK + DRAG</b> Trackpad drive pad</span>
-          <span><b>SHIFT</b> Boost</span>
-          <span><b>SPACE</b> Brake</span>
-          <span><b>E</b> Care or build nearby</span>
-          <span><b>R</b> Return rover to gate</span>
+          <span><b>WASD / ARROWS</b> Walk through the garden</span>
+          <span><b>CLICK + DRAG</b> Trackpad walking pad</span>
+          <span><b>SHIFT</b> Run</span>
+          <span><b>E</b> Talk, care, or open a portal</span>
+          <span><b>MY GARDEN</b> Place and upgrade objects</span>
+          <span><b>R</b> Return to the garden gate</span>
         </div>
-        <button className="secondary-button full" onClick={() => { resetRover(); onClose() }}><RotateCcw size={16} /> Reset rover only</button>
+        <button className="secondary-button full" onClick={() => { resetRover(); onClose() }}><RotateCcw size={16} /> Return caretaker to gate</button>
         <button className="text-button" onClick={() => {
           if (window.confirm('Replay Splotch’s first day from the beginning?')) resetGame()
           onClose()
@@ -613,38 +761,30 @@ export default function App() {
   const resetRover = useGame((state) => state.resetRover)
   const bondingMode = useGame((state) => state.bondingMode)
   const bondVisits = useGame((state) => state.bondVisits)
-  const [memoryOpen, setMemoryOpen] = useState(false)
-  const [completionOpen, setCompletionOpen] = useState(false)
+  const loginDays = useGame((state) => state.loginDays)
+  const lastDailyClaim = useGame((state) => state.lastDailyClaim)
   const [bondResult, setBondResult] = useState<{ advanced: boolean; visit: number } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
   const [realityOpen, setRealityOpen] = useState(false)
   const [dreamOpen, setDreamOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [designerOpen, setDesignerOpen] = useState(false)
+  const [morningOpen, setMorningOpen] = useState(false)
+  const [personOpen, setPersonOpen] = useState<PersonId | null>(null)
   const [donationNeed, setDonationNeed] = useState<SplotchNeed | null>(null)
   const handleAction = useCallback(() => {
     const game = useGame.getState()
     if (game.nearby === 'cat') {
-      if (!game.hasFed && game.feed()) {
+      if (game.lastFedDate !== localDay() && game.feedDaily()) {
         window.setTimeout(playPurr, 650)
         return
       }
-      if (game.hasFed && !game.hasBonded && game.bond()) {
-        playPurr()
-        setMemoryOpen(true)
-        return
-      }
-      if (game.hasBonded) {
-        game.beginBonding()
-      }
+      game.beginBonding()
     }
-    if (game.nearby === 'shelter') {
-      const final = game.shelterStage === 3
-      if (game.build()) {
-        playBuild(final)
-        if (final) {
-          window.setTimeout(() => setCompletionOpen(true), 850)
-        }
-      }
+    if (game.nearby === 'plant') game.waterPlant()
+    if (game.nearby === 'chanda' || game.nearby === 'karen' || game.nearby === 'kimberly') {
+      game.visitPerson(game.nearby)
+      setPersonOpen(game.nearby)
     }
     if (game.nearby === 'reality') setRealityOpen(true)
     if (game.nearby === 'dream' && game.enterDream()) setDreamOpen(true)
@@ -720,25 +860,28 @@ export default function App() {
     setRealityOpen(false)
     setDreamOpen(false)
     setProfileOpen(false)
+    setDesignerOpen(false)
     setDonationNeed(need)
   }, [])
 
-  const paused = !started || memoryOpen || completionOpen || bondResult || helpOpen || realityOpen || dreamOpen || profileOpen || donationNeed
+  const paused = !started || bondResult || helpOpen || realityOpen || dreamOpen || profileOpen || designerOpen || morningOpen || personOpen || donationNeed
 
   return (
     <main className={`game-shell ${paused ? 'is-paused' : ''} ${bondingMode ? 'is-bonding' : ''}`}>
       <GameSync />
       <div className="world-canvas">
-        <Suspense fallback={<div className="world-loading"><i /><span>Loading the real first day…</span></div>}>
+        <Suspense fallback={<div className="world-loading"><i /><span>Growing Splotch’s living garden…</span></div>}>
           <CatGardenWorld />
         </Suspense>
       </div>
 
       <header className="game-header game-panel">
-        <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>SPLOTCH · MEMORY {Math.min(7, bondVisits + 1)}/7 · THEN ∞</small></a>
+        <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>SPLOTCH · DAY {Math.max(1, loginDays)} · MEMORY {Math.min(7, bondVisits + 1)}/7</small></a>
         <nav>
           <button onClick={() => setRealityOpen(true)}><Video size={17} /><span>Reality</span></button>
-          <button onClick={() => setProfileOpen(true)}><UserRound size={17} /><span>My Garden</span></button>
+          <button onClick={() => setDesignerOpen(true)}><Leaf size={17} /><span>Design Garden</span></button>
+          <button onClick={() => setProfileOpen(true)}><UserRound size={17} /><span>My Profile</span></button>
+          <button onClick={() => setMorningOpen(true)}><Gift size={17} /><span>{lastDailyClaim === localDay() ? 'Basket' : 'Free Gift'}</span></button>
           <button onClick={() => setHelpOpen(true)}><CircleHelp size={17} /><span>Help</span></button>
           <button className="donate-nav" onClick={() => setDonationNeed(splotchNeeds.find((need) => need.id === 'food')!)}><CircleDollarSign size={17} /> Donate</button>
         </nav>
@@ -752,7 +895,7 @@ export default function App() {
           <MiniMap />
           <DrivePad />
           <ActionButton onAction={handleAction} />
-          <button className="reset-rover" onClick={resetRover}><RotateCcw size={15} /> Reset rover <kbd>R</kbd></button>
+          <button className="reset-rover" onClick={resetRover}><RotateCcw size={15} /> Return to gate <kbd>R</kbd></button>
           {notification && <div className="game-toast"><Sparkles size={16} />{notification}</div>}
         </>
       )}
@@ -764,21 +907,14 @@ export default function App() {
         />
       )}
 
-      {!started && <StartMission onStart={start} />}
-      {memoryOpen && <MemoryModal onClose={() => setMemoryOpen(false)} />}
-      {completionOpen && (
-        <CompletionModal
-          onClose={() => setCompletionOpen(false)}
-          onBeginBond={() => {
-            setCompletionOpen(false)
-            useGame.getState().beginBonding()
-          }}
-        />
-      )}
+      {!started && <StartMission onStart={() => { start(); setMorningOpen(true) }} />}
+      {morningOpen && <MorningBasketModal onClose={() => setMorningOpen(false)} />}
+      {personOpen && <PersonDialogue person={personOpen} onClose={() => setPersonOpen(null)} />}
       {bondResult && <BondResultModal result={bondResult} onClose={() => setBondResult(null)} />}
       {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
       {realityOpen && <RealityPortal onClose={() => setRealityOpen(false)} onDonate={openDonation} />}
       {dreamOpen && <DreamGarden onClose={() => setDreamOpen(false)} onDonate={openDonation} />}
+      {designerOpen && <GardenDesigner onClose={() => setDesignerOpen(false)} onDonate={openDonation} />}
       {profileOpen && <GardenProfile onClose={() => setProfileOpen(false)} onDonate={openDonation} />}
       {donationNeed && <DonationDrawer need={donationNeed} onClose={() => setDonationNeed(null)} />}
     </main>
