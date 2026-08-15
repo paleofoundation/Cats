@@ -39,8 +39,8 @@ import { loadStripe, type Stripe } from '@stripe/stripe-js'
 import catGardensMark from '../assets/cat-gardens-icon.png'
 import splotchImage from '../assets/splotch.jpg'
 import mathikoloniGardenShell from '../assets/mathikoloni-garden-shell.webp'
-import mathikoloniRoadWalls from '../assets/mathikoloni-road-walls.webp'
 import mathikoloniAerialPlot from '../assets/mathikoloni-aerial-plot.webp'
+import mathikoloniVisionSource from '../assets/mathikoloni-vision-source.webp'
 import { badgeLabels, cats, dreamGardenConcept, dreamSpaces, splotchNeeds, type SplotchNeed } from './data'
 import { tvChannels, tvFundingNeeds } from './catGardensTv'
 import { useGardenAccount } from './account'
@@ -51,14 +51,14 @@ import { foodPrice, getDailyProgress, getObjective, getRelationshipText, localDa
 import { episodeFor, useGardenNotifications, useRealityFeed } from './reality'
 
 const MATHIKOLONI_LISTING = 'https://www.bazaraki.com/adv/5818712_4-bedroom-detached-house-for-sale/'
-const MATHIKOLONI_CURRENT_IMAGE = mathikoloniRoadWalls
+const MATHIKOLONI_CURRENT_IMAGE = mathikoloniVisionSource
 
 const mathikoloniRealityViews = [
   {
-    image: mathikoloniRoadWalls,
-    label: 'ROAD + BOUNDARY',
-    title: 'The road sits above the house.',
-    detail: 'Unlike the cats’ current home beside fast traffic, the residence and gardens sit below the road behind substantial walls—creating the bones of a protected indoor/outdoor campus.',
+    image: mathikoloniVisionSource,
+    label: 'VISION SOURCE · EXACT VIEW',
+    title: 'The transformation starts with this photograph.',
+    detail: 'This real listing image is the exact viewpoint used to create the proposed sanctuary visualization. The comparison keeps reality and vision aligned instead of implying that future work already exists.',
   },
   {
     image: mathikoloniGardenShell,
@@ -831,7 +831,7 @@ function DreamGarden({ onClose, onDonate }: { onClose: () => void; onDonate: (ne
   const discoverDream = useGame((state) => state.discoverDream)
   const completedDays = useGame((state) => state.completedDays)
   const [chapter, setChapter] = useState<0 | 1 | 2>(0)
-  const [reveal, setReveal] = useState(52)
+  const [reveal, setReveal] = useState(12)
   const [realityView, setRealityView] = useState(0)
   const dreamNeed = splotchNeeds.find((need) => need.id === 'mathikoloni')!
   const activeReality = mathikoloniRealityViews[realityView]
@@ -845,7 +845,7 @@ function DreamGarden({ onClose, onDonate }: { onClose: () => void; onDonate: (ne
       {chapter === 0 && <img className="dream-background current-property" src={activeReality.image} alt={activeReality.title} />}
       {chapter === 1 && (
         <div className="dream-comparison">
-          <img src={MATHIKOLONI_CURRENT_IMAGE} alt="The existing Mathikoloni shell house" />
+          <img src={MATHIKOLONI_CURRENT_IMAGE} alt="The real Mathikoloni listing photograph used as the source for the proposed sanctuary visualization" />
           <div className="dream-reveal" style={{ width: `${reveal}%` }}><img src={dreamGardenConcept} alt="Proposed Cat Gardens transformation of the Mathikoloni property" /></div>
           <i style={{ left: `${reveal}%` }}><span>DRAG</span></i>
           <input aria-label="Compare the current property with the proposed Cat Gardens transformation" type="range" min="12" max="88" value={reveal} onChange={(event) => setReveal(Number(event.target.value))} />
