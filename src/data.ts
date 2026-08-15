@@ -133,11 +133,13 @@ export const splotchNeeds: SplotchNeed[] = [
 ]
 
 export const dreamSpaces: DreamSpace[] = [
-  { id: 'warm-rooms', number: '01', title: 'Winter warmth', detail: 'The lower level becomes protected indoor habitat: warm rooms, worn blankets, quiet corners and no cold outdoor box as the only option.' },
-  { id: 'friend-garden', number: '02', title: 'Friends in the garden', detail: 'Distinct planted territories give compatible cats room to rest together—and plenty of space to retreat when they want solitude.' },
-  { id: 'visitor-court', number: '03', title: 'The visitation garden', detail: 'The small court becomes a supervised place where people can sit at cat level, volunteer, pet and build real relationships.' },
-  { id: 'safe-distance', number: '04', title: 'Far from fast traffic', detail: 'The hillside setting moves Splotch’s daily life away from the immediate danger of a busy road.' },
-  { id: 'human-team', number: '05', title: 'People whose job is care', detail: 'Resident keepers, feeders, cleaners and dedicated petters turn safety into a dependable daily practice.' },
+  { id: 'garden-campus', number: '01', title: 'A sanctuary made mostly of gardens', detail: 'The existing succulent, grass and palm gardens become distinct cat territories with shade, climbing, hiding and room to choose company or solitude.' },
+  { id: 'warm-rooms', number: '02', title: 'The shell becomes winter warmth', detail: 'The unfinished lower floor becomes generous protected indoor habitat: warm rooms, blankets, cuddleboxes, quiet corners and no cold outdoor box as the only option.' },
+  { id: 'human-team', number: '03', title: 'Rooms for resident cat keepers', detail: 'Full-time feeders, cleaners, carers and dedicated petters can live on site, close enough to hear and respond throughout the day and night.' },
+  { id: 'visitor-terrace', number: '04', title: 'Sit outside with the cats', detail: 'The downstairs outdoor seating becomes a calm visitation terrace where guests and volunteers can spend unhurried time at cat level.' },
+  { id: 'visitor-court', number: '05', title: 'The court becomes room to grow', detail: 'The basketball court becomes supervised visitation, enrichment and flexible expansion space for the sanctuary’s future.' },
+  { id: 'safe-distance', number: '06', title: 'Road above. Cats protected below.', detail: 'The hillside geometry and substantial perimeter walls preserve indoor/outdoor freedom inside a near-continuous boundary, away from immediate roadside danger.' },
+  { id: 'closer-vet', number: '07', title: 'Closer to trusted veterinary care', detail: 'The location is intended to shorten the current roughly 25-minute route to Markos and Limassol Veterinary Clinic when a cat needs help.' },
 ]
 
 export const badgeLabels: Record<DonationBadge, string> = {
@@ -249,7 +251,7 @@ export const places: Place[] = [
     imageAlt: 'Concept visualization of a future cat garden',
     imageNote: 'Concept image — the real-photo field journal will be added next.',
     actions: [
-      { label: 'Meet the real cats', href: '/gallery.html', primary: true },
+      { label: 'Meet the real cats', href: '/cats', primary: true },
       { label: 'Help with daily care · $10', href: '/checkout.html?amount=10&frequency=once&campaign=daily-care' },
     ],
   },

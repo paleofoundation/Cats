@@ -5,7 +5,7 @@ import { useGame, type DonationBadge, type GameState } from './game/store'
 const allowedBadges: DonationBadge[] = ['bowl-bringer', 'gentle-hands', 'storykeeper', 'bright-bite', 'safe-passage', 'dream-builder', 'garden-keeper', 'broadcast-builder', 'trust-keeper', 'fluff-crew']
 
 type SavedGame = Partial<Pick<GameState,
-  'started' | 'foodFound' | 'partsFound' | 'food' | 'parts' | 'hunger' | 'trust' | 'safety' | 'carePoints' |
+  'storyVersion' | 'started' | 'splotchDiscovered' | 'foodFound' | 'partsFound' | 'food' | 'parts' | 'hunger' | 'trust' | 'safety' | 'carePoints' |
   'waterUnits' | 'treats' | 'gardenTokens' | 'hasFed' | 'hasBonded' | 'shelterStage' | 'bondVisits' | 'lastBondAt' |
   'lastDailyClaim' | 'lastChandaVisitDate' | 'lastDayCompleted' | 'completedDays' | 'loginDays' | 'lastFedDate' | 'lastWateredDate' | 'plantStage' | 'plantHydration' |
   'blanketLevel' | 'waterBowlLevel' | 'cuddleboxLevel' | 'benchPlaced' | 'pathStyle' | 'collarName' |
@@ -15,7 +15,9 @@ type SavedGame = Partial<Pick<GameState,
 
 function snapshot(state: GameState): SavedGame {
   return {
+    storyVersion: state.storyVersion,
     started: state.started,
+    splotchDiscovered: state.splotchDiscovered,
     foodFound: state.foodFound,
     partsFound: state.partsFound,
     food: state.food,
@@ -64,9 +66,11 @@ function union(local: string[], remote: unknown) {
 }
 
 function mergeProgress(local: GameState, remote: SavedGame | null): SavedGame {
-  if (!remote) return snapshot(local)
+  if (!remote || remote.storyVersion !== local.storyVersion) return snapshot(local)
   return {
+    storyVersion: local.storyVersion,
     started: local.started || Boolean(remote.started),
+    splotchDiscovered: local.splotchDiscovered || Boolean(remote.splotchDiscovered),
     foodFound: union(local.foodFound, remote.foodFound),
     partsFound: union(local.partsFound, remote.partsFound),
     food: Math.max(local.food, remote.food || 0),
@@ -148,8 +152,12 @@ export function GameSync() {
         useGame.setState({ ...merged, verifiedDonationTotal: Number(payload.verifiedDonationTotal || 0), donationBadges: badges })
         await save(useGame.getState())
         if (cancelled) return
+        let lastSavedSnapshot = JSON.stringify(snapshot(useGame.getState()))
         unsubscribe = useGame.subscribe((state, previous) => {
           if (state === previous) return
+          const nextSnapshot = JSON.stringify(snapshot(state))
+          if (nextSnapshot === lastSavedSnapshot) return
+          lastSavedSnapshot = nextSnapshot
           window.clearTimeout(saveTimer)
           saveTimer = window.setTimeout(() => { save(state).catch(() => undefined) }, 900)
         })

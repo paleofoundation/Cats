@@ -7,6 +7,9 @@ export type TvChannel = {
   description: string
   schedule: string
   youtubeId: string
+  localVideo?: string
+  poster?: string
+  watchPage?: string
   kind: 'live' | 'episode'
 }
 
@@ -22,6 +25,30 @@ const cleanYouTubeId = (value: string | undefined) => {
 // environment value. The player automatically switches from its safe holding
 // screen to the privacy-enhanced YouTube embed—no component edit required.
 export const tvChannels: TvChannel[] = [
+  {
+    id: 'splotch-today',
+    label: 'SPLOTCH TODAY',
+    title: 'Splotch asks for more pets.',
+    description: 'Meet the real big orange boy behind the game. Splotch approaches Karen for affection while his Cat Gardens friends gather nearby.',
+    schedule: 'REAL CAT · 00:34 · CYPRUS',
+    youtubeId: cleanYouTubeId(import.meta.env.VITE_YOUTUBE_SPLOTCH),
+    localVideo: '/videos/splotch-petting.mp4',
+    poster: '/videos/splotch-petting.jpg',
+    watchPage: '/watch-splotch.html',
+    kind: 'episode',
+  },
+  {
+    id: 'mabel-sunbeam',
+    label: 'MABEL IN THE SUN',
+    title: 'A quiet morning with Mabel.',
+    description: 'The real Mabel grooms herself in a warm sunbeam. She is an FIV-positive Cat Gardens resident whose advanced care routine helps protect ordinary moments like this one.',
+    schedule: 'REAL CAT · 00:11 · CYPRUS',
+    youtubeId: cleanYouTubeId(import.meta.env.VITE_YOUTUBE_MABEL),
+    localVideo: '/videos/mabel-sunbeam.mp4',
+    poster: '/videos/mabel-sunbeam.jpg',
+    watchPage: '/watch-mabel.html',
+    kind: 'episode',
+  },
   {
     id: 'garden-cam',
     label: 'GARDEN CAM',

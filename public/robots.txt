@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://catgardens.org/video-sitemap.xml
+Sitemap: https://catgardens.org/sitemap.xml

@@ -1,22 +1,39 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Float, Html, RoundedBox, Sky, Sparkles, Text, useAnimations, useGLTF } from '@react-three/drei'
 import { CapsuleCollider, CuboidCollider, Physics, RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import * as THREE from 'three'
 import { SkeletonUtils } from 'three-stdlib'
 import { localDay, useGame, type NearbyAction, type PersonId } from './game/store'
 
 const START_POSITION: [number, number, number] = [0, 1, -9]
 const SPLOTCH_HOME = new THREE.Vector3(0, 0, 4.4)
+const SPLOTCH_SHELTER_SPOT = new THREE.Vector3(2.05, 0, 4.75)
 const PLANT_POSITION = new THREE.Vector3(-3.2, 0, 3.6)
+const BUILD_POSITION = new THREE.Vector3(3.25, 0, 6.1)
+const BASKET_POSITION = new THREE.Vector3(1.8, 0, -7.8)
+const SUPPLY_POSITION = new THREE.Vector3(-4.6, 0, -7.3)
 const REALITY_PORTAL_POSITION = new THREE.Vector3(9.4, 0, -2.1)
 const DREAM_PORTAL_POSITION = new THREE.Vector3(-9.2, 0, 7.2)
 const SCREEN_FORWARD = new THREE.Vector3(0, 0, 1)
 const CAMERA_OFFSET = new THREE.Vector3(0, 3.35, -6.3)
-const PEOPLE: Record<PersonId, { position: [number, number, number]; color: string; label: string; subtitle: string }> = {
-  chanda: { position: [-4.8, 0, .6], color: '#dd8b52', label: 'Chanda', subtitle: 'daily caretaker' },
-  karen: { position: [6.8, 0, 4.6], color: '#b7cc68', label: 'Karen', subtitle: 'co-founder · Cat Gardens' },
-  kimberly: { position: [6.8, 0, 8.1], color: '#789f92', label: 'Kimberly', subtitle: 'co-founder · Cat Gardens' },
+const PEOPLE: Record<PersonId, { position: [number, number, number]; clothing: string; hair: string; eyes: string; scale: number; label: string; subtitle: string }> = {
+  chanda: { position: [-4.8, 0, .6], clothing: '#c7763f', hair: '#171411', eyes: '#5a351f', scale: .79, label: 'Chanda', subtitle: 'unlocked · daily caretaker' },
+  karen: { position: [6.8, 0, 4.6], clothing: '#718e3e', hair: '#5b3825', eyes: '#4f9fd2', scale: .88, label: 'Karen', subtitle: 'unlocked · co-founder' },
+  kimberly: { position: [6.8, 0, 8.1], clothing: '#477f78', hair: '#a94d2b', eyes: '#4d9867', scale: .9, label: 'Kimberly', subtitle: 'unlocked · co-founder' },
+}
+
+const isPersonUnlocked = (id: PersonId, completedDays: number, realityVisits: number) => {
+  if (id === 'chanda') return completedDays >= 1
+  if (id === 'karen') return completedDays >= 3 && realityVisits > 0
+  return completedDays >= 6 && realityVisits > 0
+}
+
+const runIfPlayerNear = (point: THREE.Vector3, action: () => void, label: string) => {
+  const game = useGame.getState()
+  const player = new THREE.Vector3(game.playerPosition[0], 0, game.playerPosition[2])
+  if (player.distanceTo(point) <= 2.65) action()
+  else game.setNotification(`Walk closer to ${label} first.`)
 }
 
 const seeded = (seed: number) => {
@@ -167,7 +184,8 @@ function CaretakerPlayer() {
     const magnitude = Math.min(1, Math.hypot(x, z))
     const running = game.input.boost > 0
     const speed = running ? 5.6 : 3.25
-    const paused = !started || game.bondingMode
+    const working = Date.now() < game.playerActionUntil
+    const paused = !started || game.bondingMode || working
     if (!paused && magnitude > .02) {
       const nx = x / magnitude
       const nz = z / magnitude
@@ -181,7 +199,7 @@ function CaretakerPlayer() {
       body.current.setLinvel({ x: 0, y: velocity.y, z: 0 }, true)
     }
 
-    const actionName = paused || magnitude < .02 ? 'Idle_Neutral' : running ? 'Run' : 'Walk'
+    const actionName = working ? 'Interact' : paused || magnitude < .02 ? 'Idle_Neutral' : running ? 'Run' : 'Walk'
     if (currentAction.current !== actionName) {
       actions[currentAction.current]?.fadeOut(.18)
       ;(actions[actionName] ?? actions.Idle)?.reset().fadeIn(.18).play()
@@ -190,8 +208,9 @@ function CaretakerPlayer() {
 
     const flat = new THREE.Vector3(position.x, 0, position.z)
     if (game.bondingMode) {
-      camera.position.lerp(SPLOTCH_HOME.clone().add(new THREE.Vector3(3.5, 2.15, -3.2)), 1 - Math.exp(-delta * 3.5))
-      smoothTarget.current.lerp(SPLOTCH_HOME.clone().add(new THREE.Vector3(0, .75, 0)), 1 - Math.exp(-delta * 5))
+      const cat = new THREE.Vector3(...game.catPosition)
+      camera.position.lerp(cat.clone().add(new THREE.Vector3(3.5, 2.15, -3.2)), 1 - Math.exp(-delta * 3.5))
+      smoothTarget.current.lerp(cat.clone().add(new THREE.Vector3(0, .75, 0)), 1 - Math.exp(-delta * 5))
     } else {
       const desiredCamera = flat.clone().add(CAMERA_OFFSET)
       camera.position.lerp(desiredCamera, 1 - Math.exp(-delta * 4.4))
@@ -200,17 +219,20 @@ function CaretakerPlayer() {
     camera.lookAt(smoothTarget.current)
 
     const distances: Array<[NearbyAction, number]> = [
-      ['cat', flat.distanceTo(SPLOTCH_HOME)],
+      [game.lastDailyClaim === localDay() ? null : 'basket', flat.distanceTo(BASKET_POSITION)],
+      [game.shelterStage < 3 ? 'build' : 'home', flat.distanceTo(BUILD_POSITION)],
+      ['supply', flat.distanceTo(SUPPLY_POSITION)],
+      ['cat', flat.distanceTo(new THREE.Vector3(...game.catPosition))],
       ['plant', flat.distanceTo(PLANT_POSITION)],
-      ['chanda', flat.distanceTo(new THREE.Vector3(...PEOPLE.chanda.position))],
-      ['karen', flat.distanceTo(new THREE.Vector3(...PEOPLE.karen.position))],
-      ['kimberly', flat.distanceTo(new THREE.Vector3(...PEOPLE.kimberly.position))],
+      [isPersonUnlocked('chanda', game.completedDays, game.realityVisits) ? 'chanda' : null, flat.distanceTo(new THREE.Vector3(...PEOPLE.chanda.position))],
+      [isPersonUnlocked('karen', game.completedDays, game.realityVisits) ? 'karen' : null, flat.distanceTo(new THREE.Vector3(...PEOPLE.karen.position))],
+      [isPersonUnlocked('kimberly', game.completedDays, game.realityVisits) ? 'kimberly' : null, flat.distanceTo(new THREE.Vector3(...PEOPLE.kimberly.position))],
       ['reality', flat.distanceTo(REALITY_PORTAL_POSITION)],
       ['dream', flat.distanceTo(DREAM_PORTAL_POSITION)],
-    ]
+    ].filter((entry): entry is [Exclude<NearbyAction, null>, number] => Boolean(entry[0]))
     distances.sort((a, b) => a[1] - b[1])
     const [nearest, distance] = distances[0]
-    const dreamReady = game.hasFed && game.blanketLevel > 0 && game.waterBowlLevel > 0
+    const dreamReady = game.shelterStage >= 3 && game.hasFed && game.blanketLevel > 0 && game.waterBowlLevel > 0
     setNearby(distance < 2.35 && (nearest !== 'dream' || dreamReady) ? nearest : null)
     setPlayerPosition([position.x, position.y, position.z])
     if (position.y < -2 || Math.abs(position.x) > 34 || Math.abs(position.z) > 30) reset()
@@ -247,19 +269,28 @@ function PersonActor({ id }: { id: PersonId }) {
         object.castShadow = true
         object.receiveShadow = true
         const material = (object.material as THREE.MeshStandardMaterial).clone()
-        if (object.name.includes('Body') || object.name.includes('Casual_Body')) material.color.multiply(new THREE.Color(person.color))
+        if (object.name.includes('Body') || object.name.includes('Casual_Body')) {
+          material.color.set(person.clothing)
+          material.emissive = new THREE.Color(person.clothing).multiplyScalar(.08)
+        }
         object.material = material
       }
     })
-  }, [clone, person.color])
+  }, [clone, person.clothing])
   useEffect(() => {
     const action = visits === 0 ? actions.Wave ?? actions.Idle_Neutral : actions.Idle_Neutral ?? actions.Idle
     action?.reset().fadeIn(.2).play()
     return () => { action?.fadeOut(.2) }
   }, [actions, visits])
   return (
-    <group ref={group} position={person.position} rotation={[0, id === 'chanda' ? .8 : -1.3, 0]} scale={.88}>
+    <group ref={group} position={person.position} rotation={[0, id === 'chanda' ? .8 : -1.3, 0]} scale={person.scale}>
       <primitive object={clone} />
+      <group position={[0, 1.73, .015]}>
+        <mesh position={[0, .12, 0]} scale={[1.05, .62, 1.02]} castShadow><sphereGeometry args={[.245, 18, 12]} /><meshStandardMaterial color={person.hair} roughness={.95} /></mesh>
+        {id === 'kimberly' && <mesh position={[.19, .05, -.03]} rotation={[0, 0, -.25]}><capsuleGeometry args={[.05, .26, 5, 10]} /><meshStandardMaterial color={person.hair} roughness={.95} /></mesh>}
+        {id === 'chanda' && <mesh position={[0, .17, -.18]}><sphereGeometry args={[.095, 14, 10]} /><meshStandardMaterial color={person.hair} roughness={.95} /></mesh>}
+        {[-.075, .075].map((x) => <mesh key={x} position={[x, -.005, .226]}><sphereGeometry args={[.022, 12, 8]} /><meshStandardMaterial color={person.eyes} emissive={person.eyes} emissiveIntensity={.2} roughness={.35} /></mesh>)}
+      </group>
       <WorldTag title={person.label} subtitle={visits ? 'come say hello again' : person.subtitle} warm={visits === 0} />
     </group>
   )
@@ -270,12 +301,13 @@ function SplotchActor() {
   const { scene, animations } = useGLTF('/models/kenney/animal-cat.glb')
   const clone = useMemo(() => SkeletonUtils.clone(scene), [scene])
   const { actions } = useAnimations(animations, group)
-  const animation = useGame((state) => state.catAnimation)
+  const discovered = useGame((state) => state.splotchDiscovered)
   const hasBonded = useGame((state) => state.hasBonded)
-  const bondingMode = useGame((state) => state.bondingMode)
   const lastFedDate = useGame((state) => state.lastFedDate)
+  const shelterStage = useGame((state) => state.shelterStage)
   const collarName = useGame((state) => state.collarName)
-  const playerPosition = useGame((state) => state.playerPosition)
+  const currentAction = useRef('')
+  const target = useRef(SPLOTCH_HOME.clone())
   useEffect(() => {
     clone.traverse((object) => {
       if (object instanceof THREE.Mesh) {
@@ -290,32 +322,52 @@ function SplotchActor() {
       }
     })
   }, [clone])
-  useEffect(() => {
-    const selected = actions[animation] ?? actions.idle
-    selected?.reset().fadeIn(.2).play()
-    return () => { selected?.fadeOut(.2) }
-  }, [actions, animation])
   useFrame((_, delta) => {
     if (!group.current) return
-    const player = new THREE.Vector3(playerPosition[0], 0, playerPosition[2])
-    const distance = player.distanceTo(SPLOTCH_HOME)
-    const shouldFollow = lastFedDate === localDay() && !bondingMode && distance > 3 && distance < 15
-    const target = shouldFollow
-      ? player.clone().add(new THREE.Vector3(Math.sin(group.current.rotation.y + Math.PI) * 1.45, 0, Math.cos(group.current.rotation.y + Math.PI) * 1.45))
-      : SPLOTCH_HOME
-    const before = group.current.position.clone()
-    group.current.position.lerp(target, 1 - Math.exp(-delta * (shouldFollow ? 1.6 : .8)))
-    const motion = group.current.position.clone().sub(before)
-    if (motion.lengthSq() > .00002) {
-      group.current.rotation.y = Math.atan2(motion.x, motion.z)
-      if (animation === 'idle') (actions.walk ?? actions.idle)?.play()
+    const game = useGame.getState()
+    const player = new THREE.Vector3(game.playerPosition[0], 0, game.playerPosition[2])
+    const position = group.current.position
+    const home = game.shelterStage >= 3 ? SPLOTCH_SHELTER_SPOT : SPLOTCH_HOME
+    const playerDistance = position.distanceTo(player)
+    target.current.copy(home)
+
+    if (game.catAnimation === 'eat') {
+      target.current.copy(SPLOTCH_SHELTER_SPOT).add(new THREE.Vector3(-.6, 0, -.65))
+    } else if (game.bondingMode) {
+      target.current.copy(player).add(new THREE.Vector3(.85, 0, .55))
+    } else if (game.lastFedDate === localDay() && playerDistance > 3.1 && playerDistance < 13) {
+      // Fixed world-space following offset: it never feeds Splotch's own yaw
+      // back into his destination, which prevents the previous orbiting loop.
+      target.current.copy(player).add(new THREE.Vector3(1.25, 0, -1.25))
+    } else if (game.lastFedDate !== localDay() && playerDistance < 1.05) {
+      const away = position.clone().sub(player).setY(0)
+      if (away.lengthSq() > .001) target.current.copy(position).add(away.normalize().multiplyScalar(.75))
     }
+
+    const motion = target.current.clone().sub(position).setY(0)
+    const moving = motion.lengthSq() > .0025
+    if (moving) {
+      const step = Math.min(motion.length(), delta * (game.lastFedDate === localDay() ? 1.55 : .78))
+      motion.normalize()
+      position.addScaledVector(motion, step)
+      const desiredFacing = Math.atan2(motion.x, motion.z)
+      const turn = Math.atan2(Math.sin(desiredFacing - group.current.rotation.y), Math.cos(desiredFacing - group.current.rotation.y))
+      group.current.rotation.y += turn * (1 - Math.exp(-delta * 8))
+    }
+
+    const desiredAction = game.catAnimation === 'eat' ? 'eat' : game.catAnimation === 'dance' ? 'dance' : moving ? 'walk' : 'idle'
+    if (currentAction.current !== desiredAction) {
+      actions[currentAction.current]?.fadeOut(.2)
+      ;(actions[desiredAction] ?? actions.idle)?.reset().fadeIn(.2).play()
+      currentAction.current = desiredAction
+    }
+    game.setCatPosition([position.x, position.y, position.z])
   })
   const fedToday = lastFedDate === localDay()
   return (
     <group ref={group} position={[SPLOTCH_HOME.x, 0, SPLOTCH_HOME.z]} rotation={[0, Math.PI, 0]}>
       <primitive object={clone} scale={.98} />
-      <WorldTag title="Splotch · orange male" subtitle={fedToday ? 'fed today · ready for pets' : 'your first garden friend'} warm={!fedToday} />
+      <WorldTag title={discovered ? 'Splotch · orange male' : 'An orange cat is watching'} subtitle={fedToday ? 'fed today · choosing to follow' : shelterStage >= 3 ? 'his shelter is ready' : 'keep a little distance'} warm={!fedToday} />
       {collarName && <Text position={[0, .77, .28]} fontSize={.12} color="#fff4ca" anchorX="center">{collarName}</Text>}
       {hasBonded && <Sparkles count={10} scale={[2.1, 1.7, 2.1]} size={3} speed={.25} color="#f8f2bd" position={[0, .8, 0]} />}
     </group>
@@ -327,7 +379,13 @@ function PlantPlot() {
   const watered = useGame((state) => state.lastWateredDate === localDay())
   const leaves = Math.max(2, stage * 3)
   return (
-    <group position={[PLANT_POSITION.x, 0, PLANT_POSITION.z]}>
+    <group position={[PLANT_POSITION.x, 0, PLANT_POSITION.z]} onClick={(event) => {
+      event.stopPropagation()
+      runIfPlayerNear(PLANT_POSITION, () => {
+        useGame.setState({ nearby: 'plant' })
+        useGame.getState().waterPlant()
+      }, 'the garden bed')
+    }}>
       <RoundedBox args={[2.1, .32, 1.7]} position={[0, .16, 0]} radius={.16} smoothness={4} castShadow receiveShadow><meshStandardMaterial color="#866348" roughness={1} /></RoundedBox>
       <RoundedBox args={[1.8, .12, 1.4]} position={[0, .35, 0]} radius={.15} smoothness={4}><meshStandardMaterial color={watered ? '#4c382a' : '#71523b'} roughness={1} /></RoundedBox>
       {Array.from({ length: leaves }, (_, index) => {
@@ -346,25 +404,67 @@ function PlantPlot() {
   )
 }
 
+function BuildReveal({ children }: { children: ReactNode }) {
+  const group = useRef<THREE.Group>(null)
+  useFrame((_, delta) => {
+    if (!group.current) return
+    const next = THREE.MathUtils.damp(group.current.scale.x, 1, 7, delta)
+    group.current.scale.setScalar(next)
+  })
+  return <group ref={group} scale={.04}>{children}</group>
+}
+
 function CatHouse() {
+  const stage = useGame((state) => state.shelterStage)
   const blanket = useGame((state) => state.blanketLevel)
   const waterBowl = useGame((state) => state.waterBowlLevel)
   const cuddlebox = useGame((state) => state.cuddleboxLevel)
   const bench = useGame((state) => state.benchPlaced)
   const pathStyle = useGame((state) => state.pathStyle)
   return (
-    <group position={[3.25, 0, 6.1]}>
-      <RoundedBox args={[3.2, 2.25, 2.6]} position={[0, 1.18, 0]} radius={.16} smoothness={4} castShadow receiveShadow><meshStandardMaterial color={cuddlebox > 1 ? '#e0a468' : '#c48a5a'} roughness={.88} /></RoundedBox>
-      <mesh position={[0, 2.65, 0]} rotation={[0, Math.PI / 4, 0]} castShadow><coneGeometry args={[2.45, 1.1, 4]} /><meshStandardMaterial color="#6f5647" roughness={.9} /></mesh>
-      <mesh position={[-.7, 1, -1.31]}><circleGeometry args={[.65, 28]} /><meshStandardMaterial color="#283330" roughness={1} /></mesh>
-      <RoundedBox args={[1.48, .44, 1.35]} position={[-.7, .32, -1.02]} radius={.22} smoothness={5} castShadow><meshStandardMaterial color={cuddlebox > 1 ? '#8ca76d' : '#9a7658'} roughness={1} /></RoundedBox>
-      {blanket > 0 && <RoundedBox args={[1.23, .12, 1.08]} position={[-.7, .58, -1.18]} radius={.16} smoothness={6}><meshStandardMaterial color="#e9c8a8" roughness={1} /></RoundedBox>}
+    <group position={[BUILD_POSITION.x, 0, BUILD_POSITION.z]} onClick={(event) => {
+      event.stopPropagation()
+      runIfPlayerNear(BUILD_POSITION, () => {
+        if (useGame.getState().shelterStage < 3) useGame.getState().buildShelter()
+      }, 'the build site')
+    }}>
+      {stage === 0 && (
+        <group>
+          <RoundedBox args={[3.25, .12, 2.75]} position={[0, .08, 0]} radius={.08} smoothness={3}><meshStandardMaterial color="#efffba" transparent opacity={.2} wireframe /></RoundedBox>
+          {[[-1.48, -1.2], [1.48, -1.2], [-1.48, 1.2], [1.48, 1.2]].map(([x, z], index) => <mesh key={index} position={[x, .3, z]}><cylinderGeometry args={[.035, .055, .6, 8]} /><meshStandardMaterial color="#efff9a" emissive="#9aaf3c" emissiveIntensity={.45} /></mesh>)}
+          <Sparkles count={18} scale={[3.5, 1.4, 3]} size={3} speed={.22} color="#efff9a" position={[0, .7, 0]} />
+        </group>
+      )}
+      {stage >= 1 && (
+        <BuildReveal>
+          <RoundedBox args={[3.25, .28, 2.75]} position={[0, .2, 0]} radius={.1} smoothness={4} castShadow receiveShadow><meshStandardMaterial color="#9c704d" roughness={.94} /></RoundedBox>
+          {Array.from({ length: 7 }, (_, index) => <mesh key={index} position={[-1.35 + index * .45, .36, 0]} castShadow><boxGeometry args={[.08, .08, 2.5]} /><meshStandardMaterial color={index % 2 ? '#bd8b5d' : '#aa794f'} roughness={1} /></mesh>)}
+        </BuildReveal>
+      )}
+      {stage >= 2 && (
+        <BuildReveal>
+          <RoundedBox args={[3.05, 1.7, .22]} position={[0, 1.2, 1.23]} radius={.07} smoothness={3} castShadow receiveShadow><meshStandardMaterial color="#c58b59" roughness={.93} /></RoundedBox>
+          <RoundedBox args={[.22, 1.7, 2.25]} position={[-1.42, 1.2, 0]} radius={.07} smoothness={3} castShadow receiveShadow><meshStandardMaterial color="#bb7f50" roughness={.93} /></RoundedBox>
+          <RoundedBox args={[.22, 1.7, 2.25]} position={[1.42, 1.2, 0]} radius={.07} smoothness={3} castShadow receiveShadow><meshStandardMaterial color="#bb7f50" roughness={.93} /></RoundedBox>
+          {[[-1.37, -.98], [1.37, -.98]].map(([x, z], index) => <mesh key={index} position={[x, 1.25, z]}><boxGeometry args={[.13, 1.9, .13]} /><meshStandardMaterial color="#785540" roughness={1} /></mesh>)}
+        </BuildReveal>
+      )}
+      {stage >= 3 && (
+        <BuildReveal>
+          <group position={[0, 2.32, 0]}>
+            <mesh position={[-.78, 0, 0]} rotation={[0, 0, -.42]} castShadow><boxGeometry args={[1.95, .2, 3.15]} /><meshStandardMaterial color="#655047" roughness={.92} /></mesh>
+            <mesh position={[.78, 0, 0]} rotation={[0, 0, .42]} castShadow><boxGeometry args={[1.95, .2, 3.15]} /><meshStandardMaterial color="#6f574a" roughness={.92} /></mesh>
+          </group>
+          <RoundedBox args={[1.48, .44, 1.35]} position={[-.55, .48, .2]} radius={.22} smoothness={5} castShadow><meshStandardMaterial color={cuddlebox > 1 ? '#8ca76d' : '#9a7658'} roughness={1} /></RoundedBox>
+        </BuildReveal>
+      )}
+      {stage >= 3 && blanket > 0 && <BuildReveal><RoundedBox args={[1.23, .12, 1.08]} position={[-.55, .74, .04]} radius={.16} smoothness={6}><meshStandardMaterial color="#e9c8a8" roughness={1} /></RoundedBox></BuildReveal>}
       {waterBowl > 0 && (
-        <group position={[1.15, 0, -1.8]}>
+        <BuildReveal><group position={[1.05, 0, -1.68]}>
           <mesh position={[0, .15, 0]}><cylinderGeometry args={[.42, .3, .24, 24]} /><meshStandardMaterial color={waterBowl > 1 ? '#7aa9a2' : '#d7b45f'} metalness={.4} roughness={.3} /></mesh>
           <mesh position={[0, .29, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[.28, 24]} /><meshStandardMaterial color="#7ec8d5" transparent opacity={.8} /></mesh>
           {waterBowl > 1 && <group position={[.28, .62, .08]}><mesh><cylinderGeometry args={[.24, .26, .85, 18]} /><meshStandardMaterial color="#b7d8d0" transparent opacity={.75} /></mesh><mesh position={[-.18, -.28, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.05, .05, .38, 10]} /><meshStandardMaterial color="#6b8f8a" /></mesh></group>}
-        </group>
+        </group></BuildReveal>
       )}
       {bench && (
         <group position={[-3.35, 0, .8]} rotation={[0, .25, 0]}>
@@ -378,15 +478,15 @@ function CatHouse() {
           <circleGeometry args={[.16 + seeded(index + 8) * .08, 7]} /><meshStandardMaterial color={index % 2 ? '#dad2bd' : '#b7b0a0'} roughness={1} />
         </mesh>
       ))}
-      <Html center position={[0, 3.55, 0]} distanceFactor={11} zIndexRange={[5, 0]}><div className="home-world-label"><b>SPLOTCH’S HOUSE</b><span>cuddlebox {cuddlebox > 1 ? 'upgraded' : 'ready'} · blanket {blanket ? 'added' : 'needed'} · water {waterBowl ? 'ready' : 'needed'}</span></div></Html>
-      <pointLight position={[-.7, 1.1, -1.4]} color="#ffd18d" intensity={blanket ? 1.8 : .6} distance={5} />
+      <Html center position={[0, stage >= 3 ? 3.35 : 1.4, 0]} distanceFactor={11} zIndexRange={[5, 0]}><div className="home-world-label"><b>{stage >= 3 ? 'THE SHELTER YOU BUILT' : 'BUILD SITE · BEFORE NIGHTFALL'}</b><span>{stage === 0 ? 'floor · walls · roof' : stage === 1 ? 'floor complete · walls next' : stage === 2 ? 'walls complete · roof next' : `blanket ${blanket ? 'added' : 'needed'} · water ${waterBowl ? 'ready' : 'needed'}`}</span></div></Html>
+      {stage >= 3 && <pointLight position={[-.55, 1.05, -.15]} color="#ffd18d" intensity={blanket ? 1.8 : .6} distance={5} />}
     </group>
   )
 }
 
 function GardenPortals() {
   const realityVisits = useGame((state) => state.realityVisits)
-  const dreamReady = useGame((state) => state.hasFed && state.blanketLevel > 0 && state.waterBowlLevel > 0)
+  const dreamReady = useGame((state) => state.shelterStage >= 3 && state.hasFed && state.blanketLevel > 0 && state.waterBowlLevel > 0)
   return (
     <group>
       <group position={[REALITY_PORTAL_POSITION.x, 0, REALITY_PORTAL_POSITION.z]} rotation={[0, -.5, 0]}>
@@ -408,12 +508,32 @@ function GardenPortals() {
 
 function MorningBasket() {
   const claimed = useGame((state) => state.lastDailyClaim === localDay())
+  const firstDay = useGame((state) => state.completedDays === 0 && state.shelterStage === 0)
   return (
-    <group position={[1.8, 0, -7.8]}>
+    <group position={[BASKET_POSITION.x, 0, BASKET_POSITION.z]} onClick={(event) => { event.stopPropagation(); runIfPlayerNear(BASKET_POSITION, () => useGame.getState().claimDailyBasket(), 'the supply crate') }}>
       <RoundedBox args={[1.4, .62, 1]} position={[0, .34, 0]} radius={.15} smoothness={4} castShadow><meshStandardMaterial color={claimed ? '#8b765e' : '#d2a466'} roughness={.9} /></RoundedBox>
       {[0, 1, 2, 3].map((index) => <mesh key={index} position={[-.48 + index * .32, .63, 0]}><boxGeometry args={[.09, .45, 1.02]} /><meshStandardMaterial color="#6f5946" /></mesh>)}
       {!claimed && <><pointLight position={[0, 1, 0]} color="#efff9a" intensity={2.5} distance={6} /><Sparkles count={14} scale={[2, 2.5, 2]} size={4} speed={.3} color="#efff9a" position={[0, 1, 0]} /></>}
-      <WorldTag title="Morning basket" subtitle={claimed ? 'come back tomorrow' : 'free daily care supplies'} warm={!claimed} />
+      <WorldTag title={firstDay ? 'Starter supply crate' : 'Morning supply crate'} subtitle={claimed ? 'opened · come back tomorrow' : 'click, tap, or press E to open'} warm={!claimed} />
+    </group>
+  )
+}
+
+function SupplyShelf() {
+  const food = useGame((state) => state.food)
+  const tokens = useGame((state) => state.gardenTokens)
+  return (
+    <group position={[SUPPLY_POSITION.x, 0, SUPPLY_POSITION.z]} onClick={(event) => { event.stopPropagation(); runIfPlayerNear(SUPPLY_POSITION, () => useGame.getState().buyFood(), 'the food shelf') }}>
+      <RoundedBox args={[2.25, 1.75, .62]} position={[0, .9, 0]} radius={.12} smoothness={4} castShadow receiveShadow><meshStandardMaterial color="#506458" roughness={.9} /></RoundedBox>
+      {[.38, 1.02, 1.55].map((height) => <mesh key={height} position={[0, height, -.36]}><boxGeometry args={[2.05, .08, .72]} /><meshStandardMaterial color="#dfc391" roughness={1} /></mesh>)}
+      {[-.65, 0, .65].map((x, index) => (
+        <group key={x} position={[x, .72 + (index % 2) * .63, -.52]}>
+          <mesh castShadow><cylinderGeometry args={[.25, .3, .55, 8]} /><meshStandardMaterial color={index % 2 ? '#b96a45' : '#d6a65f'} roughness={.95} /></mesh>
+          <Text position={[0, 0, -.27]} rotation={[0, Math.PI, 0]} fontSize={.09} color="#fff4cf" anchorX="center">FOOD</Text>
+        </group>
+      ))}
+      <Text position={[0, 1.98, 0]} fontSize={.23} color="#f4ffbd" anchorX="center">CAT GARDENS SUPPLY</Text>
+      <WorldTag title="Splotch’s food shelf" subtitle={food >= 3 ? 'food bag full' : tokens >= 15 ? 'one meal · 15 tokens' : 'earn tokens to pack a meal'} warm={food < 1 && tokens >= 15} />
     </group>
   )
 }
@@ -430,6 +550,9 @@ function BoundaryColliders() {
 }
 
 function Scene() {
+  const completedDays = useGame((state) => state.completedDays)
+  const realityVisits = useGame((state) => state.realityVisits)
+  const unlockedPeople = (Object.keys(PEOPLE) as PersonId[]).filter((id) => isPersonUnlocked(id, completedDays, realityVisits))
   return (
     <>
       <color attach="background" args={['#b7c6dc']} />
@@ -442,10 +565,11 @@ function Scene() {
       <Landscape />
       <BoundaryColliders />
       <MorningBasket />
+      <SupplyShelf />
       <PlantPlot />
       <CatHouse />
       <SplotchActor />
-      {(Object.keys(PEOPLE) as PersonId[]).map((id) => <PersonActor key={id} id={id} />)}
+      {unlockedPeople.map((id) => <PersonActor key={id} id={id} />)}
       <GardenPortals />
       <CaretakerPlayer />
     </>

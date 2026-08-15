@@ -38,15 +38,48 @@ import { EmbeddedCheckout, EmbeddedCheckoutProvider } from '@stripe/react-stripe
 import { loadStripe, type Stripe } from '@stripe/stripe-js'
 import catGardensMark from '../assets/cat-gardens-icon.png'
 import splotchImage from '../assets/splotch.jpg'
+import mathikoloniGardenShell from '../assets/mathikoloni-garden-shell.webp'
+import mathikoloniRoadWalls from '../assets/mathikoloni-road-walls.webp'
+import mathikoloniAerialPlot from '../assets/mathikoloni-aerial-plot.webp'
 import { badgeLabels, cats, dreamGardenConcept, dreamSpaces, splotchNeeds, type SplotchNeed } from './data'
 import { tvChannels, tvFundingNeeds } from './catGardensTv'
 import { useGardenAccount } from './account'
 import { GameSync } from './GameSync'
 import { playPurr } from './game/audio'
-import { getDailyProgress, getObjective, getRelationshipText, localDay, upgradeCatalog, useGame, type DonationBadge, type GardenUpgrade, type PersonId } from './game/store'
+import { foodPrice, getDailyProgress, getObjective, getRelationshipText, localDay, shelterBuildCatalog, upgradeCatalog, useGame, type DonationBadge, type GardenUpgrade, type PersonId } from './game/store'
 
 const MATHIKOLONI_LISTING = 'https://www.bazaraki.com/adv/5818712_4-bedroom-detached-house-for-sale/'
-const MATHIKOLONI_CURRENT_IMAGE = 'https://cdn1.bazaraki.com/media/cache1/97/99/97990f9045775e12504619b7bbba349d.webp'
+const MATHIKOLONI_CURRENT_IMAGE = mathikoloniRoadWalls
+
+const mathikoloniRealityViews = [
+  {
+    image: mathikoloniRoadWalls,
+    label: 'ROAD + BOUNDARY',
+    title: 'The road sits above the house.',
+    detail: 'Unlike the cats’ current home beside fast traffic, the residence and gardens sit below the road behind substantial walls—creating the bones of a protected indoor/outdoor campus.',
+  },
+  {
+    image: mathikoloniGardenShell,
+    label: 'GARDENS + SHELL',
+    title: 'The sanctuary is mostly garden.',
+    detail: 'Palm, succulent and grass gardens already create distinct territories. The unfinished shell can become generous warm cat habitat, with shaded outdoor seating for visitors.',
+  },
+  {
+    image: mathikoloniAerialPlot,
+    label: 'SPACE + PROXIMITY',
+    title: 'Secluded, expandable, closer to care.',
+    detail: 'The aerial view shows room for multiple gardens and future expansion. The move is also intended to shorten today’s roughly 25-minute trip to Markos and Limassol Veterinary Clinic.',
+  },
+] as const
+
+const mathikoloniTransformationZones = [
+  { number: '01', title: 'Cat gardens first', detail: 'Preserve and expand the existing succulent, grass and palm gardens into the largest part of the sanctuary.' },
+  { number: '02', title: 'Warm lower floor', detail: 'Complete the open shell as year-round indoor cat habitat, with quiet rooms, cuddleboxes and protected winter warmth.' },
+  { number: '03', title: 'Resident care rooms', detail: 'Give full-time keepers private rooms close enough to hear, observe and respond to the cats day and night.' },
+  { number: '04', title: 'Visitor terrace', detail: 'Turn the downstairs outdoor seating into a calm place for volunteers and guests to sit with the cats.' },
+  { number: '05', title: 'Enclosed freedom', detail: 'Use the high walls and the road-above-site geometry to preserve indoor/outdoor life within a near-continuous safe boundary.' },
+  { number: '06', title: 'Expansion court', detail: 'Reimagine the basketball court as supervised visitation, enrichment and future sanctuary capacity.' },
+] as const
 
 const CatGardenWorld = lazy(() => import('./World').then((module) => ({ default: module.CatGardenWorld })))
 
@@ -74,14 +107,18 @@ function StartMission({ onStart }: { onStart: () => void }) {
         </div>
         <div className="mission-copy">
           <p className="eyebrow">A LIVING GARDEN · ONE REAL CAT · CYPRUS</p>
-          <h1>Wake up in<br />Splotch’s garden.</h1>
-          <p className="mission-lede">Walk in as yourself. Meet Chanda, Karen, and Kimberly. Feed Splotch, grow something, make his little house feel like his—and return tomorrow to continue.</p>
+          <h1>Build safety<br />before nightfall.</h1>
+          <p className="mission-lede">Splotch has no dry house here yet. Enter an unfinished garden, earn his trust, build his first shelter piece by piece, and buy the food that brings him close enough to choose you.</p>
           <ol className="mission-steps">
-            <li><span>01</span><div><strong>Return</strong><small>A free morning basket each day</small></div></li>
-            <li><span>02</span><div><strong>Care</strong><small>Food, water, plants, attention</small></div></li>
-            <li><span>03</span><div><strong>Build</strong><small>A garden that remembers you</small></div></li>
+            <li><span>01</span><div><strong>Find him</strong><small>Approach on his terms</small></div></li>
+            <li><span>02</span><div><strong>Build</strong><small>Floor, walls, roof</small></div></li>
+            <li><span>03</span><div><strong>Earn trust</strong><small>Food, patience, return</small></div></li>
           </ol>
-          <button className="primary-button" onClick={onStart}>Enter Splotch’s garden <ArrowRight size={18} /></button>
+          <div className="mission-entry-actions">
+            <button className="primary-button" onClick={onStart}>Begin before anything is built <ArrowRight size={18} /></button>
+            <a className="secondary-button" href="/cats">Meet the real cats</a>
+            <a className="mission-about-link" href="/sanctuary">How the real sanctuary works</a>
+          </div>
           <p className="free-note"><Shield size={14} /> Splotch’s real care never depends on a player logging in. Your daily ritual grows the virtual garden; optional gifts support the real sanctuary.</p>
         </div>
       </section>
@@ -119,7 +156,9 @@ function CatCard() {
 
 function ObjectiveCard() {
   const lastDailyClaim = useGame((state) => state.lastDailyClaim)
-  const lastChandaVisitDate = useGame((state) => state.lastChandaVisitDate)
+  const splotchDiscovered = useGame((state) => state.splotchDiscovered)
+  const shelterStage = useGame((state) => state.shelterStage)
+  const food = useGame((state) => state.food)
   const lastDayCompleted = useGame((state) => state.lastDayCompleted)
   const completedDays = useGame((state) => state.completedDays)
   const lastFedDate = useGame((state) => state.lastFedDate)
@@ -129,7 +168,7 @@ function ObjectiveCard() {
   const hasBonded = useGame((state) => state.hasBonded)
   const realityVisits = useGame((state) => state.realityVisits)
   const dreamVisits = useGame((state) => state.dreamVisits)
-  const objective = getObjective({ lastDailyClaim, lastChandaVisitDate, lastDayCompleted, completedDays, lastFedDate, lastWateredDate, blanketLevel, waterBowlLevel, hasBonded, realityVisits, dreamVisits })
+  const objective = getObjective({ lastDailyClaim, splotchDiscovered, shelterStage, food, lastDayCompleted, completedDays, lastFedDate, lastWateredDate, blanketLevel, waterBowlLevel, hasBonded, realityVisits, dreamVisits })
   return (
     <section className="objective-hud game-panel">
       <div className="objective-copy">
@@ -165,7 +204,8 @@ function Inventory() {
 function DayEndButton({ onDream }: { onDream: () => void }) {
   const state = {
     lastDailyClaim: useGame((game) => game.lastDailyClaim),
-    lastChandaVisitDate: useGame((game) => game.lastChandaVisitDate),
+    splotchDiscovered: useGame((game) => game.splotchDiscovered),
+    shelterStage: useGame((game) => game.shelterStage),
     lastFedDate: useGame((game) => game.lastFedDate),
     lastWateredDate: useGame((game) => game.lastWateredDate),
     blanketLevel: useGame((game) => game.blanketLevel),
@@ -188,7 +228,12 @@ function DayEndButton({ onDream }: { onDream: () => void }) {
 
 function MiniMap() {
   const [x, , z] = useGame((state) => state.playerPosition)
-  const dreamReady = useGame((state) => state.hasFed && state.blanketLevel > 0 && state.waterBowlLevel > 0)
+  const [catX, , catZ] = useGame((state) => state.catPosition)
+  const shelterStage = useGame((state) => state.shelterStage)
+  const lastDailyClaim = useGame((state) => state.lastDailyClaim)
+  const completedDays = useGame((state) => state.completedDays)
+  const realityVisits = useGame((state) => state.realityVisits)
+  const dreamReady = useGame((state) => state.shelterStage >= 3 && state.hasFed && state.blanketLevel > 0 && state.waterBowlLevel > 0)
   // Match the fixed game camera: +Z is screen-up and +X is screen-left.
   const mapPoint = (px: number, pz: number) => ({ left: `${50 - (px / 44) * 100}%`, top: `${50 - (pz / 44) * 100}%` })
   return (
@@ -197,14 +242,16 @@ function MiniMap() {
       <div className="map-field">
         <i className="map-road map-road-one" />
         <i className="map-road map-road-two" />
-        <span className="map-marker map-cat" style={mapPoint(0, 4.4)} title="Splotch"><Heart size={10} /></span>
-        <span className="map-marker map-build" style={mapPoint(3.25, 6.1)} title="Splotch’s house"><Home size={10} /></span>
+        <span className="map-marker map-cat" style={mapPoint(catX, catZ)} title="Splotch"><Heart size={10} /></span>
+        <span className="map-marker map-build" style={mapPoint(3.25, 6.1)} title={shelterStage >= 3 ? 'The shelter you built' : 'Build site'}>{shelterStage >= 3 ? <Home size={10} /> : <Box size={10} />}</span>
+        {lastDailyClaim !== localDay() && <span className="map-marker map-basket" style={mapPoint(1.8, -7.8)} title="Supply crate"><Gift size={10} /></span>}
+        <span className="map-marker map-supply" style={mapPoint(-4.6, -7.3)} title="Food shelf"><Utensils size={10} /></span>
         <span className="map-marker map-food" style={mapPoint(-3.2, 3.6)} title="Young plant"><Leaf size={10} /></span>
         <span className="map-marker map-reality" style={mapPoint(9.4, -2.1)} title="Reality Portal"><Video size={10} /></span>
         {dreamReady && <span className="map-marker map-dream" style={mapPoint(-9.2, 7.2)} title="Dream Garden"><Sparkles size={10} /></span>}
-        <span className="map-marker map-person" style={mapPoint(-4.8, .6)} title="Chanda"><UserRound size={10} /></span>
-        <span className="map-marker map-person" style={mapPoint(6.8, 4.6)} title="Karen"><UserRound size={10} /></span>
-        <span className="map-marker map-person" style={mapPoint(6.8, 8.1)} title="Kimberly"><UserRound size={10} /></span>
+        {completedDays >= 1 && <span className="map-marker map-person map-chanda" style={mapPoint(-4.8, .6)} title="Chanda"><UserRound size={10} /></span>}
+        {completedDays >= 3 && realityVisits > 0 && <span className="map-marker map-person map-karen" style={mapPoint(6.8, 4.6)} title="Karen"><UserRound size={10} /></span>}
+        {completedDays >= 6 && realityVisits > 0 && <span className="map-marker map-person map-kimberly" style={mapPoint(6.8, 8.1)} title="Kimberly"><UserRound size={10} /></span>}
         <span className="map-player" style={mapPoint(x, z)}><i /></span>
       </div>
     </aside>
@@ -260,16 +307,32 @@ function DrivePad() {
 
 function ActionButton({ onAction }: { onAction: () => void }) {
   const nearby = useGame((state) => state.nearby)
+  const discovered = useGame((state) => state.splotchDiscovered)
+  const shelterStage = useGame((state) => state.shelterStage)
   const food = useGame((state) => state.food)
   const water = useGame((state) => state.waterUnits)
+  const tokens = useGame((state) => state.gardenTokens)
+  const lastDailyClaim = useGame((state) => state.lastDailyClaim)
   const lastFedDate = useGame((state) => state.lastFedDate)
   const lastWateredDate = useGame((state) => state.lastWateredDate)
   const lastDayCompleted = useGame((state) => state.lastDayCompleted)
   const hasBonded = useGame((state) => state.hasBonded)
   const bondVisits = useGame((state) => state.bondVisits)
+  const nextBuild = shelterBuildCatalog[shelterStage]
   const label = useMemo(() => {
+    if (nearby === 'basket') return lastDailyClaim === localDay() ? 'Supply crate opened today' : 'Open the starter supply crate'
+    if (nearby === 'build') return lastDailyClaim !== localDay()
+      ? 'Open the supply crate first'
+      : nextBuild ? `${nextBuild.title} · ${nextBuild.cost} tokens` : 'Shelter complete'
+    if (nearby === 'home') return 'Open the shelter you built'
+    if (nearby === 'supply') return lastDailyClaim !== localDay()
+      ? 'Open today’s supply crate first'
+      : food >= 3 ? 'Food bag full'
+        : `Buy one Splotch meal · ${foodPrice} tokens`
     if (nearby === 'cat') {
-      if (lastFedDate !== localDay()) return food > 0 ? 'Feed virtual Splotch' : 'Open the morning basket first'
+      if (!discovered) return 'Sit low and let Splotch see you'
+      if (shelterStage < 3) return 'Splotch is watching you build'
+      if (lastFedDate !== localDay()) return food > 0 ? 'Feed virtual Splotch' : `Buy food at the supply shelf · ${foodPrice} tokens`
       if (!hasBonded) return 'Sit down & pet Splotch'
       return bondVisits >= 6 ? 'Sit with Splotch again' : `Spend time together · memory ${bondVisits + 2}`
     }
@@ -280,9 +343,17 @@ function ActionButton({ onAction }: { onAction: () => void }) {
     if (nearby === 'reality') return 'Open Splotch’s Reality Portal'
     if (nearby === 'dream') return lastDayCompleted === localDay() ? 'Re-enter tonight’s dream' : 'Finish today to enter the dream'
     return null
-  }, [bondVisits, food, hasBonded, lastDayCompleted, lastFedDate, lastWateredDate, nearby, water])
-  const enabled = nearby === 'cat'
-    ? (lastFedDate === localDay() || food > 0)
+  }, [bondVisits, discovered, food, hasBonded, lastDailyClaim, lastDayCompleted, lastFedDate, lastWateredDate, nearby, nextBuild, shelterStage, water])
+  const enabled = nearby === 'basket'
+    ? lastDailyClaim !== localDay()
+    : nearby === 'build'
+      ? lastDailyClaim === localDay() && Boolean(nextBuild) && tokens >= (nextBuild?.cost || 0)
+      : nearby === 'home'
+        ? true
+        : nearby === 'supply'
+          ? lastDailyClaim === localDay() && food < 3 && tokens >= foodPrice
+          : nearby === 'cat'
+    ? (!discovered || (shelterStage >= 3 && (lastFedDate === localDay() || food > 0)))
     : nearby === 'plant'
       ? lastWateredDate !== localDay() && water > 0
       : nearby === 'dream'
@@ -299,22 +370,24 @@ function ActionButton({ onAction }: { onAction: () => void }) {
 function MorningBasketModal({ onClose }: { onClose: () => void }) {
   const claimed = useGame((state) => state.lastDailyClaim === localDay())
   const loginDays = useGame((state) => state.loginDays)
+  const firstCrate = useGame((state) => state.completedDays === 0 && state.shelterStage === 0)
   const claim = useGame((state) => state.claimDailyBasket)
+  const tokens = firstCrate ? 120 : 40
   return (
     <div className="story-backdrop morning-backdrop" role="presentation">
       <article className="morning-card" role="dialog" aria-modal="true" aria-labelledby="morning-title">
         <button className="close-button" onClick={onClose} aria-label="Close morning basket"><X size={19} /></button>
         <span className="morning-sun"><Gift /></span>
-        <p className="eyebrow">MORNING BASKET · DAY {Math.max(1, loginDays + (claimed ? 0 : 1))}</p>
-        <h2 id="morning-title">A little care,<br />waiting for you.</h2>
-        <p>Every new local day brings enough to do something kind without paying: food for virtual Splotch, water for one plant, a happiness treat, and thirty garden tokens.</p>
+        <p className="eyebrow">{firstCrate ? 'STARTER SUPPLY CRATE' : 'MORNING SUPPLY CRATE'} · DAY {Math.max(1, loginDays + (claimed ? 0 : 1))}</p>
+        <h2 id="morning-title">Something useful,<br />waiting for you.</h2>
+        <p>{firstCrate ? 'This one-time starter crate is enough to build a basic shelter, buy Splotch’s first meal, add his bowl and blanket, and still make one caring choice yourself.' : 'Every new local day brings water, a happiness treat, and forty garden tokens. Food is purchased at the physical supply shelf so spending remains part of the game.'}</p>
         <div className="basket-items">
-          <span><Utensils /> <b>1 food</b></span>
+          <span><Box /> <b>{firstCrate ? 'Starter materials' : 'Daily supplies'}</b></span>
           <span><Droplets /> <b>1 water</b></span>
           <span><Heart /> <b>1 treat</b></span>
-          <span><Coins /> <b>30 tokens</b></span>
+          <span><Coins /> <b>{tokens} tokens</b></span>
         </div>
-        <button className="primary-button" disabled={claimed} onClick={() => { claim(); onClose() }}>{claimed ? 'Today’s basket is already open' : 'Open today’s basket'} <ArrowRight size={17} /></button>
+        <button className="primary-button" disabled={claimed} onClick={() => { claim(); onClose() }}>{claimed ? 'Today’s crate is already open' : 'Open today’s supply crate'} <ArrowRight size={17} /></button>
         <small><Shield size={13} /> Miss a day and nothing bad happens. Real Splotch’s food, water, and safety never depend on this game.</small>
       </article>
     </div>
@@ -370,6 +443,7 @@ const upgrades = Object.keys(upgradeCatalog) as GardenUpgrade[]
 function GardenDesigner({ onClose, onDonate }: { onClose: () => void; onDonate: (need: SplotchNeed) => void }) {
   const account = useGardenAccount()
   const tokens = useGame((state) => state.gardenTokens)
+  const shelterStage = useGame((state) => state.shelterStage)
   const blanket = useGame((state) => state.blanketLevel)
   const waterBowl = useGame((state) => state.waterBowlLevel)
   const cuddlebox = useGame((state) => state.cuddleboxLevel)
@@ -405,25 +479,26 @@ function GardenDesigner({ onClose, onDonate }: { onClose: () => void; onDonate: 
       <article className="garden-designer" role="dialog" aria-modal="true" aria-labelledby="designer-title">
         <button className="close-button" onClick={onClose} aria-label="Close garden designer"><X size={19} /></button>
         <header>
-          <div><p className="eyebrow">GARDEN DESIGNER · SPLOTCH’S HOME</p><h2 id="designer-title">Make the garden remember you.</h2><p>Spend free garden tokens on visible upgrades. Starter tokens cover the blanket and simple water bowl.</p></div>
+          <div><p className="eyebrow">GARDEN DESIGNER · SPLOTCH’S HOME</p><h2 id="designer-title">Make what you built feel like his.</h2><p>{shelterStage < 3 ? 'The shelter must have a floor, walls, and roof before home furnishings can be placed.' : 'Spend earned garden tokens on visible improvements. Your starter budget covers Splotch’s blanket and simple water bowl.'}</p></div>
           <div className="token-wallet"><Coins size={20} /><span>AVAILABLE</span><strong>{tokens}</strong><small>garden tokens</small></div>
         </header>
         <section className="upgrade-grid">
           {upgrades.map((id) => {
             const item = upgradeCatalog[id]
             const isOwned = owned(id)
+            const needsShelter = shelterStage < 3 && ['blanket', 'simple-bowl', 'automatic-bowl', 'cuddlebox'].includes(id)
             return (
               <article className={isOwned ? 'owned' : ''} key={id}>
                 <span>{id.includes('bowl') ? <Droplets /> : id === 'blanket' || id === 'cuddlebox' ? <Home /> : id === 'gravel' || id === 'bench' ? <Leaf /> : <Heart />}</span>
                 <div><p>{isOwned ? 'IN YOUR GARDEN' : `${item.cost} TOKENS`}</p><h3>{item.title}</h3><small>{item.detail}</small></div>
-                <button disabled={isOwned} onClick={() => {
+                <button disabled={isOwned || needsShelter} onClick={() => {
                   if (id === 'collar') {
                     const name = window.prompt('What should the virtual collar say?', 'Garden Friend')
                     if (name) purchase(id, name)
                     return
                   }
                   purchase(id)
-                }}>{isOwned ? <><Check size={14} /> Added</> : tokens >= item.cost ? 'Add to garden' : `Need ${item.cost - tokens} more`}</button>
+                }}>{isOwned ? <><Check size={14} /> Added</> : needsShelter ? 'Build the roof first' : tokens >= item.cost ? 'Add to garden' : `Need ${item.cost - tokens} more`}</button>
               </article>
             )
           })}
@@ -561,7 +636,7 @@ function BondResultModal({ result, onClose }: { result: { advanced: boolean; vis
         </div>
         <div className="complete-actions">
           <button className="primary-button" onClick={onClose}>Return to the garden <ArrowRight size={17} /></button>
-          <a className="secondary-button" href="/gallery.html">Meet the real cats</a>
+          <a className="secondary-button" href="/cats">Meet the real cats</a>
         </div>
       </article>
     </div>
@@ -586,12 +661,16 @@ function RealityPortal({ onClose, onDonate }: { onClose: () => void; onDonate: (
 
         <section className="reality-grid">
           <div className="real-media-slot">
-            <span className="media-orbit real-splotch-orbit"><img src={splotchImage} alt="The real Splotch, an orange male cat in Cyprus" /></span>
+            <video className="real-splotch-video" controls playsInline preload="metadata" poster="/videos/splotch-petting.jpg">
+              <source src="/videos/splotch-petting.mp4" type="video/mp4" />
+              Your browser does not support the Splotch video.
+            </video>
             <div>
-              <b>REAL SPLOTCH · FIRST VERIFIED PHOTOGRAPH</b>
+              <b>REAL SPLOTCH · FIRST VERIFIED VIDEO · 00:34</b>
               <h3>This is the cat in your garden.</h3>
-              <p>Splotch is a big orange adult male. New sanctuary-reviewed photographs, videos, dental history, and daily-life updates will join this portrait as they are published.</p>
+              <p>Splotch is a big orange adult male who actively seeks affection. This real moment shows him approaching Karen for pets while his Cat Gardens friends gather nearby.</p>
               <span className="truth-chip"><Shield size={13} /> Real-life updates remain separate from game state</span>
+              <a className="reality-watch-link" href="/Splotch">Open Splotch’s complete story <ArrowRight size={13} /></a>
             </div>
           </div>
           <div className="known-today">
@@ -673,7 +752,7 @@ function CatGardensTv({ onClose, onDonate }: { onClose: () => void; onDonate: (n
               <button className={active.id === channel.id ? 'active' : ''} key={channel.id} onClick={() => chooseChannel(channel.id)}>
                 <span>{channel.kind === 'live' ? <Radio size={16} /> : <Play size={16} />}</span>
                 <div><b>{channel.label}</b><small>{channel.schedule}</small></div>
-                <i>{channel.youtubeId ? 'READY' : 'SLOT'}</i>
+                <i>{channel.youtubeId || channel.localVideo ? 'READY' : 'SLOT'}</i>
               </button>
             ))}
           </nav>
@@ -686,6 +765,11 @@ function CatGardensTv({ onClose, onDonate }: { onClose: () => void; onDonate: (n
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 />
+              ) : active.localVideo ? (
+                <video controls playsInline preload="metadata" poster={active.poster}>
+                  <source src={active.localVideo} type="video/mp4" />
+                  Your browser does not support this Cat Gardens video.
+                </video>
               ) : (
                 <div className="tv-holding">
                   <span><Camera size={42} /></span>
@@ -694,10 +778,10 @@ function CatGardensTv({ onClose, onDonate }: { onClose: () => void; onDonate: (n
                   <small>This production-ready player will connect automatically when its YouTube URL or ID is added. Until then, it will never pretend that recorded or missing footage is live.</small>
                 </div>
               )}
-              <div className="tv-player-status"><i className={active.youtubeId ? 'connected' : ''} /><span>{active.youtubeId ? active.kind === 'live' ? 'CHANNEL CONNECTED' : 'LATEST VERIFIED EPISODE' : 'AWAITING FIRST SAFE FEED'}</span><b>{active.label}</b></div>
+              <div className="tv-player-status"><i className={active.youtubeId || active.localVideo ? 'connected' : ''} /><span>{active.youtubeId ? active.kind === 'live' ? 'CHANNEL CONNECTED' : 'YOUTUBE + CAT GARDENS' : active.localVideo ? 'FIRST-PARTY VERIFIED FILM' : 'AWAITING FIRST SAFE FEED'}</span><b>{active.label}</b></div>
             </div>
             <div className="tv-program-copy">
-              <div><p className="eyebrow">{active.label}</p><h3>{active.title}</h3><p>{active.description}</p></div>
+              <div><p className="eyebrow">{active.label}</p><h3>{active.title}</h3><p>{active.description}</p>{active.watchPage && <a className="tv-watch-link" href={active.watchPage}>Open the dedicated video page <ArrowRight size={13} /></a>}</div>
               <span><b>+20 CARE</b> for today’s first Cat Gardens TV check-in</span>
             </div>
           </div>
@@ -739,10 +823,17 @@ function DreamGarden({ onClose, onDonate }: { onClose: () => void; onDonate: (ne
   const completedDays = useGame((state) => state.completedDays)
   const [chapter, setChapter] = useState<0 | 1 | 2>(0)
   const [reveal, setReveal] = useState(52)
+  const [realityView, setRealityView] = useState(0)
   const dreamNeed = splotchNeeds.find((need) => need.id === 'mathikoloni')!
+  const activeReality = mathikoloniRealityViews[realityView]
+  const chapterCopy = [
+    { label: 'REALITY', title: 'Why this land.', detail: 'See the safety already present' },
+    { label: 'TRANSFORMATION', title: 'How it changes.', detail: 'Explore the garden-first plan' },
+    { label: 'DREAM', title: 'Who it protects.', detail: 'Enter Splotch’s future' },
+  ] as const
   return (
     <div className={`dream-screen dream-chapter-${chapter}`} role="dialog" aria-modal="true" aria-labelledby="dream-title">
-      {chapter === 0 && <img className="dream-background current-property" src={MATHIKOLONI_CURRENT_IMAGE} alt="The existing Mathikoloni shell house shown in the current property listing" />}
+      {chapter === 0 && <img className="dream-background current-property" src={activeReality.image} alt={activeReality.title} />}
       {chapter === 1 && (
         <div className="dream-comparison">
           <img src={MATHIKOLONI_CURRENT_IMAGE} alt="The existing Mathikoloni shell house" />
@@ -754,27 +845,41 @@ function DreamGarden({ onClose, onDonate }: { onClose: () => void; onDonate: (ne
       {chapter === 2 && <img className="dream-background" src={dreamGardenConcept} alt="Proposed visualization of Splotch’s future sanctuary at the Mathikoloni property" />}
       <div className="dream-shade" />
       <header className="dream-header">
-        <div><p>NIGHT {Math.max(1, completedDays)} · SPLOTCH’S DREAM · {chapter + 1}/3</p><h2 id="dream-title">{chapter === 0 ? 'What exists.' : chapter === 1 ? 'What could change.' : 'What safety could feel like.'}</h2></div>
+        <div><p>NIGHT {Math.max(1, completedDays)} · SPLOTCH’S DREAM · {chapter + 1}/3</p><h2 id="dream-title">{chapterCopy[chapter].title}</h2></div>
         <button onClick={onClose}><X size={20} /> Wake gently</button>
       </header>
       <nav className="dream-chapters" aria-label="Mathikoloni dream chapters">
-        {(['REALITY', 'TRANSFORMATION', 'DREAM'] as const).map((label, index) => <button className={chapter === index ? 'active' : ''} onClick={() => setChapter(index as 0 | 1 | 2)} key={label}><b>0{index + 1}</b>{label}</button>)}
+        {chapterCopy.map((item, index) => (
+          <button className={chapter === index ? 'active' : ''} onClick={() => setChapter(index as 0 | 1 | 2)} key={item.label}>
+            <b>0{index + 1}</b><span><strong>{item.label}</strong><small>{item.detail}</small></span><ArrowRight size={16} />
+          </button>
+        ))}
       </nav>
-      <div className="concept-disclosure"><Shield size={14} /><span><b>{chapter === 0 ? 'CURRENT LISTING PHOTOGRAPH' : 'PROPOSED FUTURE VISUALIZATION'}</b>{chapter === 0 ? ' Source: public Bazaraki property listing.' : ' Generated from the actual listing geometry—not a photograph of completed work.'} Cat Gardens does not own this property.</span></div>
+      <div className="concept-disclosure"><Shield size={14} /><span><b>{chapter === 0 ? 'CURRENT PROPERTY PHOTOGRAPH' : 'PROPOSED FUTURE VISUALIZATION'}</b>{chapter === 0 ? ' Public listing imagery documents the existing land.' : ' The transformation is an illustrated proposal, not completed work.'} Cat Gardens does not own this property. <a href={MATHIKOLONI_LISTING} target="_blank" rel="noreferrer">Source</a></span></div>
       {chapter === 0 && (
         <section className="property-facts">
-          <p className="eyebrow">THE ACTUAL MATHIKOLONI LISTING</p>
-          <h3>A shell house with the bones of a sanctuary.</h3>
-          <p>The listing describes a secluded, semi-constructed 683 m² house on a 6,818 m² hillside plot, with gardens, a pool courtyard, broad views, and room for a resident care team. It is a candidate dream—not an owned asset.</p>
-          <div><span><b>683 m²</b>house</span><span><b>6,818 m²</b>plot</span><span><b>4</b>bedrooms</span><span><b>5+</b>bathrooms</span></div>
-          <a href={MATHIKOLONI_LISTING} target="_blank" rel="noreferrer">Inspect the actual listing <ExternalLink size={14} /></a>
+          <p className="eyebrow">REALITY · WHY THIS SITE CHANGES THE ODDS</p>
+          <h3>{activeReality.title}</h3>
+          <p>{activeReality.detail}</p>
+          <div className="reality-proof-grid"><span><b>Road above</b>not beside the cats</span><span><b>High walls</b>near-continuous boundary</span><span><b>3 gardens</b>already established</span><span><b>Open shell</b>room to build well</span></div>
+          <button onClick={() => setChapter(1)}>See the transformation <ArrowRight size={15} /></button>
         </section>
       )}
+      {chapter === 0 && <section className="reality-gallery" aria-label="Existing Mathikoloni property features">
+        {mathikoloniRealityViews.map((view, index) => (
+          <button className={realityView === index ? 'active' : ''} onClick={() => setRealityView(index)} key={view.label}>
+            <img src={view.image} alt="" /><span><small>0{index + 1} · {view.label}</small><strong>{view.title}</strong></span>
+          </button>
+        ))}
+      </section>}
       {chapter === 1 && (
         <section className="transformation-story">
-          <p className="eyebrow">A BUILDABLE PROPOSAL · NOT A PROMISE</p>
-          <h3>Move the line to compare “as listed” with “as imagined.”</h3>
-          <p>Complete the shell. Replace open-water danger with a planted courtyard. Make the lower floor warm cat habitat. Connect terraces with shaded paths and cat-safe boundaries. Turn the flat court into a supervised visitation garden.</p>
+          <p className="eyebrow">TRANSFORMATION · A GARDEN-FIRST SANCTUARY</p>
+          <h3>The house supports the care. The gardens are the heart.</h3>
+          <p>Move the line across the property, then explore the six practical conversions that turn existing strengths into a safer daily life.</p>
+          <div className="transformation-zones">
+            {mathikoloniTransformationZones.map((zone) => <article key={zone.number}><b>{zone.number}</b><div><strong>{zone.title}</strong><small>{zone.detail}</small></div></article>)}
+          </div>
           <button onClick={() => setChapter(2)}>Enter tonight’s dream <ArrowRight size={15} /></button>
         </section>
       )}
@@ -792,11 +897,11 @@ function DreamGarden({ onClose, onDonate }: { onClose: () => void; onDonate: (ne
         </div>
       </section>}
       {chapter === 2 && <aside className="dream-give">
-        <p>The dream is free to enter.</p>
-        <strong>Help make one part real.</strong>
-        <div><button onClick={() => onDonate(dreamNeed)}><Landmark size={17} /> Fund the big dream</button><a href={MATHIKOLONI_LISTING} target="_blank" rel="noreferrer">View actual listing <ExternalLink size={14} /></a></div>
+        <p>The dream is free to enter · the work is real</p>
+        <strong>Help build the next piece of safety.</strong>
+        <div><button onClick={() => onDonate(dreamNeed)}><Landmark size={17} /> Fund the transformation</button></div>
       </aside>}
-      <div className="dream-next">{chapter < 2 ? <button onClick={() => setChapter((chapter + 1) as 1 | 2)}>Continue <ArrowRight size={15} /></button> : <button onClick={onClose}>Save tonight’s dream <MoonStar size={15} /></button>}</div>
+      <div className="dream-next">{chapter < 2 ? <button onClick={() => setChapter((chapter + 1) as 1 | 2)}>{chapter === 0 ? 'See transformation' : 'Enter the dream'} <ArrowRight size={15} /></button> : <button onClick={onClose}>Keep Splotch’s dream <MoonStar size={15} /></button>}</div>
     </div>
   )
 }
@@ -811,7 +916,7 @@ function CareRoster({ onClose }: { onClose: () => void }) {
           {cats.map((cat) => (
             <article className={`roster-cat roster-${cat.difficulty}`} key={cat.id}>
               {cat.image ? <img src={cat.image} alt={`${cat.name}, a real Cat Gardens cat`} /> : <div className="roster-photo-pending" style={{ '--cat-color': cat.color } as React.CSSProperties}><PawPrint size={35} /><b>{cat.name.charAt(0)}</b><span>REAL PHOTO PENDING</span></div>}
-              <div><span>{cat.status === 'active' ? 'CURRENTLY ACTIVE' : 'MEMORIAL'} · {cat.difficulty.toUpperCase()} MODE</span><h3>{cat.name}</h3><b>{cat.nickname}</b><p>{cat.careSummary}</p><ul>{cat.careTasks.map((task) => <li key={task}><Check size={12} />{task}</li>)}</ul><button disabled={cat.id !== 'splotch'}>{cat.id === 'splotch' ? 'Your current sidekick' : cat.id === 'mabel' ? 'Advanced-care chapter in preparation' : 'Care profile in review'}</button></div>
+              <div><span>{cat.status === 'active' ? 'CURRENTLY ACTIVE' : 'MEMORIAL'} · {cat.difficulty.toUpperCase()} MODE</span><h3>{cat.name}</h3><b>{cat.nickname}</b><p>{cat.careSummary}</p><ul>{cat.careTasks.map((task) => <li key={task}><Check size={12} />{task}</li>)}</ul>{cat.id === 'splotch' || cat.id === 'mabel' ? <a className="roster-profile-link" href={`/${cat.name}`}>Open {cat.name}’s real profile</a> : <button disabled>Care profile in review</button>}</div>
             </article>
           ))}
         </section>
@@ -943,8 +1048,8 @@ function HelpPanel({ onClose }: { onClose: () => void }) {
           <span><b>WASD / ARROWS</b> Walk through the garden</span>
           <span><b>CLICK + DRAG</b> Trackpad walking pad</span>
           <span><b>SHIFT</b> Run</span>
-          <span><b>E</b> Talk, care, or open a portal</span>
-          <span><b>MY GARDEN</b> Place and upgrade objects</span>
+          <span><b>E / CLICK</b> Build, buy, water, care, or open</span>
+          <span><b>DESIGN GARDEN</b> Furnish the shelter after its roof is built</span>
           <span><b>R</b> Return to the garden gate</span>
         </div>
         <button className="secondary-button full" onClick={() => { resetRover(); onClose() }}><RotateCcw size={16} /> Return caretaker to gate</button>
@@ -970,6 +1075,10 @@ export default function App() {
   const bondVisits = useGame((state) => state.bondVisits)
   const loginDays = useGame((state) => state.loginDays)
   const lastDailyClaim = useGame((state) => state.lastDailyClaim)
+  const splotchDiscovered = useGame((state) => state.splotchDiscovered)
+  const shelterStage = useGame((state) => state.shelterStage)
+  const completedDays = useGame((state) => state.completedDays)
+  const realityVisits = useGame((state) => state.realityVisits)
   const [bondResult, setBondResult] = useState<{ advanced: boolean; visit: number } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
   const [realityOpen, setRealityOpen] = useState(false)
@@ -1001,7 +1110,31 @@ export default function App() {
   }, [account.getToken, account.loaded, account.signedIn])
   const handleAction = useCallback(() => {
     const game = useGame.getState()
+    if (game.nearby === 'basket') {
+      game.claimDailyBasket()
+      return
+    }
+    if (game.nearby === 'build') {
+      game.buildShelter()
+      return
+    }
+    if (game.nearby === 'home') {
+      setDesignerOpen(true)
+      return
+    }
+    if (game.nearby === 'supply') {
+      game.buyFood()
+      return
+    }
     if (game.nearby === 'cat') {
+      if (!game.splotchDiscovered) {
+        game.discoverSplotch()
+        return
+      }
+      if (game.shelterStage < 3) {
+        game.setNotification('Splotch is watching. Finish the shelter before dinner.')
+        return
+      }
       if (game.lastFedDate !== localDay() && game.feedDaily()) {
         window.setTimeout(playPurr, 650)
         return
@@ -1114,14 +1247,14 @@ export default function App() {
       <header className="game-header game-panel">
         <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>SPLOTCH · DAY {Math.max(1, loginDays)} · MEMORY {Math.min(7, bondVisits + 1)}/7</small></a>
         <nav>
-          <button className="tv-nav" onClick={() => setTvOpen(true)}><Radio size={17} /><span>Cat Gardens TV</span></button>
-          <button onClick={() => setRealityOpen(true)}><Video size={17} /><span>Reality</span></button>
-          <button onClick={() => setRosterOpen(true)}><PawPrint size={17} /><span>Cats</span></button>
-          <button onClick={() => setDesignerOpen(true)}><Leaf size={17} /><span>Design Garden</span></button>
-          <button onClick={() => setProfileOpen(true)}><UserRound size={17} /><span>My Profile</span></button>
-          <button onClick={() => setMorningOpen(true)}><Gift size={17} /><span>{lastDailyClaim === localDay() ? 'Basket' : 'Free Gift'}</span></button>
-          <button onClick={() => setHelpOpen(true)}><CircleHelp size={17} /><span>Help</span></button>
-          <button className="donate-nav" onClick={() => setDonationNeed(splotchNeeds.find((need) => need.id === 'food')!)}><CircleDollarSign size={17} /> Donate</button>
+          {completedDays > 0 && <button className="tv-nav" onClick={() => setTvOpen(true)}><Radio size={17} /><span>Cat Gardens TV</span></button>}
+          {splotchDiscovered && <button className="reality-nav" onClick={() => setRealityOpen(true)}><Video size={17} /><span>Reality</span></button>}
+          <button className="cats-nav" onClick={() => setRosterOpen(true)}><PawPrint size={17} /><span>Cats</span></button>
+          {shelterStage >= 3 && <button className="design-nav" onClick={() => setDesignerOpen(true)}><Leaf size={17} /><span>Design Garden</span></button>}
+          <button className="profile-nav" onClick={() => setProfileOpen(true)}><UserRound size={17} /><span>My Profile</span></button>
+          <button className="gift-nav" onClick={() => setMorningOpen(true)}><Gift size={17} /><span>{lastDailyClaim === localDay() ? 'Basket' : 'Free Gift'}</span></button>
+          <button className="help-nav" onClick={() => setHelpOpen(true)}><CircleHelp size={17} /><span>Help</span></button>
+          {realityVisits > 0 && <button className="donate-nav" onClick={() => setDonationNeed(splotchNeeds.find((need) => need.id === 'food')!)}><CircleDollarSign size={17} /> Donate</button>}
         </nav>
       </header>
 
@@ -1146,7 +1279,7 @@ export default function App() {
         />
       )}
 
-      {!started && <StartMission onStart={() => { start(); setMorningOpen(true) }} />}
+      {!started && <StartMission onStart={start} />}
       {morningOpen && <MorningBasketModal onClose={() => setMorningOpen(false)} />}
       {personOpen && <PersonDialogue person={personOpen} onClose={() => setPersonOpen(null)} />}
       {bondResult && <BondResultModal result={bondResult} onClose={() => setBondResult(null)} />}

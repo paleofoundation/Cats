@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+  <url>
+    <loc>https://catgardens.org/Mabel</loc>
+    <video:video>
+      <video:thumbnail_loc>https://catgardens.org/videos/mabel-sunbeam.jpg</video:thumbnail_loc>
+      <video:title>Mabel in the Cyprus sun</video:title>
+      <video:description>Mabel, a real FIV-positive Cat Gardens resident in Cyprus, grooms herself during a quiet sunlit moment.</video:description>
+      <video:content_loc>https://catgardens.org/videos/mabel-sunbeam.mp4</video:content_loc>
+      <video:publication_date>2026-08-15T18:20:00+03:00</video:publication_date>
+      <video:duration>11</video:duration>
+    </video:video>
+  </url>
+  <url>
+    <loc>https://catgardens.org/Splotch</loc>
+    <video:video>
+      <video:thumbnail_loc>https://catgardens.org/videos/splotch-petting.jpg</video:thumbnail_loc>
+      <video:title>Splotch asks for more pets</video:title>
+      <video:description>Splotch, the real big orange Cat Gardens cat in Cyprus, approaches Karen for affection while other sanctuary cats gather nearby.</video:description>
+      <video:content_loc>https://catgardens.org/videos/splotch-petting.mp4</video:content_loc>
+      <video:publication_date>2026-08-15T18:20:00+03:00</video:publication_date>
+      <video:duration>34</video:duration>
+    </video:video>
+  </url>
+</urlset>

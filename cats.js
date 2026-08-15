@@ -187,7 +187,7 @@ function openLightbox(element) {
     lbImg.src = img;
     lbName.textContent = name;
     lbDesc.textContent = desc;
-    lbLink.href = `profile.html?id=${id}`;
+    lbLink.href = id === 'mabel' ? '/Mabel' : id === 'splotch' ? '/Splotch' : `/profile.html?id=${id}`;
 
     // Show
     lightbox.classList.remove('hidden');
