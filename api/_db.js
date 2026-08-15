@@ -187,6 +187,47 @@ async function ensureSchema() {
           created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
       `
+      await sql`
+        CREATE TABLE IF NOT EXISTS garden_participation_requests (
+          request_id BIGSERIAL PRIMARY KEY,
+          request_type TEXT NOT NULL,
+          full_name TEXT NOT NULL,
+          email TEXT NOT NULL,
+          location TEXT,
+          availability TEXT,
+          interests JSONB NOT NULL DEFAULT '[]'::jsonb,
+          message TEXT,
+          privacy_consent BOOLEAN NOT NULL DEFAULT FALSE,
+          status TEXT NOT NULL DEFAULT 'new',
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `
+      await sql`CREATE INDEX IF NOT EXISTS garden_participation_status_idx ON garden_participation_requests (status, created_at DESC)`
+      await sql`
+        CREATE TABLE IF NOT EXISTS garden_cat_relationships (
+          relationship_id BIGSERIAL PRIMARY KEY,
+          cat_id TEXT NOT NULL REFERENCES garden_cats(cat_id),
+          related_cat_id TEXT NOT NULL REFERENCES garden_cats(cat_id),
+          relationship_label TEXT NOT NULL,
+          public BOOLEAN NOT NULL DEFAULT TRUE,
+          source_status TEXT NOT NULL DEFAULT 'sanctuary_reported',
+          UNIQUE (cat_id, related_cat_id, relationship_label)
+        )
+      `
+      await sql`
+        CREATE TABLE IF NOT EXISTS garden_care_schedules (
+          schedule_id BIGSERIAL PRIMARY KEY,
+          cat_id TEXT NOT NULL REFERENCES garden_cats(cat_id),
+          care_name TEXT NOT NULL,
+          care_category TEXT NOT NULL,
+          cadence TEXT,
+          notes TEXT,
+          status TEXT NOT NULL DEFAULT 'awaiting_import',
+          public BOOLEAN NOT NULL DEFAULT FALSE,
+          source TEXT,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `
 
       await sql`
         INSERT INTO garden_cats (cat_id, name, summary, difficulty, profile_path)
@@ -194,8 +235,25 @@ async function ensureSchema() {
           ('splotch', 'Splotch', 'A large orange adult male who loves unhurried human attention and currently lives near a busy road.', 'easy', '/Splotch'),
           ('mabel', 'Mabel', 'A shy, affectionate FIV-positive resident with a higher-support care routine.', 'advanced', '/Mabel'),
           ('gabriel', 'Gabriel', 'A long-haired trust graduate who needs patient social time and warm-weather brushing.', 'easy', '/cats'),
-          ('poly', 'Poly', 'Gabriel’s affectionate long-haired sister, with a recurring summer coat-care routine.', 'easy', '/cats')
+          ('poly', 'Poly', 'Gabriel’s affectionate long-haired sister, with a recurring summer coat-care routine.', 'easy', '/cats'),
+          ('chili-pepper', 'Chili Pepper', 'Show Pony: an energetic resident and sister of Zucchini and the late Cucumber.', 'easy', '/cats'),
+          ('zucchini', 'Zucchini', 'Chili Pepper’s sibling. A fuller sanctuary-reviewed profile is being prepared.', 'easy', '/cats'),
+          ('cucumber', 'Cucumber', 'Chili Pepper and Zucchini’s sibling, remembered after dying from FIP.', 'advanced', '/cats'),
+          ('gemini', 'Gemini', 'One half of the inseparable pair known at Cat Gardens as the Honeymooners.', 'easy', '/cats'),
+          ('nelly', 'Nelly', 'Also called Nelly Belly; Gemini’s constant companion and the other Honeymooner.', 'easy', '/cats')
         ON CONFLICT (cat_id) DO NOTHING
+      `
+
+      await sql`UPDATE garden_cats SET life_status = 'passed' WHERE cat_id = 'cucumber'`
+      await sql`
+        INSERT INTO garden_cat_relationships (cat_id, related_cat_id, relationship_label)
+        VALUES
+          ('chili-pepper', 'zucchini', 'siblings'),
+          ('chili-pepper', 'cucumber', 'siblings · Cucumber in memory'),
+          ('zucchini', 'cucumber', 'siblings · Cucumber in memory'),
+          ('gemini', 'nelly', 'bonded pair · The Honeymooners'),
+          ('nelly', 'gemini', 'bonded pair · The Honeymooners')
+        ON CONFLICT (cat_id, related_cat_id, relationship_label) DO NOTHING
       `
 
       const overflowPolicy = 'If this need is already covered, the sanctuary will route the gift to the next published care need for this cat or to daily sanctuary care. The final allocation will appear in the care record.'
@@ -207,6 +265,9 @@ async function ensureSchema() {
         ) VALUES
           ('general-care', NULL, 'sanctuary', 'Daily sanctuary care', 'Food, water, cleaning, bedding, routine observation, transport, and the human work required to care for more than ninety cats.', NULL, 1000, 'open', 'published', ${generalPolicy}),
           ('food', 'splotch', 'cat-care', 'Food for Splotch and the shared garden', 'A recurring need. The reviewed monthly cost will be added after accounting review rather than estimated inside the game.', NULL, 1000, 'open', 'published', ${overflowPolicy}),
+          ('medical-care', NULL, 'sanctuary', 'Veterinary and medical care', 'Reviewed veterinary visits, diagnostics, medication, supportive care, transport, and medical supplies for Cat Gardens residents.', NULL, 10000, 'open', 'published', ${generalPolicy}),
+          ('care-team', NULL, 'sanctuary', 'The human care team', 'The real people who feed, clean, observe, transport, brush, medicate, document, and spend patient time with the cats.', NULL, 10000, 'open', 'published', ${generalPolicy}),
+          ('full-month', NULL, 'sanctuary', 'One historical operating month', 'A $12,000 historical operating snapshot from the original sanctuary website. Current costs are being reconciled; this is not presented as a live audited monthly total.', 1200000, 1200000, 'historical_snapshot', 'published', ${generalPolicy}),
           ('future-dental', 'splotch', 'cat-care', 'Splotch’s preventive dental reserve', 'Splotch has no current health crisis. Timing and cost must be reviewed with the sanctuary veterinarian before this need is marked scheduled.', NULL, 2500, 'review', 'published', ${overflowPolicy}),
           ('petting', 'splotch', 'cat-care', 'A documented petting session', 'Dedicated human time for Splotch, followed by a caretaker-confirmed update for the people bonded with him.', NULL, 1500, 'open', 'published', ${overflowPolicy}),
           ('media', 'splotch', 'cat-care', 'Splotch photography and video', 'A real photography or video session that becomes a verified dispatch in Splotch’s journal and playable garden.', NULL, 2500, 'open', 'published', ${overflowPolicy}),

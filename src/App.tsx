@@ -925,7 +925,7 @@ function CareRoster({ onClose }: { onClose: () => void }) {
           {cats.map((cat) => (
             <article className={`roster-cat roster-${cat.difficulty}`} key={cat.id}>
               {cat.image ? <img src={cat.image} alt={`${cat.name}, a real Cat Gardens cat`} /> : <div className="roster-photo-pending" style={{ '--cat-color': cat.color } as React.CSSProperties}><PawPrint size={35} /><b>{cat.name.charAt(0)}</b><span>REAL PHOTO PENDING</span></div>}
-              <div><span>{cat.status === 'active' ? 'CURRENTLY ACTIVE' : 'MEMORIAL'} · {cat.difficulty.toUpperCase()} MODE</span><h3>{cat.name}</h3><b>{cat.nickname}</b><p>{cat.careSummary}</p><ul>{cat.careTasks.map((task) => <li key={task}><Check size={12} />{task}</li>)}</ul>{cat.id === 'splotch' || cat.id === 'mabel' ? <a className="roster-profile-link" href={`/${cat.name}`}>Open {cat.name}’s real profile</a> : <button disabled>Care profile in review</button>}</div>
+              <div><span>{cat.status === 'active' ? 'CURRENTLY ACTIVE' : 'MEMORIAL'} · {cat.difficulty.toUpperCase()} MODE</span><h3>{cat.name}</h3><b>{cat.nickname}</b><p>{cat.careSummary}</p>{cat.relationships && <div className="cat-relationships">{cat.relationships.map((relationship) => <small key={relationship}>{relationship}</small>)}</div>}<ul>{cat.careTasks.map((task) => <li key={task}><Check size={12} />{task}</li>)}</ul>{cat.status === 'passed' ? <button disabled>Memorial profile in review</button> : cat.id === 'splotch' ? <button onClick={onClose}>Play with Splotch</button> : cat.id === 'mabel' ? <a className="roster-profile-link" href="/Mabel">Play with Mabel · profile first</a> : <button disabled>Play with {cat.name} · coming next</button>}</div>
             </article>
           ))}
         </section>
@@ -1102,6 +1102,16 @@ export default function App() {
   const [morningOpen, setMorningOpen] = useState(false)
   const [personOpen, setPersonOpen] = useState<PersonId | null>(null)
   const [donationNeed, setDonationNeed] = useState<SplotchNeed | null>(null)
+  const [requestedCompanion] = useState(() => new URLSearchParams(window.location.search).get('companion'))
+  useEffect(() => {
+    if (!started || !requestedCompanion || requestedCompanion === 'splotch') return
+    const cat = cats.find((candidate) => candidate.id === requestedCompanion || candidate.name.toLowerCase() === requestedCompanion.toLowerCase())
+    if (!cat) return
+    setRosterOpen(true)
+    setNotification(cat.status === 'passed'
+      ? `${cat.name} is remembered here. Memorial profiles never become play pressure.`
+      : `${cat.name} is now in the relationship roster. Their playable routine is being prepared from real sanctuary records.`)
+  }, [requestedCompanion, setNotification, started])
   useEffect(() => {
     if (!realityFeed.feed) return
     useGame.getState().setVerifiedRealityArtifacts(realityFeed.feed.worldArtifacts)

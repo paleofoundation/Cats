@@ -1,6 +1,6 @@
 import { StrictMode, useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ArrowLeft, BadgeCheck, CircleDollarSign, FileCheck2, LoaderCircle, LogIn, RefreshCw, Send, Shield, Video } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, CircleDollarSign, FileCheck2, LoaderCircle, LogIn, RefreshCw, Send, Shield, Users, Video } from 'lucide-react'
 import { GardenAccountProvider, useGardenAccount } from './account'
 import './caretaker.css'
 
@@ -18,7 +18,8 @@ type CareNeed = {
 type CareEvent = { event_id: number; cat_id: string | null; need_id: string | null; title: string; detail: string; event_type: string; public: boolean; occurred_at: string }
 type CareProof = { proof_id: number; event_id: number | null; title: string; url: string; kind: string; public: boolean; published_at: string | null }
 type CareDonation = { session_id: string; amount_cents: number; currency: string; need_id: string | null; donor_name: string | null; allocation_status: string; allocated_amount_cents: number | null; created_at: string }
-type CaretakerData = { caretaker: { userId: string; role: string }; needs: CareNeed[]; events: CareEvent[]; proofs: CareProof[]; donations: CareDonation[] }
+type ParticipationRequest = { request_id: number; request_type: string; full_name: string; email: string; location: string | null; availability: string | null; interests: string[]; message: string | null; status: string; created_at: string }
+type CaretakerData = { caretaker: { userId: string; role: string }; needs: CareNeed[]; events: CareEvent[]; proofs: CareProof[]; donations: CareDonation[]; participationRequests: ParticipationRequest[] }
 
 const money = (cents: number, currency = 'usd') => new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() }).format(cents / 100)
 
@@ -125,6 +126,7 @@ function CaretakerRoom() {
             <article><small>PUBLISHED NEEDS</small><strong>{data.needs.length}</strong><span>no invented totals</span></article>
             <article><small>FIELD EVENTS</small><strong>{data.events.length}</strong><span>public and private</span></article>
             <article><small>PROOF ASSETS</small><strong>{data.proofs.length}</strong><span>receipts, photos, video</span></article>
+            <article><small>PEOPLE OFFERING HELP</small><strong>{data.participationRequests.filter((item) => item.status === 'new').length}</strong><span>new private requests</span></article>
           </section>
 
           <section className="care-section">
@@ -133,7 +135,12 @@ function CaretakerRoom() {
           </section>
 
           <section className="care-section">
-            <div className="care-section-title"><div><p className="care-eyebrow">02 · PUBLISH ONLY WHAT IS KNOWN</p><h2>Care needs.</h2></div><BadgeCheck /></div>
+            <div className="care-section-title"><div><p className="care-eyebrow">02 · REAL PEOPLE ENTER THE WORK</p><h2>Participation requests.</h2></div><Users /></div>
+            {data.participationRequests.length === 0 ? <p className="care-empty">No participation requests have arrived yet.</p> : <div className="participation-list">{data.participationRequests.map((request) => <ParticipationReview key={request.request_id} request={request} busy={busy} onReview={(body) => mutate(body, `${request.full_name}’s request was updated.`)} />)}</div>}
+          </section>
+
+          <section className="care-section">
+            <div className="care-section-title"><div><p className="care-eyebrow">03 · PUBLISH ONLY WHAT IS KNOWN</p><h2>Care needs.</h2></div><BadgeCheck /></div>
             <div className="needs-admin-grid">{data.needs.map((need) => <NeedEditor key={`${need.need_id}-${need.status}-${need.fulfillment_status}-${need.goal_cents}`} need={need} busy={busy} onSave={(body) => mutate(body, `${need.title} was updated.`)} />)}</div>
           </section>
 
@@ -147,6 +154,11 @@ function CaretakerRoom() {
   )
 }
 
+function ParticipationReview({ request, busy, onReview }: { request: ParticipationRequest; busy: boolean; onReview: (body: Record<string, unknown>) => Promise<void> }) {
+  const [status, setStatus] = useState(request.status)
+  return <article className="participation-row"><div><small>{request.request_type.replace('-', ' ').toUpperCase()}</small><strong>{request.full_name}</strong><a href={`mailto:${request.email}`}>{request.email}</a><span>{request.location || 'Location not supplied'} · {new Date(request.created_at).toLocaleString()}</span></div><div><b>INTERESTS</b><p>{request.interests?.length ? request.interests.join(' · ') : 'Not specified'}</p><b>AVAILABILITY</b><p>{request.availability || 'Not specified'}</p></div><div><b>MESSAGE</b><p>{request.message || 'No additional message.'}</p></div><label>Review state<select value={status} onChange={(event) => setStatus(event.target.value)}><option>new</option><option>reviewing</option><option>contacted</option><option>scheduled</option><option>closed</option></select><button disabled={busy || status === request.status} onClick={() => onReview({ action: 'review_participation', requestId: request.request_id, status })}><BadgeCheck size={13} /> Save</button></label></article>
+}
+
 function AllocationEditor({ donation, needs, busy, onReview }: { donation: CareDonation; needs: CareNeed[]; busy: boolean; onReview: (body: Record<string, unknown>) => Promise<void> }) {
   const [needId, setNeedId] = useState(donation.need_id || 'general-care')
   const [note, setNote] = useState('')
@@ -154,11 +166,11 @@ function AllocationEditor({ donation, needs, busy, onReview }: { donation: CareD
 }
 
 function EventPublisher({ needs, busy, onPublish }: { needs: CareNeed[]; busy: boolean; onPublish: (body: Record<string, unknown>) => Promise<void> }) {
-  return <form className="publish-card" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const formElement = event.currentTarget; const form = new FormData(formElement); onPublish({ action: 'publish_event', eventType: form.get('eventType'), catId: form.get('catId'), needId: form.get('needId'), title: form.get('title'), detail: form.get('detail'), worldArtifact: form.get('worldArtifact'), public: form.get('public') === 'on' }).then(() => formElement.reset()) }}><Video /><p className="care-eyebrow">03 · FIELD DISPATCH</p><h2>Record what happened.</h2><label>Type<select name="eventType"><option value="care.completed">Care completed</option><option value="dispatch.published">Dispatch published</option><option value="need.updated">Need updated</option><option value="cat.updated">Cat update</option><option value="funds.allocated">Funds allocated</option></select></label><div className="care-form-row"><label>Cat<select name="catId"><option value="">Sanctuary-wide</option><option value="splotch">Splotch</option><option value="mabel">Mabel</option><option value="gabriel">Gabriel</option><option value="poly">Poly</option></select></label><label>Need<select name="needId"><option value="">None</option>{needs.map((need) => <option value={need.need_id} key={need.need_id}>{need.title}</option>)}</select></label></div><label>Title<input name="title" required maxLength={160} /></label><label>What happened<textarea name="detail" rows={4} required maxLength={1600} /></label><label>World artifact key<input name="worldArtifact" placeholder="Optional · e.g. splotch-field-update" /></label><label className="care-check"><input type="checkbox" name="public" /> Publish to the player’s reality thread</label><button disabled={busy}><Send size={15} /> Record event</button></form>
+  return <form className="publish-card" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const formElement = event.currentTarget; const form = new FormData(formElement); onPublish({ action: 'publish_event', eventType: form.get('eventType'), catId: form.get('catId'), needId: form.get('needId'), title: form.get('title'), detail: form.get('detail'), worldArtifact: form.get('worldArtifact'), public: form.get('public') === 'on' }).then(() => formElement.reset()) }}><Video /><p className="care-eyebrow">04 · FIELD DISPATCH</p><h2>Record what happened.</h2><label>Type<select name="eventType"><option value="care.completed">Care completed</option><option value="dispatch.published">Dispatch published</option><option value="need.updated">Need updated</option><option value="cat.updated">Cat update</option><option value="funds.allocated">Funds allocated</option></select></label><div className="care-form-row"><label>Cat<select name="catId"><option value="">Sanctuary-wide</option><option value="splotch">Splotch</option><option value="mabel">Mabel</option><option value="gabriel">Gabriel</option><option value="poly">Poly</option></select></label><label>Need<select name="needId"><option value="">None</option>{needs.map((need) => <option value={need.need_id} key={need.need_id}>{need.title}</option>)}</select></label></div><label>Title<input name="title" required maxLength={160} /></label><label>What happened<textarea name="detail" rows={4} required maxLength={1600} /></label><label>World artifact key<input name="worldArtifact" placeholder="Optional · e.g. splotch-field-update" /></label><label className="care-check"><input type="checkbox" name="public" /> Publish to the player’s reality thread</label><button disabled={busy}><Send size={15} /> Record event</button></form>
 }
 
 function ProofPublisher({ events, busy, onPublish }: { events: CareEvent[]; busy: boolean; onPublish: (body: Record<string, unknown>) => Promise<void> }) {
-  return <form className="publish-card" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const formElement = event.currentTarget; const form = new FormData(formElement); onPublish({ action: 'publish_proof', eventId: Number(form.get('eventId')), kind: form.get('kind'), title: form.get('title'), url: form.get('url'), source: form.get('source'), public: form.get('public') === 'on', redacted: form.get('redacted') === 'on' }).then(() => formElement.reset()) }}><FileCheck2 /><p className="care-eyebrow">04 · PROOF</p><h2>Close the loop.</h2><label>Care event<select name="eventId" required><option value="">Choose an event</option>{events.map((event) => <option value={event.event_id} key={event.event_id}>{event.title}</option>)}</select></label><label>Proof type<select name="kind"><option>video</option><option>photo</option><option>receipt</option><option>document</option><option>livestream</option></select></label><label>Title<input name="title" required maxLength={160} /></label><label>Secure URL<input name="url" type="text" required placeholder="https://… or /videos/…" /></label><label>Source<input name="source" placeholder="Sanctuary record" /></label><label className="care-check"><input type="checkbox" name="redacted" /> Sensitive details were redacted</label><label className="care-check"><input type="checkbox" name="public" /> Publish with the event</label><button disabled={busy}><FileCheck2 size={15} /> Attach proof</button></form>
+  return <form className="publish-card" onSubmit={(event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const formElement = event.currentTarget; const form = new FormData(formElement); onPublish({ action: 'publish_proof', eventId: Number(form.get('eventId')), kind: form.get('kind'), title: form.get('title'), url: form.get('url'), source: form.get('source'), public: form.get('public') === 'on', redacted: form.get('redacted') === 'on' }).then(() => formElement.reset()) }}><FileCheck2 /><p className="care-eyebrow">05 · PROOF</p><h2>Close the loop.</h2><label>Care event<select name="eventId" required><option value="">Choose an event</option>{events.map((event) => <option value={event.event_id} key={event.event_id}>{event.title}</option>)}</select></label><label>Proof type<select name="kind"><option>video</option><option>photo</option><option>receipt</option><option>document</option><option>livestream</option></select></label><label>Title<input name="title" required maxLength={160} /></label><label>Secure URL<input name="url" type="text" required placeholder="https://… or /videos/…" /></label><label>Source<input name="source" placeholder="Sanctuary record" /></label><label className="care-check"><input type="checkbox" name="redacted" /> Sensitive details were redacted</label><label className="care-check"><input type="checkbox" name="public" /> Publish with the event</label><button disabled={busy}><FileCheck2 size={15} /> Attach proof</button></form>
 }
 
 createRoot(document.getElementById('root')!).render(<StrictMode><GardenAccountProvider><CaretakerRoom /></GardenAccountProvider></StrictMode>)

@@ -4,7 +4,7 @@ const { authenticateGardenRequest } = require('./_auth')
 
 const MINIMUM_AMOUNT_CENTS = 500
 const MAXIMUM_AMOUNT_CENTS = 50000000
-const NEEDS = new Set(['food', 'future-dental', 'petting', 'media', 'tracker', 'mathikoloni', 'tv-pilot', 'tv-operations', 'gabriel-trust', 'fluff-care'])
+const NEEDS = new Set(['general-care', 'food', 'medical-care', 'care-team', 'full-month', 'future-dental', 'petting', 'media', 'tracker', 'mathikoloni', 'tv-pilot', 'tv-operations', 'gabriel-trust', 'fluff-care'])
 const BADGES = new Set(['bowl-bringer', 'gentle-hands', 'storykeeper', 'bright-bite', 'safe-passage', 'dream-builder', 'garden-keeper', 'broadcast-builder', 'trust-keeper', 'fluff-crew'])
 const CAT_IDS = new Set(['splotch', 'cat-gardens', 'gabriel', 'gabriel-and-poly'])
 const PROGRAMS = new Set(['cat-care', 'cat-gardens-tv', 'sanctuary'])
@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
   if (!process.env.STRIPE_SECRET_KEY) return res.status(503).json({ error: 'Secure checkout is not configured.' })
 
   try {
-    const { amount, frequency, needId, needTitle, badge, email, donorName, catId, program } = req.body || {}
+    const { amount, frequency, needId, needTitle, badge, email, donorName, catId, program, returnTo } = req.body || {}
     const account = await authenticateGardenRequest(req, { optional: true })
     const amountCents = Math.round(Number(amount) * 100)
     const isMonthly = frequency === 'monthly'
@@ -71,7 +71,7 @@ module.exports = async function handler(req, res) {
           unit_amount: amountCents,
           product_data: {
             name: isMonthly ? 'Monthly Cat Gardens donation' : 'Cat Gardens donation',
-            description: `${safeCatId === 'cat-gardens' ? 'Cat Gardens TV' : safeCatId === 'gabriel-and-poly' ? 'Gabriel + Poly' : safeCatId.charAt(0).toUpperCase() + safeCatId.slice(1)} — ${safeTitle}`,
+            description: `${safeCatId === 'cat-gardens' ? 'Cat Gardens sanctuary' : safeCatId === 'gabriel-and-poly' ? 'Gabriel + Poly' : safeCatId.charAt(0).toUpperCase() + safeCatId.slice(1)} — ${safeTitle}`,
           },
           ...(isMonthly ? { recurring: { interval: 'month' } } : {}),
         },
@@ -79,7 +79,9 @@ module.exports = async function handler(req, res) {
       metadata: sharedMetadata,
       subscription_data: isMonthly ? { metadata: sharedMetadata } : undefined,
       payment_intent_data: isMonthly ? undefined : { metadata: sharedMetadata },
-      return_url: `${origin}/?donation=complete&session_id={CHECKOUT_SESSION_ID}`,
+      return_url: returnTo === 'donate'
+        ? `${origin}/donation-success.html?session_id={CHECKOUT_SESSION_ID}`
+        : `${origin}/?donation=complete&session_id={CHECKOUT_SESSION_ID}`,
     })
 
     return res.status(200).json({ clientSecret: session.client_secret })

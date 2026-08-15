@@ -19,6 +19,7 @@ export type Cat = {
   status: 'active' | 'passed'
   careSummary: string
   careTasks: string[]
+  relationships?: string[]
 }
 
 export type Place = {
@@ -207,6 +208,59 @@ export const cats: Cat[] = [
     status: 'active',
     careSummary: 'A social resident whose full care profile is awaiting sanctuary review.',
     careTasks: ['Daily food and fresh water', 'Observation', 'Social time'],
+    relationships: ['Sister of Zucchini', 'Sister of Cucumber (“Cucumba”), remembered after FIP'],
+  },
+  {
+    id: 'zucchini',
+    name: 'Zucchini',
+    nickname: 'The Sibling Story',
+    color: '#879c68',
+    role: 'Family relationship companion',
+    story: 'Chili Pepper’s sibling and part of the same family as the late Cucumber. A fuller profile will be added as photographs and sanctuary notes are reviewed.',
+    difficulty: 'easy',
+    status: 'active',
+    careSummary: 'A current resident whose individual care history and personality notes are being prepared for publication.',
+    careTasks: ['Daily food and fresh water', 'Observation', 'Social time'],
+    relationships: ['Sibling of Chili Pepper', 'Sibling of Cucumber (“Cucumba”), in memory'],
+  },
+  {
+    id: 'cucumber',
+    name: 'Cucumber',
+    nickname: 'Cucumba',
+    color: '#708368',
+    role: 'Memorial sibling',
+    story: 'Chili Pepper and Zucchini’s brother died from FIP. His family remembers him with an entire song.',
+    difficulty: 'advanced',
+    status: 'passed',
+    careSummary: 'Cucumber’s profile is a memorial and family record. It will not turn his death into a countdown, blame mechanic, or donation pressure event.',
+    careTasks: ['Preserve his story', 'Connect his siblings’ history', 'Explain why FIP care matters'],
+    relationships: ['Brother of Chili Pepper', 'Brother of Zucchini'],
+  },
+  {
+    id: 'gemini',
+    name: 'Gemini',
+    nickname: 'The Honeymooner',
+    color: '#8f765e',
+    role: 'Bonded-pair companion',
+    story: 'Gemini and Nelly are called “the Honeymooners” because they are almost always together.',
+    difficulty: 'easy',
+    status: 'active',
+    careSummary: 'Gemini’s playable care story should preserve the bond with Nelly rather than treating either cat as an isolated collectible.',
+    careTasks: ['Daily food and water', 'Shared enrichment', 'Observe the bonded pair together'],
+    relationships: ['Bonded with Nelly (“Nelly Belly”) · The Honeymooners'],
+  },
+  {
+    id: 'nelly',
+    name: 'Nelly',
+    nickname: 'Nelly Belly',
+    color: '#796758',
+    role: 'Bonded-pair companion',
+    story: 'Nelly is Gemini’s constant companion and the other half of the pair known as the Honeymooners.',
+    difficulty: 'easy',
+    status: 'active',
+    careSummary: 'Nelly’s playable care story should preserve her daily relationship with Gemini.',
+    careTasks: ['Daily food and water', 'Shared enrichment', 'Observe the bonded pair together'],
+    relationships: ['Bonded with Gemini · The Honeymooners'],
   },
   {
     id: 'mabel',
@@ -228,11 +282,11 @@ export const cats: Cat[] = [
     image: charlie,
     color: '#7e6556',
     role: 'Road-risk rescue',
-    story: 'Found with four siblings beside a football field and a busy Germasogeia road. Charlie is safe, healthy, and adoptable.',
+    story: 'Found with four siblings beside a football field and a busy Germasogeia road. Charlie is safe, healthy, and part of the Cat Gardens resident family.',
     difficulty: 'easy',
     status: 'active',
-    careSummary: 'A healthy, adoptable resident whose care profile is awaiting sanctuary review.',
-    careTasks: ['Daily food and fresh water', 'Safe housing', 'Adoption preparation'],
+    careSummary: 'A healthy resident whose care profile is awaiting sanctuary review.',
+    careTasks: ['Daily food and fresh water', 'Safe housing', 'Observation and social time'],
   },
 ]
 

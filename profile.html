@@ -149,7 +149,7 @@
                 </a>
                 <ul class="nav-links">
 
-                    <li><a href="adoptions.html">The Cats</a></li>
+                    <li><a href="/cats">The Cats</a></li>
                     <li><a href="cat-crisis.html">The Crisis</a></li>
                     <li><a href="campaigns.html">Campaigns</a></li>
                     <li><a href="sponsor.html">Sponsor</a></li>
@@ -197,7 +197,7 @@
                     <h4 style="color: white; margin-bottom: 1rem;">Discover</h4>
                     <ul style="list-style: none; padding: 0;">
                         <li style="margin-bottom: 0.5rem;"><a href="index.html" style="color: #9ca3af;">Home</a></li>
-                        <li style="margin-bottom: 0.5rem;"><a href="adoptions.html" style="color: #9ca3af;">The Cats</a>
+                        <li style="margin-bottom: 0.5rem;"><a href="/cats" style="color: #9ca3af;">The Cats</a>
                         </li>
                         <li style="margin-bottom: 0.5rem;"><a href="campaigns.html"
                                 style="color: #9ca3af;">Campaigns</a></li>
@@ -234,7 +234,7 @@
                 container.innerHTML = `
                     <div class="container" style="text-align: center; padding: 4rem;">
                         <h2>Cat Not Found</h2>
-                        <p>We couldn't find the cat you're looking for. <a href="adoptions.html" style="color: var(--color-accent); text-decoration: underline;">View all cats</a>.</p>
+                        <p>We couldn't find the cat you're looking for. <a href="/cats" style="color: var(--color-accent); text-decoration: underline;">View all cats</a>.</p>
                     </div>
                 `;
                 return;
@@ -244,22 +244,12 @@
 
             // Build Campaign HTML if active
             let campaignHtml = '';
-            const isSponsored = (JSON.parse(localStorage.getItem('sponsored_cats') || '[]')).includes(catId);
-            const sponsorBtnText = isSponsored ? "✅ You Sponsor " + cat.name : "❤️ Sponsor " + cat.name;
-            const sponsorBtnClass = isSponsored ? "btn btn-outline" : "btn btn-primary";
+            const sponsorBtnText = "🐾 Play with " + cat.name;
+            const sponsorBtnClass = "btn btn-primary";
 
-            // Function to handle sponsorship click
+            // Enter the relationship experience for this real cat.
             window.toggleSponsor = function () {
-                let sponsored = JSON.parse(localStorage.getItem('sponsored_cats') || '[]');
-                if (sponsored.includes(catId)) {
-                    // Optional: remove sponsorship? For now let's just keep it simple.
-                    alert(`You are already sponsoring ${cat.name}!`);
-                } else {
-                    sponsored.push(catId);
-                    localStorage.setItem('sponsored_cats', JSON.stringify(sponsored));
-                    alert(`Thank you for sponsoring ${cat.name}! You will now receive updates about them.`);
-                    location.reload(); // Reload to update UI
-                }
+                window.location.href = `/?companion=${encodeURIComponent(catId)}`;
             }
 
             if (cat.campaign) {
@@ -286,7 +276,7 @@
                     <div style="margin-top: 2rem;">
                         <div style="display: flex; gap: 0.5rem; align-items: center;">
                             <button onclick="toggleSponsor()" class="${sponsorBtnClass}" style="flex: 1; padding: 1.2rem;">${sponsorBtnText}</button>
-                            <button onclick="openSponsorInfo()" style="background: none; border: none; cursor: pointer; color: #9ca3af; padding: 0.5rem;" title="What does it mean to sponsor?">
+                            <button onclick="openSponsorInfo()" style="background: none; border: none; cursor: pointer; color: #9ca3af; padding: 0.5rem;" title="How does play connect to a real cat?">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -294,7 +284,7 @@
                                 </svg>
                             </button>
                         </div>
-                        <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--color-text-light); text-align: center;">Processing donations securely via Stripe.</p>
+                        <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--color-text-light); text-align: center;">Play is free. Real-world giving remains optional and separate.</p>
                     </div>
 
                     <!-- Sponsor Info Modal -->
@@ -302,14 +292,14 @@
                         <div style="background: white; width: 90%; max-width: 500px; border-radius: 12px; padding: 2rem; position: relative; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
                             <button onclick="closeSponsorInfo()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">&times;</button>
                             
-                            <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--color-primary);">What does it mean to sponsor a cat?</h3>
+                            <h3 style="font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--color-primary);">What does it mean to play with a real cat?</h3>
                             
                             <div style="font-size: 1rem; line-height: 1.6; color: #374151; space-y: 1rem;">
-                                <p style="margin-bottom: 1rem;">Sponsoring a cat connects your support to a specific animal while funding the sanctuary that cares for them. Your contribution helps cover food, veterinary care, shelter, and daily support, ensuring that all cats, including the one you sponsor, receive consistent, humane care.</p>
+                                <p style="margin-bottom: 1rem;">The playable companion is tied to a real Cat Gardens resident. Their personality, relationships, needs, and updates come from sanctuary-reviewed information.</p>
                                 
-                                <p style="margin-bottom: 1rem;">Sponsorship provides ongoing updates about your sponsored cat, such as photos and brief progress notes. It does not imply ownership or decision-making authority. Medical and welfare decisions remain with the sanctuary to ensure the best outcome for every animal.</p>
+                                <p style="margin-bottom: 1rem;">Playing does not imply ownership or decision-making authority. Medical and welfare decisions remain with the sanctuary. Real donations are optional and never become fictional game currency.</p>
                                 
-                                <p>Sponsoring a cat creates connection and accountability while preserving ethical, collective care.</p>
+                                <p>The goal is connection, truthful updates, and ethical collective care.</p>
                             </div>
                             
                             <button onclick="closeSponsorInfo()" class="btn btn-primary" style="width: 100%; margin-top: 2rem;">Got it</button>

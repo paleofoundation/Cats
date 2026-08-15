@@ -17,6 +17,7 @@ const NEED_STATUSES = new Set(['open', 'review', 'proposed', 'funded', 'fulfille
 const FULFILLMENT_STATUSES = new Set(['published', 'funding', 'funded', 'ordered', 'in_progress', 'verified'])
 const PROOF_KINDS = new Set(['photo', 'video', 'receipt', 'vet-note', 'document', 'livestream'])
 const ALLOCATION_STATUSES = new Set(['pending_sanctuary_review', 'allocated', 'fulfilled', 'refunded'])
+const PARTICIPATION_STATUSES = new Set(['new', 'reviewing', 'contacted', 'scheduled', 'closed'])
 const ID_PATTERN = /^[a-z0-9-]{1,80}$/
 
 function safeText(value, maximum = 500) {
@@ -56,7 +57,7 @@ module.exports = async function handler(req, res) {
     const sql = database()
 
     if (req.method === 'GET') {
-      const [needs, events, proofs, donations] = await Promise.all([
+      const [needs, events, proofs, donations, participationRequests] = await Promise.all([
         sql`SELECT * FROM garden_care_needs ORDER BY updated_at DESC, created_at DESC`,
         sql`SELECT * FROM garden_care_events ORDER BY occurred_at DESC LIMIT 80`,
         sql`SELECT * FROM garden_proof_assets ORDER BY published_at DESC NULLS LAST, proof_id DESC LIMIT 80`,
@@ -70,8 +71,9 @@ module.exports = async function handler(req, res) {
           ORDER BY d.created_at DESC
           LIMIT 100
         `,
+        sql`SELECT * FROM garden_participation_requests ORDER BY created_at DESC LIMIT 100`,
       ])
-      return res.status(200).json({ caretaker, needs, events, proofs, donations })
+      return res.status(200).json({ caretaker, needs, events, proofs, donations, participationRequests })
     }
 
     const action = safeText(req.body?.action, 80)
@@ -140,6 +142,19 @@ module.exports = async function handler(req, res) {
         `
       }
       return res.status(200).json({ allocated: true })
+    }
+
+    if (action === 'review_participation') {
+      const requestId = Number(req.body?.requestId)
+      const status = PARTICIPATION_STATUSES.has(req.body?.status) ? req.body.status : ''
+      if (!Number.isSafeInteger(requestId) || requestId <= 0 || !status) return res.status(400).json({ error: 'Request and review status are required.' })
+      const rows = await sql`
+        UPDATE garden_participation_requests SET status = ${status}
+        WHERE request_id = ${requestId}
+        RETURNING request_id
+      `
+      if (!rows.length) return res.status(404).json({ error: 'Participation request not found.' })
+      return res.status(200).json({ reviewed: true })
     }
 
     if (action === 'publish_event') {

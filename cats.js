@@ -2,9 +2,8 @@ const cats = {
     "splotch": {
         id: "splotch",
         name: "Splotch",
-        type: "sponsor_only",
-        status: "Available for Adoption",
-        availableForAdoption: true,
+        type: "resident",
+        status: "Cat Gardens Resident",
         breed: "Red Tabby",
         age: "2 Years",
         img: "assets/splotch.jpg",
@@ -21,9 +20,8 @@ const cats = {
     "toshiba": {
         id: "toshiba",
         name: "Toshiba",
-        type: "adoptable",
-        status: "Available for Adoption",
-        availableForAdoption: true,
+        type: "resident",
+        status: "Cat Gardens Resident",
         breed: "Domestic Long Hair",
         age: "1 Year",
         img: "assets/toshiba.jpg",
@@ -38,7 +36,6 @@ const cats = {
         name: "Oliver",
         type: "sponsor_only",
         status: "In Memory",
-        availableForAdoption: false,
         breed: "Tabby",
         age: "2 Years",
         img: "assets/oliver_xray.jpg",
@@ -56,14 +53,13 @@ const cats = {
     "mittens": {
         id: "mittens",
         name: "Mittens",
-        type: "adoptable",
-        status: "Adoption Pending",
-        availableForAdoption: true,
+        type: "resident",
+        status: "Profile In Review",
         breed: "Tuxedo",
         age: "8 Weeks",
         img: "assets/hero_garden_cat.jpg",
         images: ["assets/hero_garden_cat.jpg"],
-        story: "Mittens is a bundle of energy! Found alone in a storm drain, she has been bottle-fed by our volunteers and is now ready to find her forever home.",
+        story: "Mittens was found alone in a storm drain and bottle-fed by volunteers. This legacy profile remains in review until the sanctuary confirms current details.",
         campaign: {
             title: "Kitten Season Formula",
             goal: 2000,
@@ -75,37 +71,34 @@ const cats = {
     "barnaby": {
         id: "barnaby",
         name: "Barnaby",
-        type: "adoptable",
+        type: "resident",
         status: "Available",
-        availableForAdoption: true,
         breed: "Orange Tabby",
         age: "4 Years",
         img: "assets/hero_garden_cat.jpg",
         images: ["assets/hero_garden_cat.jpg"],
-        story: "A curious explorer who loves climbing trees and chasing sunbeams. Barnaby needs a home with plenty of vertical space!",
+        story: "A curious explorer who loves climbing trees and chasing sunbeams. This legacy profile remains in review until the sanctuary confirms current details.",
         campaign: null
     },
     "charlie": {
         id: "charlie",
         name: "Charlie (aka Charlie Barley)",
-        type: "adoptable",
-        status: "Available for Adoption",
-        availableForAdoption: true,
+        type: "resident",
+        status: "Cat Gardens Resident",
         breed: "Domestic Short Hair",
         age: "1 Year",
         img: "assets/charlie_v2.jpg",
         images: ["assets/charlie_v2.jpg"],
         story: `Charlie was found as a ~2 month old with his 4 siblings living next to a football field, being fed next to a very busy street in Germasogeia. All kittens came to the sanctuary. Siblings include Toshiba, Eminem, Papa Doc, and Sabrina (RIP).
         <br><br>
-        Charlie is available for adoption, sponsorship. No known health concerns.`,
+        Charlie is a Cat Gardens resident. No known health concerns are currently reported.`,
         campaign: null
     },
     "ziggy": {
         id: "ziggy",
         name: "Chili Pepper (aka Show Pony)",
-        type: "sponsor_only",
-        status: "Sponsorship Only",
-        availableForAdoption: false,
+        type: "resident",
+        status: "Cat Gardens Resident",
         breed: "Orange Tabby",
         age: "3 Years",
         img: "assets/profile_ziggy.jpg",
@@ -114,15 +107,14 @@ const cats = {
         <br><br>
         Her nickname is "Show pony" because of her signature move: jumping like a show pony for pets. No one is really sure how to describe this, but it is adorable.
         <br><br>
-        She is a spirited and loving companion looking for a forever home.`,
+        She is a spirited and loving Cat Gardens resident.`,
         campaign: null
     },
     "luna": {
         id: "luna",
         name: "Tillie (aka Tillie Bird)",
-        type: "sponsor_only",
+        type: "memorial",
         status: "In Memory",
-        availableForAdoption: false,
         breed: "Domestic Short Hair",
         age: "Unknown",
         img: "assets/tillie.jpg",
@@ -137,9 +129,8 @@ const cats = {
     "mabel": {
         id: "mabel",
         name: "Mabel (aka Mabel Fish)",
-        type: "sponsor_only",
-        status: "Sponsorship Only",
-        availableForAdoption: false,
+        type: "resident",
+        status: "Advanced-Care Resident",
         breed: "Unknown",
         age: "5-7 Years (est.)",
         img: "assets/mabel.jpg",
@@ -148,7 +139,7 @@ const cats = {
         <br><br>
         Her theme song is "Super Freak" (she's a very fishy girl).
         <br><br>
-        She is FIV+ and very selective about her feline friends—she only gets along with Spooky. Because of her medical status and need for a very specific environment, she is not currently available for adoption but loves human company.
+        She is FIV+ and very selective about her feline friends—she only gets along with Spooky. She needs a very specific environment and loves human company.
         <br><br>
         We can't imagine how someone could leave a sweetheart like her behind.`,
         campaign: null

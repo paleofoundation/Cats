@@ -1,19 +1,45 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thank You | Cat Gardens</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Gift Received | Cat Gardens</title>
+  <link rel="icon" type="image/png" href="/assets/favicon-32.png" />
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; --lime:#dfff6c; --line:rgba(255,255,255,.14); }
+    * { box-sizing:border-box; } body { min-height:100vh; margin:0; display:grid; place-items:center; padding:20px; color:#f8f6ef; background:radial-gradient(circle at 82% 3%,rgba(255,255,255,.2),transparent 18%),linear-gradient(145deg,#151d1a,#34413b 55%,#665a73); }
+    main { width:min(760px,100%); overflow:hidden; border:1px solid var(--line); border-radius:30px; background:rgba(22,30,27,.9); box-shadow:0 35px 100px rgba(0,0,0,.3); }
+    header { min-height:270px; display:flex; align-items:flex-end; padding:34px; background:linear-gradient(180deg,transparent,rgba(14,18,16,.86)),url('/assets/hero_garden_cat.jpg') center/cover; }
+    header img { width:42px; height:42px; margin-right:12px; } header strong { font-size:17px; }
+    section { padding:clamp(28px,6vw,58px); } .eyebrow { margin:0 0 12px; color:var(--lime); font:800 9px ui-monospace,monospace; letter-spacing:.15em; } h1 { margin:0; font-size:clamp(54px,10vw,96px); line-height:.82; letter-spacing:-.08em; } .lead { margin:24px 0 0; color:#bcc4bd; font-size:15px; line-height:1.7; }
+    #verified { display:none; margin-top:24px; border:1px solid rgba(223,255,108,.35); border-radius:18px; padding:17px; background:rgba(223,255,108,.08); } #verified span,#verified strong { display:block; } #verified span { color:var(--lime); font:800 8px ui-monospace,monospace; letter-spacing:.12em; } #verified strong { margin-top:5px; font-size:26px; }
+    .truth { margin-top:22px; border-left:3px solid var(--lime); padding:4px 0 4px 14px; color:#aeb7af; font:700 9px/1.6 ui-monospace,monospace; }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:28px; }.actions a { border:1px solid var(--line); border-radius:100px; padding:13px 17px; color:#c5cdc6; font-size:10px; font-weight:900; text-decoration:none; }.actions a:first-child { border-color:var(--lime); color:#273127; background:var(--lime); }
+  </style>
 </head>
-<body style="background:#f7f3eb; min-height:100vh; display:grid; place-items:center; padding:2rem;">
-    <main style="background:white; max-width:680px; padding:4rem 3rem; border-radius:12px; text-align:center; box-shadow:0 12px 35px rgba(0,0,0,.08);">
-        <p style="color:#e9531d; font-weight:700; letter-spacing:.08em; text-transform:uppercase;">Payment received</p>
-        <h1 style="font-family:'Playfair Display',serif; margin:1rem 0; color:#222520;">Thank you for helping the cats.</h1>
-        <p style="line-height:1.7; color:#4b5563; margin-bottom:2rem;">Stripe will email your receipt to the address you provided. Your generosity supports food, veterinary care, shelter, and long-term protection.</p>
-        <a href="index.html" class="btn btn-primary">Return home</a>
-    </main>
-    <a href="/" class="return-to-living-garden" aria-label="Return to the Cat Gardens game">🐾 <span>Return to living garden</span></a>
+<body>
+  <main>
+    <header><img src="/assets/cat-gardens-icon.png" alt="" /><strong>Cat Gardens</strong></header>
+    <section>
+      <p class="eyebrow" id="status">STRIPE CONFIRMATION IN PROGRESS</p>
+      <h1>Thank you for showing up.</h1>
+      <p class="lead">Stripe will email your receipt. The gift is recorded first; a caretaker then reviews its real-world allocation. Evidence of completed care remains a separate step.</p>
+      <div id="verified"><span>PAYMENT VERIFIED</span><strong id="amount"></strong></div>
+      <p class="truth">Virtual tokens remain game currency. Real money is never represented as fictional currency or treated as something the player “spent” on an imaginary object.</p>
+      <div class="actions"><a href="/?profile=open">Return to your garden</a><a href="/cats">Play with another cat</a><a href="/donate.html">Make another gift</a></div>
+    </section>
+  </main>
+  <script>
+    const sessionId = new URLSearchParams(location.search).get('session_id');
+    if (sessionId) fetch('/api/verify-donation-session?session_id=' + encodeURIComponent(sessionId))
+      .then(async response => ({ ok: response.ok, payload: await response.json() }))
+      .then(({ ok, payload }) => {
+        if (!ok || !payload.verified) return;
+        document.getElementById('status').textContent = 'REAL GIFT · VERIFIED BY STRIPE';
+        document.getElementById('amount').textContent = '$' + Number(payload.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' USD';
+        document.getElementById('verified').style.display = 'block';
+      }).catch(() => undefined);
+  </script>
 </body>
 </html>

@@ -5,7 +5,10 @@
     { "source": "/watch-mabel.html", "destination": "/Mabel", "permanent": true },
     { "source": "/watch-splotch.html", "destination": "/Splotch", "permanent": true },
     { "source": "/gallery.html", "destination": "/cats", "permanent": true },
-    { "source": "/adoptions.html", "destination": "/cats", "permanent": true }
+    { "source": "/adoptions.html", "destination": "/cats", "permanent": true },
+    { "source": "/sponsor.html", "destination": "/cats", "permanent": true },
+    { "source": "/sponsor-month.html", "destination": "/donate.html?program=full-month&frequency=once&amount=12000", "permanent": true },
+    { "source": "/checkout.html", "destination": "/donate.html", "permanent": true }
   ],
   "rewrites": [
     { "source": "/Mabel", "destination": "/watch-mabel.html" },
