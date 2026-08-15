@@ -45,8 +45,10 @@ import { badgeLabels, cats, dreamGardenConcept, dreamSpaces, splotchNeeds, type 
 import { tvChannels, tvFundingNeeds } from './catGardensTv'
 import { useGardenAccount } from './account'
 import { GameSync } from './GameSync'
+import { RealityThread } from './RealityThread'
 import { playPurr } from './game/audio'
 import { foodPrice, getDailyProgress, getObjective, getRelationshipText, localDay, shelterBuildCatalog, upgradeCatalog, useGame, type DonationBadge, type GardenUpgrade, type PersonId } from './game/store'
+import { episodeFor, useGardenNotifications, useRealityFeed } from './reality'
 
 const MATHIKOLONI_LISTING = 'https://www.bazaraki.com/adv/5818712_4-bedroom-detached-house-for-sale/'
 const MATHIKOLONI_CURRENT_IMAGE = mathikoloniRoadWalls
@@ -106,19 +108,20 @@ function StartMission({ onStart }: { onStart: () => void }) {
           <div className="visit-strip"><b>01</b><i /><span>Your first living garden</span></div>
         </div>
         <div className="mission-copy">
-          <p className="eyebrow">A LIVING GARDEN · ONE REAL CAT · CYPRUS</p>
-          <h1>Build safety<br />before nightfall.</h1>
-          <p className="mission-lede">Splotch has no dry house here yet. Enter an unfinished garden, earn his trust, build his first shelter piece by piece, and buy the food that brings him close enough to choose you.</p>
+          <p className="eyebrow">SPLOTCH · THE FIRST SEVEN DAYS · CYPRUS</p>
+          <h1>What happens here<br />can become real.</h1>
+          <p className="mission-lede">The cat is real. The garden is the interface. Build Splotch’s first virtual shelter, earn his trust, and watch verified sanctuary actions cross the screen from Cyprus.</p>
           <ol className="mission-steps">
             <li><span>01</span><div><strong>Find him</strong><small>Approach on his terms</small></div></li>
             <li><span>02</span><div><strong>Build</strong><small>Floor, walls, roof</small></div></li>
-            <li><span>03</span><div><strong>Earn trust</strong><small>Food, patience, return</small></div></li>
+            <li><span>03</span><div><strong>Return</strong><small>Seven days, then a living garden</small></div></li>
           </ol>
           <div className="mission-entry-actions">
-            <button className="primary-button" onClick={onStart}>Begin before anything is built <ArrowRight size={18} /></button>
+            <button className="primary-button" onClick={onStart}>Enter today’s garden <ArrowRight size={18} /></button>
             <a className="secondary-button" href="/cats">Meet the real cats</a>
             <a className="mission-about-link" href="/sanctuary">How the real sanctuary works</a>
           </div>
+          <div className="entry-truth-boundary"><Shield size={17} /><p><strong>Virtual tokens remain game currency.</strong><span>Real money is never represented as fictional currency or treated as something the player “spent” on an imaginary object.</span></p></div>
           <p className="free-note"><Shield size={14} /> Splotch’s real care never depends on a player logging in. Your daily ritual grows the virtual garden; optional gifts support the real sanctuary.</p>
         </div>
       </section>
@@ -141,11 +144,14 @@ function CatCard() {
   const trust = useGame((state) => state.trust)
   const safety = useGame((state) => state.safety)
   const bondVisits = useGame((state) => state.bondVisits)
+  const completedDays = useGame((state) => state.completedDays)
+  const episode = episodeFor(completedDays)
+  const dayLabel = completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${episode.day}/7`
   return (
     <aside className="cat-status game-panel">
       <div className="cat-status-head">
         <span className="cat-status-avatar"><PawPrint size={24} /></span>
-        <div><span>EASY MODE · MEMORY {Math.min(7, bondVisits + 1)}/7 · THEN ∞</span><strong>Splotch</strong><small>{getRelationshipText(trust)}</small></div>
+        <div><span>EASY MODE · {dayLabel} · MEMORY {Math.min(7, bondVisits + 1)}/7</span><strong>Splotch</strong><small>{getRelationshipText(trust)}</small></div>
       </div>
       <Vitals label="FULL" value={hunger} color="#efb55f" />
       <Vitals label="TRUST" value={trust} color="#dfff6c" />
@@ -169,12 +175,14 @@ function ObjectiveCard() {
   const realityVisits = useGame((state) => state.realityVisits)
   const dreamVisits = useGame((state) => state.dreamVisits)
   const objective = getObjective({ lastDailyClaim, splotchDiscovered, shelterStage, food, lastDayCompleted, completedDays, lastFedDate, lastWateredDate, blanketLevel, waterBowlLevel, hasBonded, realityVisits, dreamVisits })
+  const episode = episodeFor(completedDays)
+  const dayLabel = completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${episode.day}/7`
   return (
     <section className="objective-hud game-panel">
       <div className="objective-copy">
-        <span>{objective.chapter}</span>
+        <span>{dayLabel} · {episode.eyebrow}</span>
         <strong>{objective.title}</strong>
-        <small>{objective.detail}</small>
+        <small>{episode.title} · {objective.detail}</small>
       </div>
       <div className="objective-count"><b>{objective.progress}</b><span>/ {objective.total}</span></div>
       <div className="objective-progress"><i style={{ width: `${(objective.progress / objective.total) * 100}%` }} /></div>
@@ -197,6 +205,7 @@ function Inventory() {
         <span><Heart size={14} /> Treats <b>{treats}</b></span>
       </div>
       <small className="care-points-line">{carePoints.toLocaleString()} care points</small>
+      <small className="token-boundary-line"><Shield size={10} /> virtual game currency only</small>
     </aside>
   )
 }
@@ -512,9 +521,9 @@ function GardenDesigner({ onClose, onDonate }: { onClose: () => void; onDonate: 
             <button onClick={account.signedIn ? share : account.openSignIn}>{account.signedIn ? shareRewardClaimed ? 'Share again · friend rewards stay active' : 'Share Splotch’s garden' : 'Sign in to create your invitation'}</button>
           </div>
           <div className="supporter-upgrade">
-            <p className="eyebrow">OPTIONAL REAL-WORLD GIFT</p>
-            <h3>A verified $10 gift adds 250 thank-you tokens.</h3>
-            <p>The gift supports real sanctuary care. Virtual tokens have no cash value and are a supporter thank-you—not a purchase of care for the real Splotch.</p>
+            <p className="eyebrow">REALITY BOUNDARY · OPTIONAL GIFT</p>
+            <h3>Care for the real cats. Keep the game economy separate.</h3>
+            <p>Virtual tokens remain game currency. A real gift can add a verified supporter badge and a transparent sanctuary record—but never tokens or an imaginary object.</p>
             <button onClick={() => onDonate(splotchNeeds.find((need) => need.id === 'food')!)}>Support real daily care</button>
           </div>
         </section>
@@ -656,7 +665,7 @@ function RealityPortal({ onClose, onDonate }: { onClose: () => void; onDonate: (
             <h2 id="reality-title">What is true today.</h2>
             <p>This portal only publishes sanctuary-reviewed information. Missing information stays visibly missing—it is never replaced by game fiction.</p>
           </div>
-          <div className="reality-signal"><i /><span>UPDATE CHANNEL</span><strong>Awaiting Splotch’s first verified media pack</strong><small>Karen · Chanda · Markos contributor access planned</small></div>
+          <div className="reality-signal"><i /><span>VERIFIED DISPATCH</span><strong>Splotch’s first field video is live</strong><small>Published from the real Cat Gardens record</small></div>
         </header>
 
         <section className="reality-grid">
@@ -1004,7 +1013,7 @@ function DonationDrawer({ need, onClose }: { need: SplotchNeed; onClose: () => v
     const payload = await response.json()
     if (!response.ok || !payload.clientSecret) throw new Error(payload.error || 'Unable to open checkout.')
     return payload.clientSecret as string
-  }, [account.email, account.getToken, account.name, account.signedIn, amount, frequency, need.badge, need.id, need.title])
+  }, [account.email, account.getToken, account.name, account.signedIn, amount, frequency, need.badge, need.catId, need.id, need.program, need.title])
 
   return (
     <div className="donation-backdrop" role="presentation">
@@ -1016,7 +1025,8 @@ function DonationDrawer({ need, onClose }: { need: SplotchNeed; onClose: () => v
             <div className="frequency-switch"><button className={frequency === 'once' ? 'active' : ''} onClick={() => setFrequency('once')}>Give once</button><button className={frequency === 'monthly' ? 'active' : ''} onClick={() => setFrequency('monthly')}>Monthly keeper</button></div>
             <label><span>Donation amount · USD</span><div><b>$</b><input value={amount} min="5" max="500000" type="number" onChange={(event) => setAmount(Math.max(5, Number(event.target.value)))} /></div></label>
             <div className="amount-options">{[10, 25, 50, 100].map((value) => <button className={amount === value ? 'active' : ''} key={value} onClick={() => setAmount(value)}>${value}</button>)}</div>
-            <div className="donation-reward"><BadgeCheck size={24} /><div><span>SUPPORTER THANK-YOU AFTER VERIFICATION</span><strong>{badgeLabels[frequency === 'monthly' ? 'garden-keeper' : need.badge]} · {Math.max(0, Math.floor(amount / 10) * 250)} garden tokens</strong><small>Every complete $10 adds 250 no-cash-value virtual tokens after Stripe confirms payment.</small></div></div>
+            <div className="donation-reward"><BadgeCheck size={24} /><div><span>SUPPORTER RECORD AFTER VERIFICATION</span><strong>{badgeLabels[frequency === 'monthly' ? 'garden-keeper' : need.badge]} · permanent care-record badge</strong><small>Real gifts are recorded in dollars and allocated by the sanctuary. They are never converted into garden tokens.</small></div></div>
+            <div className="donation-allocation"><strong>Before you give</strong><p>If this need is already covered, the sanctuary will route the gift to the next published care need for this cat or to daily sanctuary care. The final allocation will appear in your care record.</p></div>
             <button className="launch-checkout" disabled={!stripePromise || Boolean(error)} onClick={() => setCheckoutReady(true)}><WalletCards size={18} /> Continue to secure donation</button>
             {error && <p className="checkout-error">{error}</p>}
             <small className="wallet-note">Eligible devices will see Apple Pay. Stripe dynamically displays the available secure wallet and payment options.</small>
@@ -1029,7 +1039,7 @@ function DonationDrawer({ need, onClose }: { need: SplotchNeed; onClose: () => v
             </EmbeddedCheckoutProvider>
           </section>
         )}
-        <footer><Shield size={14} /> Donations support Gardens of St. Gertrude, the legal nonprofit. Virtual thank-you items are not cash, do not determine real Splotch’s care, and are shown separately from real-world fulfillment.</footer>
+        <footer><Shield size={14} /> Virtual tokens remain game currency. Real money is never represented as fictional currency or treated as something the player “spent” on an imaginary object. Donations support Gardens of St. Gertrude, the legal nonprofit.</footer>
       </aside>
     </div>
   )
@@ -1065,6 +1075,8 @@ function HelpPanel({ onClose }: { onClose: () => void }) {
 
 export default function App() {
   const account = useGardenAccount()
+  const realityFeed = useRealityFeed('splotch')
+  const gardenNotifications = useGardenNotifications(account)
   const started = useGame((state) => state.started)
   const notification = useGame((state) => state.notification)
   const setNotification = useGame((state) => state.setNotification)
@@ -1073,7 +1085,6 @@ export default function App() {
   const resetRover = useGame((state) => state.resetRover)
   const bondingMode = useGame((state) => state.bondingMode)
   const bondVisits = useGame((state) => state.bondVisits)
-  const loginDays = useGame((state) => state.loginDays)
   const lastDailyClaim = useGame((state) => state.lastDailyClaim)
   const splotchDiscovered = useGame((state) => state.splotchDiscovered)
   const shelterStage = useGame((state) => state.shelterStage)
@@ -1082,6 +1093,7 @@ export default function App() {
   const [bondResult, setBondResult] = useState<{ advanced: boolean; visit: number } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
   const [realityOpen, setRealityOpen] = useState(false)
+  const [threadOpen, setThreadOpen] = useState(false)
   const [tvOpen, setTvOpen] = useState(false)
   const [dreamOpen, setDreamOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -1090,6 +1102,10 @@ export default function App() {
   const [morningOpen, setMorningOpen] = useState(false)
   const [personOpen, setPersonOpen] = useState<PersonId | null>(null)
   const [donationNeed, setDonationNeed] = useState<SplotchNeed | null>(null)
+  useEffect(() => {
+    if (!realityFeed.feed) return
+    useGame.getState().setVerifiedRealityArtifacts(realityFeed.feed.worldArtifacts)
+  }, [realityFeed.feed])
   useEffect(() => {
     if (!account.loaded || !account.signedIn) return
     const code = new URLSearchParams(window.location.search).get('invite')?.toUpperCase() || ''
@@ -1225,6 +1241,7 @@ export default function App() {
 
   const openDonation = useCallback((need: SplotchNeed) => {
     setRealityOpen(false)
+    setThreadOpen(false)
     setTvOpen(false)
     setDreamOpen(false)
     setProfileOpen(false)
@@ -1233,7 +1250,7 @@ export default function App() {
     setDonationNeed(need)
   }, [])
 
-  const paused = !started || bondResult || helpOpen || realityOpen || tvOpen || dreamOpen || profileOpen || rosterOpen || designerOpen || morningOpen || personOpen || donationNeed
+  const paused = !started || bondResult || helpOpen || realityOpen || threadOpen || tvOpen || dreamOpen || profileOpen || rosterOpen || designerOpen || morningOpen || personOpen || donationNeed
 
   return (
     <main className={`game-shell ${paused ? 'is-paused' : ''} ${bondingMode ? 'is-bonding' : ''}`}>
@@ -1245,10 +1262,11 @@ export default function App() {
       </div>
 
       <header className="game-header game-panel">
-        <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>SPLOTCH · DAY {Math.max(1, loginDays)} · MEMORY {Math.min(7, bondVisits + 1)}/7</small></a>
+        <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>SPLOTCH · {completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${episodeFor(completedDays).day}/7`} · MEMORY {Math.min(7, bondVisits + 1)}/7</small></a>
         <nav>
           {completedDays > 0 && <button className="tv-nav" onClick={() => setTvOpen(true)}><Radio size={17} /><span>Cat Gardens TV</span></button>}
           {splotchDiscovered && <button className="reality-nav" onClick={() => setRealityOpen(true)}><Video size={17} /><span>Reality</span></button>}
+          <button className="thread-nav" onClick={() => setThreadOpen(true)}><BadgeCheck size={17} /><span>Live record</span>{gardenNotifications.unread > 0 && <b>{gardenNotifications.unread}</b>}</button>
           <button className="cats-nav" onClick={() => setRosterOpen(true)}><PawPrint size={17} /><span>Cats</span></button>
           {shelterStage >= 3 && <button className="design-nav" onClick={() => setDesignerOpen(true)}><Leaf size={17} /><span>Design Garden</span></button>}
           <button className="profile-nav" onClick={() => setProfileOpen(true)}><UserRound size={17} /><span>My Profile</span></button>
@@ -1286,6 +1304,7 @@ export default function App() {
       {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
       {tvOpen && <CatGardensTv onClose={() => setTvOpen(false)} onDonate={openDonation} />}
       {realityOpen && <RealityPortal onClose={() => setRealityOpen(false)} onDonate={openDonation} />}
+      {threadOpen && <RealityThread feed={realityFeed.feed} loading={realityFeed.loading} error={realityFeed.error} notifications={gardenNotifications.notifications} onMarkRead={gardenNotifications.markRead} onClose={() => setThreadOpen(false)} onDonate={openDonation} donationNeeds={splotchNeeds} />}
       {dreamOpen && <DreamGarden onClose={() => setDreamOpen(false)} onDonate={openDonation} />}
       {rosterOpen && <CareRoster onClose={() => setRosterOpen(false)} />}
       {designerOpen && <GardenDesigner onClose={() => setDesignerOpen(false)} onDonate={openDonation} />}

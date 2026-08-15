@@ -506,6 +506,28 @@ function GardenPortals() {
   )
 }
 
+function VerifiedRealityArtifacts() {
+  const artifacts = useGame((state) => state.verifiedRealityArtifacts)
+  if (!artifacts.includes('splotch-first-dispatch')) return null
+  return (
+    <group position={[7.15, 0, -4.15]} rotation={[0, -.25, 0]}>
+      <RoundedBox args={[1.7, .12, 1.7]} position={[0, .08, 0]} radius={.12} smoothness={4} receiveShadow>
+        <meshStandardMaterial color="#f0eadb" roughness={.8} />
+      </RoundedBox>
+      <mesh position={[0, .72, 0]} castShadow>
+        <icosahedronGeometry args={[.52, 1]} />
+        <meshStandardMaterial color="#ffab5d" emissive="#dc7836" emissiveIntensity={1.15} roughness={.38} />
+      </mesh>
+      <mesh position={[0, .72, 0]} scale={1.28}>
+        <icosahedronGeometry args={[.52, 1]} />
+        <meshBasicMaterial color="#fff8da" transparent opacity={.14} wireframe />
+      </mesh>
+      <Sparkles count={18} scale={[2.1, 2.2, 2.1]} size={3} speed={.2} color="#fff4bf" position={[0, .82, 0]} />
+      <WorldTag title="A real dispatch arrived" subtitle="Splotch · verified in Cyprus · Live record" warm />
+    </group>
+  )
+}
+
 function MorningBasket() {
   const claimed = useGame((state) => state.lastDailyClaim === localDay())
   const firstDay = useGame((state) => state.completedDays === 0 && state.shelterStage === 0)
@@ -571,6 +593,7 @@ function Scene() {
       <SplotchActor />
       {unlockedPeople.map((id) => <PersonActor key={id} id={id} />)}
       <GardenPortals />
+      <VerifiedRealityArtifacts />
       <CaretakerPlayer />
     </>
   )

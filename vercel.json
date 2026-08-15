@@ -11,6 +11,7 @@
     { "source": "/Mabel", "destination": "/watch-mabel.html" },
     { "source": "/Splotch", "destination": "/watch-splotch.html" },
     { "source": "/cats", "destination": "/cats.html" },
-    { "source": "/sanctuary", "destination": "/sanctuary.html" }
+    { "source": "/sanctuary", "destination": "/sanctuary.html" },
+    { "source": "/caretaker", "destination": "/caretaker.html" }
   ]
 }

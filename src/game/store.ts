@@ -81,6 +81,7 @@ export type GameState = {
   tvChannelsVisited: string[]
   donationBadges: DonationBadge[]
   verifiedDonationTotal: number
+  verifiedRealityArtifacts: string[]
   nearby: NearbyAction
   catAnimation: CatAnimation
   catPosition: [number, number, number]
@@ -114,6 +115,7 @@ export type GameState = {
   discoverDream: (id: string) => void
   grantDonation: (amount: number, badge: DonationBadge) => void
   setVerifiedDonations: (amount: number, badges: DonationBadge[]) => void
+  setVerifiedRealityArtifacts: (artifacts: string[]) => void
   setNearby: (nearby: NearbyAction) => void
   setCatAnimation: (animation: CatAnimation) => void
   setCatPosition: (position: [number, number, number]) => void
@@ -187,6 +189,7 @@ export const useGame = create<GameState>()(
       playerPosition: [0, 0, -9],
       playerActionUntil: 0,
       notification: null,
+      verifiedRealityArtifacts: [],
       resetToken: 0,
       input: emptyInput,
       start: () => set({ started: true, notification: 'Nothing has been built yet. Open the glowing supply crate by the gate.' }),
@@ -441,18 +444,13 @@ export const useGame = create<GameState>()(
         if (get().dreamDiscoveries.includes(id)) return
         set((state) => ({ dreamDiscoveries: [...state.dreamDiscoveries, id], carePoints: state.carePoints + 20, notification: 'Dream discovered · +20 care' }))
       },
-      grantDonation: (amount, badge) => set((state) => {
-        const careReward = Math.max(50, Math.round(amount * 10))
-        const tokenReward = Math.max(0, Math.floor(amount / 10) * 250)
-        return {
-          donationBadges: state.donationBadges.includes(badge) ? state.donationBadges : [...state.donationBadges, badge],
-          verifiedDonationTotal: state.verifiedDonationTotal + amount,
-          carePoints: state.carePoints + careReward,
-          gardenTokens: state.gardenTokens + tokenReward,
-          notification: `Gift verified · ${tokenReward} thank-you garden tokens added`,
-        }
-      }),
+      grantDonation: (amount, badge) => set((state) => ({
+        donationBadges: state.donationBadges.includes(badge) ? state.donationBadges : [...state.donationBadges, badge],
+        verifiedDonationTotal: state.verifiedDonationTotal + amount,
+        notification: 'A real contribution was verified · no virtual-currency conversion',
+      })),
       setVerifiedDonations: (amount, badges) => set({ verifiedDonationTotal: Math.max(0, amount), donationBadges: [...new Set(badges)] }),
+      setVerifiedRealityArtifacts: (artifacts) => set({ verifiedRealityArtifacts: [...new Set(artifacts)] }),
       setNearby: (nearby) => { if (get().nearby !== nearby) set({ nearby }) },
       setCatAnimation: (catAnimation) => set({ catAnimation }),
       setCatPosition: (catPosition) => {
@@ -473,6 +471,7 @@ export const useGame = create<GameState>()(
         playerPosition: [0, 0, -9],
         playerActionUntil: 0,
         notification: null,
+        verifiedRealityArtifacts: state.verifiedRealityArtifacts,
         resetToken: state.resetToken + 1,
         input: emptyInput,
       })),
