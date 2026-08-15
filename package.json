@@ -1,0 +1,10 @@
+{
+  "name": "gardens-of-st-gertrude",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "stripe": "^18.5.0"
+  }
+}
