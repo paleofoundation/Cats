@@ -330,24 +330,16 @@
                 </div>
 
                 <div class="card-body">
-                    <!-- Express Payment -->
-                    <div class="section-label">EXPRESS PAYMENT METHOD</div>
-                    <button class="express-btn">
-                        Express Donate &raquo;
-                    </button>
-
-                    <div class="divider">or enter your details manually below</div>
-
                     <!-- Form -->
                     <form id="sponsor-form" onsubmit="handleSponsor(event)">
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">First Name</label>
-                                <input type="text" class="form-input" required>
+                                <input type="text" class="form-input" name="firstName" autocomplete="given-name" required>
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Last Name</label>
-                                <input type="text" class="form-input" required>
+                                <input type="text" class="form-input" name="lastName" autocomplete="family-name" required>
                             </div>
                         </div>
 
@@ -378,7 +370,7 @@
 
                         <div class="form-group">
                             <label class="form-label">Email</label>
-                            <input type="email" class="form-input" required>
+                            <input type="email" class="form-input" name="email" autocomplete="email" required>
                         </div>
 
                         <div class="form-group">
@@ -430,9 +422,7 @@
                             <path
                                 d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
                         </svg>
-                        Secure Payment · This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of
-                        Service
-                        apply.
+                        Secure payment processing is provided by Stripe.
                     </div>
                 </div>
             </div>
@@ -480,17 +470,36 @@
     </footer>
 
     <script>
-        function handleSponsor(e) {
+        async function handleSponsor(e) {
             e.preventDefault();
             const btn = document.querySelector('.next-btn');
             btn.innerText = 'Processing...';
             btn.disabled = true;
             btn.style.opacity = '0.8';
 
-            setTimeout(() => {
-                alert('Thank you for your incredible generosity! We will be in touch shortly.');
-                window.location.href = 'index.html';
-            }, 1500);
+            const formData = new FormData(e.currentTarget);
+            try {
+                const response = await fetch('/api/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: 12000,
+                        frequency: 'once',
+                        campaign: 'Steward of the Garden',
+                        firstName: formData.get('firstName'),
+                        lastName: formData.get('lastName'),
+                        email: formData.get('email')
+                    })
+                });
+                const result = await response.json();
+                if (!response.ok || !result.url) throw new Error(result.error || 'Unable to start checkout.');
+                window.location.assign(result.url);
+            } catch (error) {
+                alert(error.message || 'Unable to start secure checkout. Please try again.');
+                btn.innerText = 'Process Sponsorship';
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
         }
     </script>
 </body>
