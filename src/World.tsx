@@ -1,282 +1,640 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Html, OrbitControls, RoundedBox } from '@react-three/drei'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Float, Html, RoundedBox, Sky, Sparkles, Text, useAnimations, useGLTF } from '@react-three/drei'
+import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
+import { BallCollider, CuboidCollider, Physics, RigidBody, type RapierRigidBody } from '@react-three/rapier'
+import { Suspense, useCallback, useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import type { Cat, Place } from './data'
+import { SkeletonUtils } from 'three-stdlib'
+import { playCollect } from './game/audio'
+import { useGame } from './game/store'
 
-type Focus = 'overview' | 'garden' | 'dream'
+const CAT_POSITION = new THREE.Vector3(0.2, 0, 4.2)
+const CAT_FEEDING_POSITION = new THREE.Vector3(0.2, .04, 4.2)
+const CAT_SHELTER_POSITION = new THREE.Vector3(4.55, .04, 7.05)
+const SHELTER_POSITION = new THREE.Vector3(5.4, 0, 7.2)
+const START_POSITION: [number, number, number] = [0, 0.75, -9]
 
-const CAMERA_VIEWS: Record<Focus, { position: THREE.Vector3; target: THREE.Vector3 }> = {
-  overview: { position: new THREE.Vector3(12, 12, 15), target: new THREE.Vector3(0, 0, -0.5) },
-  garden: { position: new THREE.Vector3(-8, 7, 9), target: new THREE.Vector3(-3, 0, 1.5) },
-  dream: { position: new THREE.Vector3(10, 8, -1), target: new THREE.Vector3(4, 1, -5) },
+const FOOD_CRATES = [
+  { id: 'food-olive', position: [0, 0.45, -3.2] as [number, number, number] },
+  { id: 'food-well', position: [6.8, 0.45, .5] as [number, number, number] },
+  { id: 'food-road', position: [-5.8, 0.45, 4.9] as [number, number, number] },
+]
+
+const SHELTER_PARTS = [
+  { id: 'part-timber', position: [10.4, 0.42, 3.2] as [number, number, number] },
+  { id: 'part-roof', position: [-9.2, 0.42, 2.4] as [number, number, number] },
+  { id: 'part-wall', position: [-8.1, 0.42, 11.1] as [number, number, number] },
+  { id: 'part-cushion', position: [8.8, 0.42, 11.4] as [number, number, number] },
+]
+
+const TREE_POSITIONS = [
+  [-17, -12, .52], [-12, -16, .44], [-5, -17, .48], [5, -17, .4], [13, -15, .5], [18, -10, .42],
+  [18, -1, .48], [18, 8, .44], [14, 16, .5], [6, 17, .42], [-4, 17, .5], [-13, 15, .46],
+  [-18, 9, .5], [-18, 1, .42], [-17, -6, .46], [13, -6, .32], [-13, 5, .34], [2, 14, .3],
+] as const
+
+const seeded = (seed: number) => {
+  const value = Math.sin(seed * 144.731) * 43758.5453
+  return value - Math.floor(value)
 }
 
-function CameraRig({ focus, controls }: { focus: Focus; controls: React.RefObject<OrbitControlsImpl | null> }) {
-  const { camera } = useThree()
-  const goal = useRef(CAMERA_VIEWS[focus])
-  const moving = useRef(true)
+function useRoadGeometry(points: Array<[number, number]>, width: number) {
+  return useMemo(() => {
+    const curve = new THREE.CatmullRomCurve3(points.map(([x, z]) => new THREE.Vector3(x, 0.035, z)), true, 'catmullrom', 0.25)
+    const samples = 110
+    const vertices: number[] = []
+    const uvs: number[] = []
+    const indices: number[] = []
+    for (let index = 0; index <= samples; index += 1) {
+      const t = index / samples
+      const point = curve.getPointAt(t)
+      const tangent = curve.getTangentAt(t)
+      const side = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize().multiplyScalar(width / 2)
+      vertices.push(point.x + side.x, point.y, point.z + side.z)
+      vertices.push(point.x - side.x, point.y, point.z - side.z)
+      uvs.push(0, t * 18, 1, t * 18)
+      if (index < samples) {
+        const a = index * 2
+        indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3)
+      }
+    }
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+    geometry.setIndex(indices)
+    geometry.computeVertexNormals()
+    return geometry
+  }, [points, width])
+}
+
+function Road() {
+  const geometry = useRoadGeometry([
+    [0, -11], [10, -8], [12, 1], [9, 10], [1, 13], [-9, 10], [-12, 2], [-9, -7],
+  ], 3.25)
+  return (
+    <mesh geometry={geometry} receiveShadow>
+      <meshStandardMaterial color="#92765f" roughness={1} side={THREE.DoubleSide} />
+    </mesh>
+  )
+}
+
+function GrassField() {
+  const mesh = useRef<THREE.InstancedMesh>(null)
+  const count = 780
+  useEffect(() => {
+    if (!mesh.current) return
+    const dummy = new THREE.Object3D()
+    for (let index = 0; index < count; index += 1) {
+      const angle = seeded(index + 1) * Math.PI * 2
+      const radius = 7 + seeded(index + 41) * 25
+      const x = Math.cos(angle) * radius + (seeded(index + 74) - .5) * 5
+      const z = Math.sin(angle) * radius + (seeded(index + 97) - .5) * 5
+      const scale = .55 + seeded(index + 131) * 1.15
+      dummy.position.set(x, .16, z)
+      dummy.rotation.set((seeded(index + 154) - .5) * .12, seeded(index + 181) * Math.PI, (seeded(index + 201) - .5) * .16)
+      dummy.scale.set(.7 + seeded(index + 241) * .55, scale, .7 + seeded(index + 263) * .55)
+      dummy.updateMatrix()
+      mesh.current.setMatrixAt(index, dummy.matrix)
+    }
+    mesh.current.instanceMatrix.needsUpdate = true
+  }, [])
+  return (
+    <instancedMesh ref={mesh} args={[undefined, undefined, count]} receiveShadow frustumCulled={false}>
+      <coneGeometry args={[.075, .48, 3]} />
+      <meshStandardMaterial color="#73894f" emissive="#23310f" emissiveIntensity={.18} roughness={1} />
+    </instancedMesh>
+  )
+}
+
+function OakTree({ position, scale }: { position: [number, number, number]; scale: number }) {
+  const { scene } = useGLTF('/models/bruno/oak-tree.glb')
+  const clone = useMemo(() => scene.clone(true), [scene])
+  useEffect(() => {
+    clone.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.castShadow = true
+        object.receiveShadow = true
+      }
+    })
+  }, [clone])
+  return <primitive object={clone} position={position} scale={scale} />
+}
+
+function Landscape() {
+  return (
+    <group>
+      <RigidBody type="fixed" colliders={false} friction={2.4} restitution={0}>
+        <CuboidCollider args={[45, .18, 45]} position={[0, -.18, 0]} />
+        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+          <planeGeometry args={[90, 90, 2, 2]} />
+          <meshStandardMaterial color="#899861" roughness={1} />
+        </mesh>
+      </RigidBody>
+      <Road />
+      <GrassField />
+      {TREE_POSITIONS.map(([x, z, scale], index) => (
+        <OakTree key={`${x}-${z}`} position={[x, 0, z]} scale={scale} />
+      ))}
+      <mesh position={[-28, -1.5, -8]} scale={[1.4, .42, 1]} receiveShadow>
+        <sphereGeometry args={[13, 32, 14]} />
+        <meshStandardMaterial color="#66764e" roughness={1} />
+      </mesh>
+      <mesh position={[27, -2, 12]} scale={[1.5, .5, 1]} receiveShadow>
+        <sphereGeometry args={[13, 32, 14]} />
+        <meshStandardMaterial color="#75835a" roughness={1} />
+      </mesh>
+      <group position={[0, 0, -13.8]}>
+        <mesh castShadow position={[0, 1.35, 0]}>
+          <boxGeometry args={[5.2, 2.1, .26]} />
+          <meshStandardMaterial color="#303633" roughness={.72} />
+        </mesh>
+        <mesh castShadow position={[-2.15, .32, 0]}><boxGeometry args={[.2, 2.6, .2]} /><meshStandardMaterial color="#d8d1b9" /></mesh>
+        <mesh castShadow position={[2.15, .32, 0]}><boxGeometry args={[.2, 2.6, .2]} /><meshStandardMaterial color="#d8d1b9" /></mesh>
+        <Text position={[0, 1.55, .15]} fontSize={.52} color="#e2ff70" anchorX="center">CAT GARDENS</Text>
+        <Text position={[0, .95, .15]} fontSize={.2} color="#f7f3e8" anchorX="center" letterSpacing={.18}>FIRST DAY</Text>
+      </group>
+    </group>
+  )
+}
+
+function StormClouds() {
+  const clouds = [
+    [-16, 18, -25, 8], [-4, 20, -30, 10], [12, 18, -26, 8], [25, 21, -18, 11], [-25, 21, -9, 8],
+  ] as const
+  return (
+    <group>
+      {clouds.map(([x, y, z, scale], index) => (
+        <Float key={index} speed={.18 + index * .02} rotationIntensity={.02} floatIntensity={.25}>
+          <mesh position={[x, y, z]} scale={[scale, scale * .22, scale * .55]}>
+            <dodecahedronGeometry args={[1, 2]} />
+            <meshStandardMaterial color={index % 2 ? '#5f586f' : '#71697e'} roughness={1} transparent opacity={.82} />
+          </mesh>
+        </Float>
+      ))}
+    </group>
+  )
+}
+
+function RoverVisual({ speed, steer }: { speed: React.MutableRefObject<number>; steer: React.MutableRefObject<number> }) {
+  const { scene } = useGLTF('/models/bruno/rescue-rover.glb')
+  const chassis = useMemo(() => scene.getObjectByName('chassis001')?.clone(true), [scene])
+  const wheelSource = useMemo(() => scene.getObjectByName('wheelContainer001'), [scene])
+  const wheelRefs = useRef<Array<THREE.Group | null>>([])
+  const green = useMemo(() => new THREE.MeshStandardMaterial({ color: '#cce94d', roughness: .42, metalness: .25 }), [])
 
   useEffect(() => {
-    goal.current = CAMERA_VIEWS[focus]
-    moving.current = true
-  }, [focus])
+    chassis?.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.castShadow = true
+        object.receiveShadow = true
+        if (object.name.includes('bodyPainted')) object.material = green
+      }
+    })
+  }, [chassis, green])
 
-  useFrame(() => {
-    if (!moving.current || !controls.current) return
-    camera.position.lerp(goal.current.position, 0.055)
-    controls.current.target.lerp(goal.current.target, 0.055)
-    controls.current.update()
-    if (camera.position.distanceTo(goal.current.position) < 0.08) moving.current = false
+  useFrame((_, delta) => {
+    wheelRefs.current.forEach((wheel, index) => {
+      if (!wheel) return
+      wheel.rotation.z -= speed.current * delta * .85
+      if (index < 2) wheel.rotation.y = steer.current * .32
+    })
   })
-  return null
-}
 
-function OliveTree({ position, scale = 1 }: { position: [number, number, number]; scale?: number }) {
-  const foliage = useMemo(() => [
-    [-0.34, 1.58, 0.05, 0.64], [0.3, 1.72, 0.02, 0.7], [0.02, 1.98, -0.12, 0.58],
-    [-0.05, 1.55, 0.36, 0.6], [0.22, 1.48, -0.33, 0.55],
-  ], [])
   return (
-    <group position={position} scale={scale}>
-      <mesh castShadow position={[0, 0.82, 0]} rotation={[0.03, 0, -0.08]}>
-        <cylinderGeometry args={[0.16, 0.28, 1.7, 7]} />
-        <meshStandardMaterial color="#746050" roughness={1} />
-      </mesh>
-      {foliage.map(([x, y, z, s], index) => (
-        <mesh key={index} castShadow position={[x, y, z]} scale={[s * 1.35, s * 0.7, s]}>
-          <dodecahedronGeometry args={[0.76, 1]} />
-          <meshStandardMaterial color={index % 2 ? '#6f8467' : '#819475'} roughness={0.95} />
-        </mesh>
-      ))}
+    <group scale={.9} position={[0, -.68, 0]}>
+      {chassis && <primitive object={chassis} />}
+      {wheelSource && [
+        [.86, -.08, -.68], [.86, -.08, .68], [-.78, -.08, -.68], [-.78, -.08, .68],
+      ].map((position, index) => {
+        const wheel = wheelSource.clone(true)
+        wheel.position.set(0, 0, 0)
+        wheel.traverse((object) => {
+          if (object instanceof THREE.Mesh) {
+            object.castShadow = true
+            if (object.name.includes('Painted')) object.material = green
+          }
+        })
+        return (
+          <group key={index} position={position as [number, number, number]} ref={(value) => { wheelRefs.current[index] = value }}>
+            <primitive object={wheel} rotation={index % 2 ? [Math.PI, 0, 0] : [0, 0, 0]} />
+          </group>
+        )
+      })}
+      <pointLight position={[1.1, .65, 0]} color="#f4ffd0" intensity={1.2} distance={7} />
     </group>
   )
 }
 
-function GrassPatch({ position, color = '#9eaa6b' }: { position: [number, number, number]; color?: string }) {
-  const blades = useMemo(() => Array.from({ length: 13 }, (_, i) => ({
-    x: Math.sin(i * 5.1) * 0.45,
-    z: Math.cos(i * 3.8) * 0.4,
-    h: 0.28 + (i % 4) * 0.08,
-    r: (i - 6) * 0.08,
-  })), [])
+function CaretakerRover() {
+  const body = useRef<RapierRigidBody>(null)
+  const { camera } = useThree()
+  const smoothTarget = useRef(new THREE.Vector3(0, 1, -4))
+  const speedRef = useRef(0)
+  const driveSpeed = useRef(0)
+  const steerRef = useRef(0)
+  const frame = useRef(0)
+  const resetToken = useGame((state) => state.resetToken)
+  const started = useGame((state) => state.started)
+  const setNearby = useGame((state) => state.setNearby)
+  const setPlayerPosition = useGame((state) => state.setPlayerPosition)
+
+  const reset = useCallback(() => {
+    if (!body.current) return
+    body.current.setTranslation({ x: START_POSITION[0], y: START_POSITION[1], z: START_POSITION[2] }, true)
+    body.current.setRotation({ x: 0, y: -Math.sin(Math.PI / 4), z: 0, w: Math.cos(Math.PI / 4) }, true)
+    body.current.setLinvel({ x: 0, y: 0, z: 0 }, true)
+    body.current.setAngvel({ x: 0, y: 0, z: 0 }, true)
+    driveSpeed.current = 0
+  }, [])
+
+  useEffect(reset, [reset, resetToken])
+
+  useFrame((_, delta) => {
+    const rigidBody = body.current
+    if (!rigidBody) return
+    const game = useGame.getState()
+    const input = game.input
+    const translation = rigidBody.translation()
+    const rotation = rigidBody.rotation()
+    const quaternion = new THREE.Quaternion(rotation.x, rotation.y, rotation.z, rotation.w)
+    const forward = new THREE.Vector3(1, 0, 0).applyQuaternion(quaternion).normalize()
+    const right = new THREE.Vector3(0, 0, 1).applyQuaternion(quaternion).normalize()
+    const velocity = rigidBody.linvel()
+    const linear = new THREE.Vector3(velocity.x, velocity.y, velocity.z)
+    const forwardSpeed = linear.dot(forward)
+    const throttle = input.forward - input.backward
+    const steer = input.left - input.right
+    const boost = input.boost > 0 ? 1.35 : 1
+    const cappedDelta = Math.min(delta, .034)
+
+    if (started) {
+      const lateralSpeed = linear.dot(right)
+      const maxSpeed = 8 * boost
+      const targetSpeed = throttle * maxSpeed
+      const acceleration = Math.abs(throttle) > .01 ? 1 - Math.exp(-cappedDelta * 2.8) : 1 - Math.exp(-cappedDelta * 5.2)
+      driveSpeed.current = THREE.MathUtils.lerp(driveSpeed.current, targetSpeed, acceleration)
+      if (input.brake > 0) driveSpeed.current *= Math.pow(.03, cappedDelta)
+      const nextForwardSpeed = driveSpeed.current
+      const nextLateralSpeed = lateralSpeed * Math.pow(.08, cappedDelta)
+      const nextVelocity = forward.clone().multiplyScalar(nextForwardSpeed).add(right.clone().multiplyScalar(nextLateralSpeed))
+      rigidBody.setLinvel({ x: nextVelocity.x, y: velocity.y, z: nextVelocity.z }, true)
+
+      const turnDirection = nextForwardSpeed < -.2 ? -1 : 1
+      const steeringAuthority = Math.min(Math.abs(nextForwardSpeed) / 3, 1)
+      if (Math.abs(steer) > .015 && steeringAuthority > .05) {
+        const yaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -steer * turnDirection * steeringAuthority * cappedDelta * .92)
+        const nextRotation = yaw.multiply(quaternion).normalize()
+        rigidBody.setRotation({ x: nextRotation.x, y: nextRotation.y, z: nextRotation.z, w: nextRotation.w }, true)
+      }
+      rigidBody.setAngvel({ x: 0, y: 0, z: 0 }, true)
+    }
+
+    speedRef.current = THREE.MathUtils.lerp(speedRef.current, driveSpeed.current, .18)
+    steerRef.current = THREE.MathUtils.lerp(steerRef.current, steer, .18)
+    const position = new THREE.Vector3(translation.x, translation.y, translation.z)
+    const desiredCamera = position.clone().addScaledVector(forward, -8.4).add(new THREE.Vector3(0, 4.9, 0))
+    camera.position.lerp(desiredCamera, 1 - Math.exp(-delta * 4.6))
+    smoothTarget.current.lerp(position.clone().addScaledVector(forward, 2.7).add(new THREE.Vector3(0, .65, 0)), 1 - Math.exp(-delta * 6.2))
+    camera.lookAt(smoothTarget.current)
+
+    frame.current += 1
+    if (frame.current % 5 === 0) {
+      setPlayerPosition([translation.x, translation.y, translation.z])
+      const flat = new THREE.Vector3(translation.x, 0, translation.z)
+      const catDistance = flat.distanceTo(CAT_POSITION)
+      const shelterDistance = flat.distanceTo(SHELTER_POSITION)
+      const nearby = catDistance < 2.65 ? 'cat' : shelterDistance < 3.1 ? 'shelter' : null
+      setNearby(nearby)
+    }
+    if (translation.y < -3 || Math.abs(translation.x) > 43 || Math.abs(translation.z) > 43) reset()
+  })
+
   return (
-    <group position={position}>
-      {blades.map((blade, index) => (
-        <mesh key={index} position={[blade.x, blade.h / 2, blade.z]} rotation={[0, blade.r, blade.r * 0.18]} castShadow>
-          <coneGeometry args={[0.045, blade.h, 3]} />
-          <meshStandardMaterial color={index % 3 ? color : '#b7bc78'} roughness={1} />
-        </mesh>
-      ))}
-    </group>
+    <RigidBody
+      ref={body}
+      colliders={false}
+      position={START_POSITION}
+      rotation={[0, -Math.PI / 2, 0]}
+      mass={2.2}
+      canSleep={false}
+      linearDamping={.65}
+      angularDamping={3.2}
+      enabledRotations={[false, true, false]}
+      friction={1.8}
+    >
+      <CuboidCollider args={[1.18, .46, .75]} position={[0, -.04, 0]} restitution={.08} friction={.72} />
+      <RoverVisual speed={speedRef} steer={steerRef} />
+    </RigidBody>
   )
 }
 
-function StoneWall({ position, length = 3, rotation = 0 }: { position: [number, number, number]; length?: number; rotation?: number }) {
-  const stones = useMemo(() => Array.from({ length: Math.ceil(length * 3) }, (_, i) => ({
-    x: -length / 2 + (i + 0.5) * (length / Math.ceil(length * 3)),
-    y: 0.18 + (i % 2) * 0.05,
-    s: 0.26 + (i % 3) * 0.04,
-  })), [length])
-  return (
-    <group position={position} rotation={[0, rotation, 0]}>
-      {stones.map((stone, index) => (
-        <mesh key={index} position={[stone.x, stone.y, 0]} scale={[stone.s * 1.35, stone.s, stone.s]} castShadow receiveShadow>
-          <dodecahedronGeometry args={[1, 0]} />
-          <meshStandardMaterial color={index % 2 ? '#b7a78d' : '#c7b99d'} roughness={1} />
-        </mesh>
-      ))}
-    </group>
-  )
-}
-
-function CatFigure({ position, color, scale = 1, rotation = 0 }: { position: [number, number, number]; color: string; scale?: number; rotation?: number }) {
-  return (
-    <group position={position} scale={scale} rotation={[0, rotation, 0]}>
-      <mesh castShadow position={[0, 0.31, 0]} scale={[0.45, 0.56, 0.72]}>
-        <sphereGeometry args={[0.48, 20, 14]} />
-        <meshStandardMaterial color={color} roughness={0.9} />
-      </mesh>
-      <mesh castShadow position={[0, 0.72, 0.26]}>
-        <sphereGeometry args={[0.32, 20, 14]} />
-        <meshStandardMaterial color={color} roughness={0.88} />
-      </mesh>
-      {[-0.17, 0.17].map((x) => (
-        <mesh key={x} castShadow position={[x, 1.01, 0.24]} rotation={[0.08, 0, x > 0 ? -0.08 : 0.08]}>
-          <coneGeometry args={[0.12, 0.3, 4]} />
-          <meshStandardMaterial color={color} roughness={0.9} />
-        </mesh>
-      ))}
-      <mesh castShadow position={[0.42, 0.34, -0.12]} rotation={[0.05, 0.25, -0.74]}>
-        <cylinderGeometry args={[0.055, 0.09, 0.95, 10]} />
-        <meshStandardMaterial color={color} roughness={0.9} />
-      </mesh>
-      <mesh position={[-0.11, 0.78, 0.53]}><sphereGeometry args={[0.026, 8, 8]} /><meshBasicMaterial color="#d7f7c7" /></mesh>
-      <mesh position={[0.11, 0.78, 0.53]}><sphereGeometry args={[0.026, 8, 8]} /><meshBasicMaterial color="#d7f7c7" /></mesh>
-    </group>
-  )
-}
-
-function MovingCar({ offset, color }: { offset: number; color: string }) {
-  const ref = useRef<THREE.Group>(null)
+function Beacon({ color, label, value }: { color: string; label: string; value: string }) {
+  const ring = useRef<THREE.Mesh>(null)
   useFrame(({ clock }) => {
-    if (!ref.current) return
-    const progress = ((clock.elapsedTime * 1.25 + offset) % 22) - 11
-    ref.current.position.x = progress
+    if (!ring.current) return
+    const pulse = 1 + Math.sin(clock.elapsedTime * 3.4) * .12
+    ring.current.scale.setScalar(pulse)
+    ring.current.rotation.z = clock.elapsedTime * .45
   })
   return (
-    <group ref={ref} position={[0, 0.23, 6.3]}>
-      <RoundedBox args={[1.25, 0.42, 0.68]} radius={0.13} smoothness={3} castShadow>
-        <meshStandardMaterial color={color} metalness={0.3} roughness={0.4} />
-      </RoundedBox>
-      <mesh position={[0, 0.33, 0]} castShadow>
-        <boxGeometry args={[0.62, 0.32, 0.56]} />
-        <meshStandardMaterial color="#d9e3e2" metalness={0.2} roughness={0.25} />
+    <group>
+      <mesh ref={ring} rotation={[Math.PI / 2, 0, 0]} position={[0, .08, 0]}>
+        <torusGeometry args={[.82, .045, 8, 34]} />
+        <meshBasicMaterial color={color} toneMapped={false} />
       </mesh>
-      {[-0.42, 0.42].flatMap((x) => [-0.36, 0.36].map((z) => (
-        <mesh key={`${x}-${z}`} position={[x, -0.18, z]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.14, 0.14, 0.11, 12]} />
-          <meshStandardMaterial color="#27272a" />
-        </mesh>
-      )))}
-    </group>
-  )
-}
-
-function CurrentGarden({ companion }: { companion: Cat }) {
-  return (
-    <group position={[-4.4, 0.02, 1.1]}>
-      <mesh receiveShadow position={[0, 0.04, 0]}>
-        <cylinderGeometry args={[3.3, 3.55, 0.18, 20]} />
-        <meshStandardMaterial color="#cabb9d" roughness={1} />
+      <mesh position={[0, 2.1, 0]}>
+        <cylinderGeometry args={[.014, .14, 3.4, 10, 1, true]} />
+        <meshBasicMaterial color={color} transparent opacity={.33} side={THREE.DoubleSide} toneMapped={false} />
       </mesh>
-      <StoneWall position={[0, 0, -2.25]} length={5.1} />
-      <OliveTree position={[-1.7, 0.08, -0.8]} scale={0.92} />
-      <OliveTree position={[1.5, 0.08, -1.25]} scale={0.72} />
-      <GrassPatch position={[-0.4, 0.1, 1.3]} />
-      <GrassPatch position={[1.3, 0.1, 0.8]} color="#718f5d" />
-      <GrassPatch position={[-1.5, 0.1, 0.8]} color="#80956b" />
-      <CatFigure position={[0.1, 0.13, 0.1]} color={companion.color} scale={0.8} rotation={0.35} />
-      <CatFigure position={[1.4, 0.12, 1.55]} color="#292c2b" scale={0.65} rotation={-0.5} />
-      <CatFigure position={[-1.35, 0.12, 1.6]} color="#bd7843" scale={0.7} rotation={0.7} />
-    </group>
-  )
-}
-
-function ShelterWorkshop() {
-  return (
-    <group position={[5.1, 0.15, 0.2]}>
-      <mesh receiveShadow position={[0, 0, 0]}><cylinderGeometry args={[2.3, 2.5, 0.24, 8]} /><meshStandardMaterial color="#b6a889" /></mesh>
-      {[-0.75, 0.15, 0.95].map((x, index) => (
-        <group key={x} position={[x, 0.12, index % 2 ? 0.35 : -0.15]} rotation={[0, index * 0.35, 0]}>
-          <mesh castShadow position={[0, 0.42, 0]}><boxGeometry args={[0.74, 0.78, 0.85]} /><meshStandardMaterial color={index % 2 ? '#c68e5c' : '#ac7650'} /></mesh>
-          <mesh castShadow position={[0, 0.9, 0]} rotation={[0, 0, Math.PI / 4]}><boxGeometry args={[0.73, 0.73, 0.08]} /><meshStandardMaterial color="#695c51" /></mesh>
-          <mesh position={[0, 0.38, 0.44]}><circleGeometry args={[0.16, 16]} /><meshStandardMaterial color="#2f2e2d" /></mesh>
-        </group>
-      ))}
-      <StoneWall position={[0, 0.05, 1.58]} length={3.2} />
-    </group>
-  )
-}
-
-function DreamProperty() {
-  return (
-    <group position={[4.25, 0.88, -5.2]}>
-      <mesh receiveShadow position={[0, -0.38, 0]}>
-        <cylinderGeometry args={[4.1, 4.8, 0.82, 9]} />
-        <meshStandardMaterial color="#8f9e67" roughness={1} />
-      </mesh>
-      <group position={[0.35, 0, 0]}>
-        <mesh castShadow position={[0, 0.8, 0]}><boxGeometry args={[3.2, 1.65, 2.25]} /><meshStandardMaterial color="#d8c9ad" roughness={0.95} /></mesh>
-        <mesh castShadow position={[-0.6, 1.8, 0]}><boxGeometry args={[2.15, 0.42, 1.75]} /><meshStandardMaterial color="#c7b697" /></mesh>
-        {[-1.15, 0, 1.15].map((x) => <mesh key={x} position={[x, 0.8, 1.14]}><boxGeometry args={[0.48, 0.68, 0.05]} /><meshStandardMaterial color="#6a7275" metalness={0.2} /></mesh>)}
-        <mesh position={[0.72, 0.35, -1.18]}><boxGeometry args={[1.2, 0.62, 0.08]} /><meshStandardMaterial color="#59656b" /></mesh>
-      </group>
-      <mesh receiveShadow position={[-2.2, 0.08, -0.5]} rotation={[-Math.PI / 2, 0, 0.08]}>
-        <planeGeometry args={[2.5, 1.65]} />
-        <meshStandardMaterial color="#b78766" roughness={0.9} />
-      </mesh>
-      {[[-2.95, -1.5], [-2.8, 1.6], [2.7, -1.7], [2.8, 1.6]].map(([x, z], i) => <OliveTree key={i} position={[x, 0.02, z]} scale={0.55} />)}
-      <StoneWall position={[0, 0.05, 2.55]} length={5.6} />
-    </group>
-  )
-}
-
-function Hotspot({ place, onOpen }: { place: Place; onOpen: (place: Place) => void }) {
-  const [hovered, setHovered] = useState(false)
-  return (
-    <group position={place.position}>
-      <mesh
-        position={[0, 0.45, 0]}
-        onClick={(event) => { event.stopPropagation(); onOpen(place) }}
-        onPointerOver={() => { setHovered(true); document.body.style.cursor = 'pointer' }}
-        onPointerOut={() => { setHovered(false); document.body.style.cursor = 'default' }}
-        scale={hovered ? 1.15 : 1}
-      >
-        <octahedronGeometry args={[0.29, 0]} />
-        <meshStandardMaterial color={place.accent} emissive={place.accent} emissiveIntensity={hovered ? 2.2 : 1.1} toneMapped={false} />
-      </mesh>
-      <mesh position={[0, 0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.35, 0.54, 32]} />
-        <meshBasicMaterial color={place.accent} transparent opacity={hovered ? 0.85 : 0.42} />
-      </mesh>
-      <Html position={[0, 1.08, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
-        <div className={`world-label ${hovered ? 'is-hovered' : ''}`}>
-          <span>{place.label}</span>
-          <strong>+{place.points}</strong>
-        </div>
+      <pointLight color={color} intensity={.48} distance={5} position={[0, 1, 0]} />
+      <Html center position={[0, 2.65, 0]} distanceFactor={10} zIndexRange={[6, 0]}>
+        <div className="world-objective-tag"><span>{label}</span><b>{value}</b></div>
       </Html>
     </group>
   )
 }
 
-function Scene({ places, companion, focus, onOpen }: { places: Place[]; companion: Cat; focus: Focus; onOpen: (place: Place) => void }) {
-  const controls = useRef<OrbitControlsImpl>(null)
+function FoodCrate({ id, position }: { id: string; position: [number, number, number] }) {
+  const found = useGame((state) => state.foodFound.includes(id))
+  const collectFood = useGame((state) => state.collectFood)
+  const playerPosition = useGame((state) => state.playerPosition)
+  const group = useRef<THREE.Group>(null)
+  useFrame(({ clock }) => {
+    if (found || !group.current) return
+    group.current.position.y = position[1] + Math.sin(clock.elapsedTime * 2.4 + position[0]) * .08
+    const dx = playerPosition[0] - position[0]
+    const dz = playerPosition[2] - position[2]
+    if (dx * dx + dz * dz < 8.41) {
+      collectFood(id)
+      playCollect()
+    }
+  })
+  if (found) return null
+  return (
+    <group ref={group} position={position}>
+      <Beacon color="#ffbd69" label="FOOD" value="+10 care" />
+      <RoundedBox args={[1.05, .9, .82]} radius={.16} smoothness={4} castShadow>
+        <meshStandardMaterial color="#c88b54" roughness={.88} />
+      </RoundedBox>
+      <mesh position={[0, .05, .43]}><circleGeometry args={[.22, 22]} /><meshStandardMaterial color="#2f4338" /></mesh>
+      <Text position={[0, -.03, .445]} fontSize={.22} color="#dfff6c" anchorX="center">FOOD</Text>
+    </group>
+  )
+}
+
+function ShelterPart({ id, position, index }: { id: string; position: [number, number, number]; index: number }) {
+  const visible = useGame((state) => state.hasBonded)
+  const found = useGame((state) => state.partsFound.includes(id))
+  const collectPart = useGame((state) => state.collectPart)
+  const playerPosition = useGame((state) => state.playerPosition)
+  const group = useRef<THREE.Group>(null)
+  useFrame(({ clock }) => {
+    if (!visible || found || !group.current) return
+    group.current.rotation.y = clock.elapsedTime * .28 + index
+    const dx = playerPosition[0] - position[0]
+    const dz = playerPosition[2] - position[2]
+    if (dx * dx + dz * dz < 8.41) {
+      collectPart(id)
+      playCollect()
+    }
+  })
+  if (!visible || found) return null
+  return (
+    <group ref={group} position={position}>
+      <Beacon color="#eefde0" label="SHELTER PART" value="+15 care" />
+      {[0, 1, 2].map((row) => (
+        <RoundedBox key={row} position={[0, (row - 1) * .25, 0]} args={[1.35, .18, .35]} radius={.05} smoothness={2} castShadow>
+          <meshStandardMaterial color={row === 1 ? '#d09a5f' : '#b97845'} roughness={.9} />
+        </RoundedBox>
+      ))}
+      <mesh position={[0, 0, .2]}><boxGeometry args={[.22, 1, .08]} /><meshStandardMaterial color="#6c4a32" /></mesh>
+    </group>
+  )
+}
+
+function CatActor() {
+  const group = useRef<THREE.Group>(null)
+  const { scene, animations } = useGLTF('/models/kenney/animal-cat.glb')
+  const clone = useMemo(() => SkeletonUtils.clone(scene), [scene])
+  const { actions } = useAnimations(animations, group)
+  const animation = useGame((state) => state.catAnimation)
+  const hasFed = useGame((state) => state.hasFed)
+  const hasBonded = useGame((state) => state.hasBonded)
+  const shelterStage = useGame((state) => state.shelterStage)
+  const setCatAnimation = useGame((state) => state.setCatAnimation)
+
+  useEffect(() => {
+    clone.traverse((object) => {
+      if (object instanceof THREE.Mesh) {
+        object.castShadow = true
+        object.receiveShadow = true
+        const material = (object.material as THREE.MeshStandardMaterial).clone()
+        material.color.multiply(new THREE.Color('#ffc08a'))
+        material.roughness = .9
+        object.material = material
+      }
+    })
+  }, [clone])
+
+  useEffect(() => {
+    const selected = actions[animation] ?? actions.idle
+    selected?.reset().fadeIn(.22).play()
+    if (animation === 'eat') {
+      const timer = window.setTimeout(() => setCatAnimation('idle'), 2600)
+      return () => {
+        window.clearTimeout(timer)
+        selected?.fadeOut(.2)
+      }
+    }
+    return () => { selected?.fadeOut(.2) }
+  }, [actions, animation, setCatAnimation])
+
+  useFrame((_, delta) => {
+    if (!group.current) return
+    const target = shelterStage === 4 ? CAT_SHELTER_POSITION : CAT_FEEDING_POSITION
+    group.current.position.lerp(target, 1 - Math.exp(-delta * .8))
+    if (shelterStage === 4) group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, -1.35, .03)
+  })
+
+  return (
+    <group ref={group} position={[CAT_POSITION.x, .04, CAT_POSITION.z]} rotation={[0, Math.PI, 0]}>
+      <primitive object={clone} scale={1.08} />
+      <Html center position={[0, 2.25, 0]} distanceFactor={9} zIndexRange={[8, 0]}>
+        <div className={`cat-world-tag ${hasFed ? 'is-fed' : ''}`}>
+          <strong>Splotch</strong>
+          <span>{shelterStage === 4 ? 'safe + warm' : hasBonded ? 'trusting you' : hasFed ? 'eating' : 'hungry'}</span>
+        </div>
+      </Html>
+      {hasBonded && <Sparkles count={12} scale={[2.3, 2, 2.3]} size={4} speed={.35} color="#e2ff70" position={[0, .9, 0]} />}
+    </group>
+  )
+}
+
+function FeedingGarden() {
+  const hasFed = useGame((state) => state.hasFed)
+  return (
+    <group>
+      <mesh position={[CAT_POSITION.x, .055, CAT_POSITION.z]} receiveShadow>
+        <cylinderGeometry args={[2.15, 2.28, .1, 32]} />
+        <meshStandardMaterial color="#b8ab89" roughness={1} />
+      </mesh>
+      <mesh position={[CAT_POSITION.x - .9, .15, CAT_POSITION.z + .2]} castShadow>
+        <cylinderGeometry args={[.46, .32, .22, 24]} />
+        <meshStandardMaterial color="#617e76" metalness={.55} roughness={.3} />
+      </mesh>
+      {hasFed && (
+        <mesh position={[CAT_POSITION.x - .9, .29, CAT_POSITION.z + .2]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[.27, 20]} />
+          <meshStandardMaterial color="#8b5c37" roughness={1} />
+        </mesh>
+      )}
+      <CatActor />
+    </group>
+  )
+}
+
+function Shelter() {
+  const stage = useGame((state) => state.shelterStage)
+  const hasBonded = useGame((state) => state.hasBonded)
+  return (
+    <group position={[SHELTER_POSITION.x, 0, SHELTER_POSITION.z]}>
+      <mesh position={[0, .035, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.6, 2.05, 40]} />
+        <meshBasicMaterial color={hasBonded && stage < 4 ? '#dfff6c' : '#5f6f53'} transparent opacity={hasBonded ? .75 : .26} toneMapped={false} />
+      </mesh>
+      {hasBonded && stage < 4 && <Beacon color="#dfff6c" label="BUILD HERE" value={`${stage}/4`} />}
+      {stage >= 1 && (
+        <RoundedBox args={[3.05, .28, 2.35]} position={[0, .18, 0]} radius={.11} smoothness={3} castShadow receiveShadow>
+          <meshStandardMaterial color="#96714e" roughness={.95} />
+        </RoundedBox>
+      )}
+      {stage >= 2 && [-1.32, 1.32].map((x) => (
+        <RoundedBox key={x} args={[.22, 1.75, 2.15]} position={[x, 1.15, 0]} radius={.08} smoothness={2} castShadow>
+          <meshStandardMaterial color="#bd8556" roughness={.88} />
+        </RoundedBox>
+      ))}
+      {stage >= 2 && (
+        <RoundedBox args={[2.8, 1.75, .22]} position={[0, 1.15, -.98]} radius={.08} smoothness={2} castShadow>
+          <meshStandardMaterial color="#b47c50" roughness={.88} />
+        </RoundedBox>
+      )}
+      {stage >= 3 && (
+        <group>
+          <RoundedBox args={[1.92, .18, 2.6]} position={[-.77, 2.1, 0]} rotation={[0, 0, .47]} radius={.07} smoothness={2} castShadow>
+            <meshStandardMaterial color="#66554a" roughness={.8} />
+          </RoundedBox>
+          <RoundedBox args={[1.92, .18, 2.6]} position={[.77, 2.1, 0]} rotation={[0, 0, -.47]} radius={.07} smoothness={2} castShadow>
+            <meshStandardMaterial color="#5b4c43" roughness={.8} />
+          </RoundedBox>
+        </group>
+      )}
+      {stage >= 4 && (
+        <group>
+          <RoundedBox args={[1.55, .18, 1.22]} position={[0, .42, .12]} radius={.2} smoothness={6} castShadow>
+            <meshStandardMaterial color="#b9d77e" roughness={.95} />
+          </RoundedBox>
+          <pointLight position={[0, 1.65, .65]} color="#ffe0a1" intensity={2.1} distance={7} />
+          <Sparkles count={18} scale={[3.2, 2.8, 3]} size={4} speed={.3} color="#ffdf96" position={[0, 1.2, 0]} />
+        </group>
+      )}
+    </group>
+  )
+}
+
+function KnockableGardenProps() {
+  const positions = [
+    [-3.1, -5.4], [4.3, -7.2], [9.7, 6.2], [-10.4, -2.5], [3.2, 10.8], [-5.2, 12.3],
+  ] as const
+  return (
+    <group>
+      {positions.map(([x, z], index) => (
+        <RigidBody key={index} position={[x, .55, z]} mass={.28} colliders="cuboid" restitution={.18} friction={.8}>
+          <RoundedBox args={[.72, 1.05, .72]} radius={.06} smoothness={2} castShadow>
+            <meshStandardMaterial color={index % 2 ? '#9d7049' : '#6e8260'} roughness={.92} />
+          </RoundedBox>
+          <mesh position={[0, 0, .37]}><boxGeometry args={[.5, .08, .02]} /><meshBasicMaterial color="#e7e0c8" /></mesh>
+        </RigidBody>
+      ))}
+    </group>
+  )
+}
+
+function BoundaryColliders() {
+  return (
+    <RigidBody type="fixed" colliders={false}>
+      <CuboidCollider args={[24, 2, .2]} position={[0, 1, -22]} />
+      <CuboidCollider args={[24, 2, .2]} position={[0, 1, 22]} />
+      <CuboidCollider args={[.2, 2, 24]} position={[-22, 1, 0]} />
+      <CuboidCollider args={[.2, 2, 24]} position={[22, 1, 0]} />
+      <BallCollider args={[1]} position={[0, -10, 0]} sensor />
+    </RigidBody>
+  )
+}
+
+function Scene() {
   return (
     <>
-      <color attach="background" args={['#716a82']} />
-      <fog attach="fog" args={['#8c8397', 18, 38]} />
-      <hemisphereLight args={['#fffef2', '#6e5d52', 2.1]} />
-      <directionalLight position={[-7, 13, 8]} intensity={4.4} color="#fffdf0" castShadow shadow-mapSize={[2048, 2048]} shadow-camera-far={35} shadow-camera-left={-16} shadow-camera-right={16} shadow-camera-top={16} shadow-camera-bottom={-16} />
-      <directionalLight position={[8, 4, -8]} intensity={1.1} color="#b8b7ff" />
-      <mesh receiveShadow position={[0, -0.23, 0]}>
-        <cylinderGeometry args={[14.5, 15.2, 0.55, 32]} />
-        <meshStandardMaterial color="#81935d" roughness={1} />
-      </mesh>
-      <mesh receiveShadow position={[0, 0.02, 6.3]}>
-        <boxGeometry args={[25, 0.14, 2.15]} />
-        <meshStandardMaterial color="#57585b" roughness={0.92} />
-      </mesh>
-      <mesh position={[0, 0.11, 6.3]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[24, 0.07]} />
-        <meshBasicMaterial color="#e9dfb9" />
-      </mesh>
-      <MovingCar offset={0} color="#d3dbd4" />
-      <MovingCar offset={10.5} color="#8f665e" />
-      <CurrentGarden companion={companion} />
-      <ShelterWorkshop />
-      <DreamProperty />
-      <OliveTree position={[-0.2, 0, -3.9]} scale={0.85} />
-      <OliveTree position={[-7.8, 0, -4.2]} scale={0.7} />
-      <OliveTree position={[7.6, 0, 3.4]} scale={0.8} />
-      {Array.from({ length: 24 }, (_, i) => (
-        <GrassPatch key={i} position={[-9 + (i * 4.1) % 18, 0.06, -6.8 + ((i * 7.3) % 12)]} color={i % 2 ? '#859766' : '#a0a667'} />
-      ))}
-      <CatFigure position={[0.3, 0.08, 5.15]} color="#d8c0a4" scale={0.52} rotation={-0.35} />
-      {places.map((place) => <Hotspot key={place.id} place={place} onOpen={onOpen} />)}
-      <CameraRig focus={focus} controls={controls} />
-      <OrbitControls ref={controls} makeDefault enableDamping dampingFactor={0.06} minDistance={7} maxDistance={25} maxPolarAngle={Math.PI / 2.14} minPolarAngle={0.28} enablePan={false} />
+      <color attach="background" args={['#81778e']} />
+      <fog attach="fog" args={['#8d8497', 29, 67]} />
+      <Sky distance={450000} sunPosition={[70, 24, -90]} inclination={.5} azimuth={.25} turbidity={11} rayleigh={3.6} mieCoefficient={.014} mieDirectionalG={.88} />
+      <ambientLight intensity={1.7} color="#d8d4ef" />
+      <hemisphereLight intensity={1.8} color="#fffef2" groundColor="#485037" />
+      <directionalLight
+        castShadow
+        position={[-12, 24, -15]}
+        intensity={3.8}
+        color="#fffff4"
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-near={1}
+        shadow-camera-far={60}
+        shadow-camera-left={-28}
+        shadow-camera-right={28}
+        shadow-camera-top={28}
+        shadow-camera-bottom={-28}
+        shadow-bias={-.00018}
+      />
+      <StormClouds />
+      <Landscape />
+      <BoundaryColliders />
+      <FeedingGarden />
+      <Shelter />
+      {FOOD_CRATES.map((item) => <FoodCrate key={item.id} {...item} />)}
+      {SHELTER_PARTS.map((item, index) => <ShelterPart key={item.id} {...item} index={index} />)}
+      <KnockableGardenProps />
+      <CaretakerRover />
+      <EffectComposer multisampling={0}>
+        <Bloom intensity={.32} luminanceThreshold={1.05} mipmapBlur />
+        <Vignette offset={.25} darkness={.28} />
+      </EffectComposer>
     </>
   )
 }
 
-export function CatGardenWorld(props: { places: Place[]; companion: Cat; focus: Focus; onOpen: (place: Place) => void }) {
+export function CatGardenWorld() {
   return (
-    <Canvas shadows dpr={[1, 1.65]} camera={{ fov: 40, near: 0.1, far: 70, position: [12, 12, 15] }} gl={{ antialias: true, powerPreference: 'high-performance' }}>
-      <Scene {...props} />
+    <Canvas
+      shadows
+      dpr={[1, 1.7]}
+      camera={{ position: [0, 7, -18], fov: 46, near: .1, far: 160 }}
+      gl={{ antialias: true, powerPreference: 'high-performance', alpha: false }}
+      onCreated={({ gl }) => {
+        gl.toneMapping = THREE.ACESFilmicToneMapping
+        gl.toneMappingExposure = 1.22
+        gl.outputColorSpace = THREE.SRGBColorSpace
+      }}
+    >
+      <Suspense fallback={null}>
+        <Physics gravity={[0, -18, 0]} timeStep="vary">
+          <Scene />
+        </Physics>
+      </Suspense>
     </Canvas>
   )
 }
 
-export type { Focus }
+useGLTF.preload('/models/bruno/rescue-rover.glb')
+useGLTF.preload('/models/bruno/oak-tree.glb')
+useGLTF.preload('/models/kenney/animal-cat.glb')
+
+export default CatGardenWorld
