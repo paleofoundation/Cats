@@ -2,8 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "trailingSlash": false,
   "redirects": [
-    { "source": "/mabel", "destination": "/Mabel", "permanent": true },
-    { "source": "/splotch", "destination": "/Splotch", "permanent": true },
     { "source": "/watch-mabel.html", "destination": "/Mabel", "permanent": true },
     { "source": "/watch-splotch.html", "destination": "/Splotch", "permanent": true },
     { "source": "/gallery.html", "destination": "/cats", "permanent": true },
