@@ -206,7 +206,8 @@ module.exports = async function handler(req, res) {
 
     return res.status(400).json({ error: 'Unknown caretaker action.' })
   } catch (error) {
-    console.error('Caretaker request failed', error?.message || error)
-    return res.status(error?.statusCode || 500).json({ error: error?.message || 'Unable to update the sanctuary record.' })
+    const statusCode = error?.statusCode || 500
+    if (statusCode >= 500) console.error('Caretaker request failed', error?.message || error)
+    return res.status(statusCode).json({ error: error?.message || 'Unable to update the sanctuary record.' })
   }
 }

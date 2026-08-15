@@ -47,7 +47,8 @@ module.exports = async function handler(req, res) {
       unread: notifications.filter((item) => !item.read).length,
     })
   } catch (error) {
-    console.error('Garden notifications request failed', error?.message || error)
-    return res.status(error?.statusCode || 500).json({ error: error?.message || 'Unable to load garden notifications.' })
+    const statusCode = error?.statusCode || 500
+    if (statusCode >= 500) console.error('Garden notifications request failed', error?.message || error)
+    return res.status(statusCode).json({ error: error?.message || 'Unable to load garden notifications.' })
   }
 }
