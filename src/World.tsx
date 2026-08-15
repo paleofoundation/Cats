@@ -13,6 +13,8 @@ const CAT_FEEDING_POSITION = new THREE.Vector3(0.2, .04, 4.2)
 const CAT_SHELTER_POSITION = new THREE.Vector3(4.55, .04, 7.05)
 const CAT_BOND_POSITION = new THREE.Vector3(2.2, .04, 2.0)
 const SHELTER_POSITION = new THREE.Vector3(5.4, 0, 7.2)
+const REALITY_PORTAL_POSITION = new THREE.Vector3(10.8, 0, -4.8)
+const DREAM_PORTAL_POSITION = new THREE.Vector3(-7.9, 0, 8.7)
 const START_POSITION: [number, number, number] = [0, 0.75, -9]
 
 const FOOD_CRATES = [
@@ -316,7 +318,17 @@ function CaretakerRover() {
       const activeCatPosition = game.shelterStage === 4 ? CAT_SHELTER_POSITION : CAT_POSITION
       const catDistance = flat.distanceTo(activeCatPosition)
       const shelterDistance = flat.distanceTo(SHELTER_POSITION)
-      const nearby = catDistance < 2.65 ? 'cat' : shelterDistance < 3.1 ? 'shelter' : null
+      const realityDistance = flat.distanceTo(REALITY_PORTAL_POSITION)
+      const dreamDistance = flat.distanceTo(DREAM_PORTAL_POSITION)
+      const nearby = catDistance < 2.65
+        ? 'cat'
+        : shelterDistance < 3.1
+          ? 'shelter'
+          : realityDistance < 3.2
+            ? 'reality'
+            : game.shelterStage === 4 && dreamDistance < 3.2
+              ? 'dream'
+              : null
       setNearby(nearby)
     }
     if (translation.y < -3 || Math.abs(translation.x) > 43 || Math.abs(translation.z) > 43) reset()
@@ -472,7 +484,7 @@ function CatActor() {
 
   return (
     <group ref={group} position={[CAT_POSITION.x, .04, CAT_POSITION.z]} rotation={[0, Math.PI, 0]}>
-      <primitive object={clone} scale={.52} />
+      <primitive object={clone} scale={.72} />
       {!bondingMode && (
         <Html center position={[0, 1.35, 0]} distanceFactor={9} zIndexRange={[8, 0]}>
           <div className={`cat-world-tag ${hasFed ? 'is-fed' : ''}`}>
@@ -589,6 +601,49 @@ function Shelter() {
   )
 }
 
+function GardenPortals() {
+  const shelterStage = useGame((state) => state.shelterStage)
+  const realityVisits = useGame((state) => state.realityVisits)
+  const dreamVisits = useGame((state) => state.dreamVisits)
+  return (
+    <group>
+      <group position={[REALITY_PORTAL_POSITION.x, 0, REALITY_PORTAL_POSITION.z]} rotation={[0, -.35, 0]}>
+        <mesh position={[0, 1.55, 0]} castShadow>
+          <boxGeometry args={[3.35, 2.85, .28]} />
+          <meshStandardMaterial color="#e9e5d7" roughness={.72} metalness={.08} />
+        </mesh>
+        <mesh position={[0, 1.55, -.16]}>
+          <planeGeometry args={[2.82, 2.3]} />
+          <meshStandardMaterial color="#202a27" emissive="#8fd8c5" emissiveIntensity={.2} roughness={.42} />
+        </mesh>
+        <mesh position={[0, 1.72, -.32]}>
+          <circleGeometry args={[.58, 36]} />
+          <meshBasicMaterial color={realityVisits ? '#dfff6c' : '#f4f1e7'} toneMapped={false} />
+        </mesh>
+        <Text position={[0, .78, -.33]} rotation={[0, Math.PI, 0]} fontSize={.23} color="#f7f4e9" anchorX="center">SPLOTCH · REAL LIFE</Text>
+        <Text position={[0, .43, -.33]} rotation={[0, Math.PI, 0]} fontSize={.13} color="#a5b9b2" anchorX="center">MEDIA · NEEDS · VERIFIED UPDATES</Text>
+        <Beacon color="#f7f4e9" label="REALITY PORTAL" value={realityVisits ? 'open again' : '+40 care'} />
+      </group>
+
+      {shelterStage === 4 && (
+        <group position={[DREAM_PORTAL_POSITION.x, 0, DREAM_PORTAL_POSITION.z]} rotation={[0, .6, 0]}>
+          <mesh position={[0, 1.65, 0]}>
+            <torusGeometry args={[1.2, .16, 18, 72]} />
+            <meshStandardMaterial color="#c8b8ff" emissive="#6b50c6" emissiveIntensity={2.2} roughness={.25} metalness={.35} toneMapped={false} />
+          </mesh>
+          <mesh position={[0, 1.65, .06]}>
+            <circleGeometry args={[1.05, 54]} />
+            <meshBasicMaterial color="#73628c" transparent opacity={.5} toneMapped={false} />
+          </mesh>
+          <Sparkles count={48} scale={[3.2, 4, 2.2]} size={6} speed={.28} color="#fff8d4" position={[0, 1.7, 0]} />
+          <pointLight color="#d4c5ff" intensity={3.5} distance={10} position={[0, 1.8, 0]} />
+          <Beacon color="#d3c4ff" label="SPLOTCH’S DREAM" value={dreamVisits ? 'return' : '+75 care'} />
+        </group>
+      )}
+    </group>
+  )
+}
+
 function KnockableGardenProps() {
   const positions = [
     [-3.1, -5.4], [4.3, -7.2], [9.7, 6.2], [-10.4, -2.5], [3.2, 10.8], [-5.2, 12.3],
@@ -648,6 +703,7 @@ function Scene() {
       <FeedingGarden />
       <GroundCaretaker />
       <Shelter />
+      <GardenPortals />
       {FOOD_CRATES.map((item) => <FoodCrate key={item.id} {...item} />)}
       {SHELTER_PARTS.map((item, index) => <ShelterPart key={item.id} {...item} index={index} />)}
       <KnockableGardenProps />

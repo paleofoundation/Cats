@@ -12,3 +12,5 @@ yarn-error.log
 .env.*
 !.env.example
 .vercel
+.agents/
+skills-lock.json

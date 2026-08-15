@@ -4,6 +4,8 @@ import mabel from '../assets/mabel.jpg'
 import charlie from '../assets/charlie_v2.jpg'
 import markos from '../assets/dr_ktori.jpg'
 import gardenConcept from '../assets/0_0.jpeg'
+import dreamGardenConcept from '../assets/mathikoloni-dream-concept.png'
+import type { DonationBadge } from './game/store'
 
 export type Cat = {
   id: string
@@ -30,6 +32,117 @@ export type Place = {
   imageNote?: string
   actions: Array<{ label: string; href: string; primary?: boolean; external?: boolean }>
 }
+
+export type SplotchNeed = {
+  id: string
+  category: 'completed' | 'recurring' | 'preventive' | 'enrichment' | 'story' | 'safety' | 'dream'
+  eyebrow: string
+  title: string
+  detail: string
+  status: string
+  suggestedAmount: number
+  badge: DonationBadge
+}
+
+export type DreamSpace = {
+  id: string
+  number: string
+  title: string
+  detail: string
+}
+
+export const splotchNeeds: SplotchNeed[] = [
+  {
+    id: 'dental-complete',
+    category: 'completed',
+    eyebrow: 'RECENT CARE · DATE PENDING',
+    title: 'Dental cleaning completed',
+    detail: 'Splotch recently had his teeth cleaned. The date, provider note and redacted expense will be added after sanctuary review.',
+    status: 'Awaiting documentation',
+    suggestedAmount: 25,
+    badge: 'bright-bite',
+  },
+  {
+    id: 'food',
+    category: 'recurring',
+    eyebrow: 'EVERYDAY CARE',
+    title: 'Food for a big, healthy boy',
+    detail: 'A recurring need. The reviewed monthly cost and food allocation will come from the sanctuary ledger rather than a fabricated game total.',
+    status: 'Cost awaiting QuickBooks review',
+    suggestedAmount: 10,
+    badge: 'bowl-bringer',
+  },
+  {
+    id: 'future-dental',
+    category: 'preventive',
+    eyebrow: 'PREVENTIVE HEALTH',
+    title: 'His next dental cleaning',
+    detail: 'Splotch has no current health crisis. This is a future preventive-care reserve, with timing to be confirmed by Markos.',
+    status: 'Timing awaiting Markos',
+    suggestedAmount: 25,
+    badge: 'bright-bite',
+  },
+  {
+    id: 'petting',
+    category: 'enrichment',
+    eyebrow: 'HUMAN ATTENTION',
+    title: 'A real petting session',
+    detail: 'Fund dedicated human time for the thing Splotch values most: unhurried attention. A completed session can become a verified garden update.',
+    status: 'Provider and cost awaiting review',
+    suggestedAmount: 15,
+    badge: 'gentle-hands',
+  },
+  {
+    id: 'media',
+    category: 'story',
+    eyebrow: 'REALITY PORTAL',
+    title: 'Photography or videography',
+    detail: 'A documented session creates new real-world photographs and video for Splotch’s journal and supporter garden.',
+    status: 'Scope awaiting review',
+    suggestedAmount: 25,
+    badge: 'storykeeper',
+  },
+  {
+    id: 'tracker',
+    category: 'safety',
+    eyebrow: 'ROAD SAFETY',
+    title: 'A suitable safety tracker',
+    detail: 'Splotch lives near a busy street. The sanctuary will compare a breakaway-mounted location tag with a true GPS pet tracker before naming the final equipment.',
+    status: 'Equipment decision pending',
+    suggestedAmount: 35,
+    badge: 'safe-passage',
+  },
+  {
+    id: 'mathikoloni',
+    category: 'dream',
+    eyebrow: 'THE GREAT DREAM',
+    title: 'A safe home in Mathikoloni',
+    detail: 'Land away from traffic, warm winter rooms, friends, gardens, visitors, resident caretakers and places to hide. Cat Gardens does not own the property.',
+    status: 'Proposed future · property not owned',
+    suggestedAmount: 100,
+    badge: 'dream-builder',
+  },
+]
+
+export const dreamSpaces: DreamSpace[] = [
+  { id: 'warm-rooms', number: '01', title: 'Winter warmth', detail: 'The lower level becomes protected indoor habitat: warm rooms, worn blankets, quiet corners and no cold outdoor box as the only option.' },
+  { id: 'friend-garden', number: '02', title: 'Friends in the garden', detail: 'Distinct planted territories give compatible cats room to rest together—and plenty of space to retreat when they want solitude.' },
+  { id: 'visitor-court', number: '03', title: 'The visitation garden', detail: 'The small court becomes a supervised place where people can sit at cat level, volunteer, pet and build real relationships.' },
+  { id: 'safe-distance', number: '04', title: 'Far from fast traffic', detail: 'The hillside setting moves Splotch’s daily life away from the immediate danger of a busy road.' },
+  { id: 'human-team', number: '05', title: 'People whose job is care', detail: 'Resident keepers, feeders, cleaners and dedicated petters turn safety into a dependable daily practice.' },
+]
+
+export const badgeLabels: Record<DonationBadge, string> = {
+  'bowl-bringer': 'Bowl Bringer',
+  'gentle-hands': 'Gentle Hands',
+  storykeeper: 'Storykeeper',
+  'bright-bite': 'Bright Bite',
+  'safe-passage': 'Safe Passage',
+  'dream-builder': 'Dream Builder',
+  'garden-keeper': 'Garden Keeper',
+}
+
+export { dreamGardenConcept }
 
 export const cats: Cat[] = [
   {

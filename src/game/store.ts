@@ -10,10 +10,11 @@ export type InputState = {
   boost: number
 }
 
-export type NearbyAction = 'cat' | 'shelter' | null
+export type NearbyAction = 'cat' | 'shelter' | 'reality' | 'dream' | null
 export type CatAnimation = 'idle' | 'eat' | 'walk' | 'dance'
+export type DonationBadge = 'bowl-bringer' | 'gentle-hands' | 'storykeeper' | 'bright-bite' | 'safe-passage' | 'dream-builder' | 'garden-keeper'
 
-type GameState = {
+export type GameState = {
   started: boolean
   foodFound: string[]
   partsFound: string[]
@@ -30,6 +31,11 @@ type GameState = {
   lastBondAt: number | null
   nextBondAt: number | null
   bondingMode: boolean
+  realityVisits: number
+  dreamVisits: number
+  dreamDiscoveries: string[]
+  donationBadges: DonationBadge[]
+  verifiedDonationTotal: number
   nearby: NearbyAction
   catAnimation: CatAnimation
   playerPosition: [number, number, number]
@@ -45,6 +51,11 @@ type GameState = {
   beginBonding: () => boolean
   cancelBonding: () => void
   completeBondVisit: () => { advanced: boolean; visit: number } | null
+  visitReality: () => void
+  enterDream: () => boolean
+  discoverDream: (id: string) => void
+  grantDonation: (amount: number, badge: DonationBadge) => void
+  setVerifiedDonations: (amount: number, badges: DonationBadge[]) => void
   setNearby: (nearby: NearbyAction) => void
   setCatAnimation: (animation: CatAnimation) => void
   setPlayerPosition: (position: [number, number, number]) => void
@@ -82,13 +93,18 @@ export const useGame = create<GameState>()(
       lastBondAt: null,
       nextBondAt: null,
       bondingMode: false,
+      realityVisits: 0,
+      dreamVisits: 0,
+      dreamDiscoveries: [],
+      donationBadges: [],
+      verifiedDonationTotal: 0,
       nearby: null,
       catAnimation: 'idle',
       playerPosition: [0, 0, -9],
       notification: null,
       resetToken: 0,
       input: emptyInput,
-      start: () => set({ started: true, notification: 'Find three food crates for Splotch.' }),
+      start: () => set({ started: true, notification: 'Splotch is a relationship, not a checklist. Begin with food.' }),
       collectFood: (id) => {
         if (get().foodFound.includes(id)) return
         set((state) => ({
@@ -104,7 +120,7 @@ export const useGame = create<GameState>()(
           partsFound: [...state.partsFound, id],
           parts: state.parts + 1,
           carePoints: state.carePoints + 15,
-          notification: state.partsFound.length === 3 ? 'All shelter parts found. Return to the glowing build pad.' : 'Shelter part recovered · +15 care',
+          notification: state.partsFound.length === 3 ? 'All shelter parts found. Return to the warm build pad.' : 'Shelter part recovered · +15 care',
         }))
       },
       feed: () => {
@@ -117,7 +133,7 @@ export const useGame = create<GameState>()(
           trust: 15,
           carePoints: state.carePoints + 50,
           catAnimation: 'eat',
-          notification: 'Splotch is eating. Stay with him a moment. · +50 care',
+          notification: 'Splotch is eating. Stay after the bowl is empty. · +50 care',
         })
         return true
       },
@@ -129,7 +145,7 @@ export const useGame = create<GameState>()(
           trust: 48,
           carePoints: state.carePoints + 75,
           catAnimation: 'dance',
-          notification: 'Splotch knows your rover now. His story is unlocked. · +75 care',
+          notification: 'Splotch recognizes your arrival. The relationship has begun. · +75 care',
         })
         return true
       },
@@ -140,23 +156,18 @@ export const useGame = create<GameState>()(
         set({
           parts: state.parts - 1,
           shelterStage: nextStage,
-          safety: nextStage === 4 ? 96 : 12 + nextStage * 20,
-          trust: nextStage === 4 ? 78 : state.trust,
+          safety: nextStage === 4 ? 82 : 12 + nextStage * 17,
+          trust: nextStage === 4 ? Math.max(78, state.trust) : state.trust,
           carePoints: state.carePoints + (nextStage === 4 ? 100 : 25),
           catAnimation: nextStage === 4 ? 'dance' : state.catAnimation,
-          notification: nextStage === 4 ? 'A warm, dry place—built by you. · +100 care' : `Shelter built ${nextStage}/4 · +25 care`,
+          notification: nextStage === 4 ? 'Warm, full and sheltered. Splotch can dream now. · +100 care' : `Shelter built ${nextStage}/4 · +25 care`,
         })
         return true
       },
       beginBonding: () => {
         const state = get()
         if (!state.hasBonded) return false
-        set({
-          bondingMode: true,
-          input: emptyInput,
-          catAnimation: 'idle',
-          notification: null,
-        })
+        set({ bondingMode: true, input: emptyInput, catAnimation: 'idle', notification: null })
         return true
       },
       cancelBonding: () => set({ bondingMode: false, input: emptyInput, catAnimation: 'idle' }),
@@ -164,21 +175,54 @@ export const useGame = create<GameState>()(
         const state = get()
         if (!state.bondingMode || !state.hasBonded) return null
         const now = Date.now()
-        const canAdvance = state.bondVisits < 6 && (!state.nextBondAt || now >= state.nextBondAt)
+        const canAdvance = state.bondVisits < 6
         const nextVisits = canAdvance ? state.bondVisits + 1 : state.bondVisits
         const nextVisit = Math.min(7, nextVisits + 1)
         set({
           bondingMode: false,
           bondVisits: nextVisits,
           lastBondAt: now,
-          nextBondAt: canAdvance && nextVisits < 6 ? now + 20 * 60 * 60 * 1000 : state.nextBondAt,
+          nextBondAt: null,
           trust: canAdvance ? Math.min(100, state.trust + 7) : state.trust,
           carePoints: canAdvance ? state.carePoints + 35 : state.carePoints,
           catAnimation: 'idle',
-          notification: canAdvance ? `Visit ${nextVisit} saved · +35 care` : 'You stayed without turning it into a transaction.',
+          notification: canAdvance ? `Relationship memory ${nextVisit} saved · +35 care` : 'You stayed without needing another reward.',
         })
         return { advanced: canAdvance, visit: nextVisit }
       },
+      visitReality: () => set((state) => ({
+        realityVisits: state.realityVisits + 1,
+        carePoints: state.carePoints + (state.realityVisits === 0 ? 40 : 0),
+        notification: state.realityVisits === 0 ? 'Reality Portal opened · +40 care' : null,
+      })),
+      enterDream: () => {
+        const state = get()
+        if (!state.hasFed || state.shelterStage < 4) return false
+        set({
+          dreamVisits: state.dreamVisits + 1,
+          carePoints: state.carePoints + (state.dreamVisits === 0 ? 75 : 0),
+          notification: state.dreamVisits === 0 ? 'Splotch let you into his dream · +75 care' : 'Welcome back to Splotch’s dream.',
+        })
+        return true
+      },
+      discoverDream: (id) => {
+        if (get().dreamDiscoveries.includes(id)) return
+        set((state) => ({
+          dreamDiscoveries: [...state.dreamDiscoveries, id],
+          carePoints: state.carePoints + 20,
+          notification: 'Dream discovered · +20 care',
+        }))
+      },
+      grantDonation: (amount, badge) => set((state) => ({
+        donationBadges: state.donationBadges.includes(badge) ? state.donationBadges : [...state.donationBadges, badge],
+        verifiedDonationTotal: state.verifiedDonationTotal + amount,
+        carePoints: state.carePoints + Math.max(50, Math.round(amount * 10)),
+        notification: `Donation verified · badge earned · +${Math.max(50, Math.round(amount * 10))} care`,
+      })),
+      setVerifiedDonations: (amount, badges) => set({
+        verifiedDonationTotal: Math.max(0, amount),
+        donationBadges: [...new Set(badges)],
+      }),
       setNearby: (nearby) => {
         if (get().nearby !== nearby) set({ nearby })
       },
@@ -204,8 +248,12 @@ export const useGame = create<GameState>()(
         lastBondAt: null,
         nextBondAt: null,
         bondingMode: false,
+        realityVisits: 0,
+        dreamVisits: 0,
+        dreamDiscoveries: [],
+        donationBadges: [],
+        verifiedDonationTotal: 0,
         nearby: null,
-        catAnimation: 'idle',
         playerPosition: [0, 0, -9],
         notification: null,
         resetToken: state.resetToken + 1,
@@ -213,16 +261,21 @@ export const useGame = create<GameState>()(
       })),
     }),
     {
-      name: 'cat-gardens-first-day-v2',
-      version: 2,
+      name: 'cat-gardens-splotch-relationship-v3',
+      version: 3,
       migrate: (persistedState) => {
         const state = persistedState as Partial<GameState>
         return {
           ...state,
           bondVisits: state.bondVisits ?? 0,
           lastBondAt: state.lastBondAt ?? null,
-          nextBondAt: state.nextBondAt ?? null,
+          nextBondAt: null,
           bondingMode: false,
+          realityVisits: state.realityVisits ?? 0,
+          dreamVisits: state.dreamVisits ?? 0,
+          dreamDiscoveries: state.dreamDiscoveries ?? [],
+          donationBadges: state.donationBadges ?? [],
+          verifiedDonationTotal: state.verifiedDonationTotal ?? 0,
         } as GameState
       },
       partialize: (state) => ({
@@ -241,6 +294,11 @@ export const useGame = create<GameState>()(
         bondVisits: state.bondVisits,
         lastBondAt: state.lastBondAt,
         nextBondAt: state.nextBondAt,
+        realityVisits: state.realityVisits,
+        dreamVisits: state.dreamVisits,
+        dreamDiscoveries: state.dreamDiscoveries,
+        donationBadges: state.donationBadges,
+        verifiedDonationTotal: state.verifiedDonationTotal,
       }),
     },
   ),
@@ -250,62 +308,16 @@ if (import.meta.env.DEV) {
   ;(window as typeof window & { __CAT_GARDENS_GAME__?: typeof useGame }).__CAT_GARDENS_GAME__ = useGame
 }
 
-export const getObjective = (state: Pick<GameState, 'foodFound' | 'hasFed' | 'hasBonded' | 'partsFound' | 'shelterStage' | 'bondVisits' | 'nextBondAt'>) => {
-  if (state.foodFound.length < 3) return {
-    chapter: '01 · FOOD RUN',
-    title: 'Recover three food crates',
-    detail: 'Follow the amber beacons. Drive through a crate to collect it.',
-    progress: state.foodFound.length,
-    total: 3,
-  }
-  if (!state.hasFed) return {
-    chapter: '02 · DELIVER',
-    title: 'Bring the food to Splotch',
-    detail: 'Find the green cat marker, stop nearby, and feed him.',
-    progress: 0,
-    total: 1,
-  }
-  if (!state.hasBonded) return {
-    chapter: '03 · TRUST',
-    title: 'Stay with Splotch',
-    detail: 'Food fixes hunger. Your attention begins a relationship.',
-    progress: 0,
-    total: 1,
-  }
-  if (state.partsFound.length < 4) return {
-    chapter: '04 · SHELTER',
-    title: 'Find four shelter parts',
-    detail: 'The white beacons mark timber and weatherproof panels.',
-    progress: state.partsFound.length,
-    total: 4,
-  }
-  if (state.shelterStage < 4) return {
-    chapter: '05 · BUILD',
-    title: 'Build Splotch a dry place',
-    detail: 'Use one part at a time at the green construction pad.',
-    progress: state.shelterStage,
-    total: 4,
-  }
-  if (state.bondVisits < 6) {
-    const nextVisit = state.bondVisits + 2
-    const waiting = Boolean(state.nextBondAt && Date.now() < state.nextBondAt)
-    return {
-      chapter: `RELATIONSHIP · VISIT ${String(nextVisit).padStart(2, '0')}`,
-      title: waiting ? `Splotch is safe. Visit ${nextVisit} opens tomorrow.` : 'Leave the rover and sit with Splotch',
-      detail: waiting
-        ? 'Nothing bad happens while you are away. A new moment—not a new emergency—will be waiting.'
-        : 'Return to his marker. This time, meet him as a person rather than a vehicle.',
-      progress: state.bondVisits + 1,
-      total: 7,
-    }
-  }
-  return {
-    chapter: 'RELATIONSHIP · ALWAYS CONTINUES',
-    title: 'Splotch comes to greet you',
-    detail: 'The seven-visit arc is complete. His saved relationship with you is not.',
-    progress: 7,
-    total: 7,
-  }
+export const getObjective = (state: Pick<GameState, 'foodFound' | 'hasFed' | 'hasBonded' | 'partsFound' | 'shelterStage' | 'bondVisits' | 'realityVisits' | 'dreamVisits'>) => {
+  if (state.foodFound.length < 3) return { chapter: 'CARE · FOOD', title: 'Recover three food crates', detail: 'Follow the amber beacons. Drive through a crate to collect it.', progress: state.foodFound.length, total: 3 }
+  if (!state.hasFed) return { chapter: 'CARE · DELIVER', title: 'Bring the food to Splotch', detail: 'Find the green cat marker, stop nearby, and feed him.', progress: 0, total: 1 }
+  if (!state.hasBonded) return { chapter: 'RELATIONSHIP · BEGIN', title: 'Stay after the bowl is empty', detail: 'Food fixes hunger. Your attention begins the relationship.', progress: 0, total: 1 }
+  if (state.partsFound.length < 4) return { chapter: 'CARE · WARMTH', title: 'Find four shelter parts', detail: 'The white beacons mark timber and weatherproof panels.', progress: state.partsFound.length, total: 4 }
+  if (state.shelterStage < 4) return { chapter: 'CARE · BUILD', title: 'Build a warm sleeping place', detail: 'Use one part at a time at the green construction pad.', progress: state.shelterStage, total: 4 }
+  if (state.realityVisits < 1) return { chapter: 'REALITY · VERIFIED LIFE', title: 'Open Splotch’s Reality Portal', detail: 'Find the white portal. Real media and reviewed expenses live there.', progress: 0, total: 1 }
+  if (state.dreamVisits < 1) return { chapter: 'DREAM · MATHIKOLONI', title: 'Enter Splotch’s dream', detail: 'He is full, warm and asleep. The violet portal is open.', progress: 0, total: 1 }
+  if (state.bondVisits < 6) return { chapter: `RELATIONSHIP · MEMORY ${String(state.bondVisits + 2).padStart(2, '0')}`, title: 'Leave the rover and spend time with Splotch', detail: 'Each visit is free. Trust comes from attention, not transactions.', progress: state.bondVisits + 1, total: 7 }
+  return { chapter: 'RELATIONSHIP · CONTINUES', title: 'Splotch knows you now', detail: 'Explore, care, return to the dream, or simply sit with him again.', progress: 7, total: 7 }
 }
 
 export const getRelationshipText = (trust: number) => {
