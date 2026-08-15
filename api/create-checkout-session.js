@@ -3,6 +3,13 @@ const Stripe = require('stripe');
 const MINIMUM_AMOUNT_CENTS = 500;
 const MAXIMUM_AMOUNT_CENTS = 50000000;
 
+function requestOrigin(req) {
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const protocol = req.headers['x-forwarded-proto'] || 'https';
+  if (host && /^[a-zA-Z0-9.-]+(?::\d+)?$/.test(host)) return `${protocol}://${host}`;
+  return (process.env.SITE_URL || 'https://catgardens.com').replace(/\/$/, '');
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -37,7 +44,7 @@ module.exports = async function handler(req, res) {
       .map(value => value.trim().slice(0, 100))
       .filter(Boolean)
       .join(' ');
-    const siteUrl = (process.env.SITE_URL || 'https://gardensofstgertrude.org').replace(/\/$/, '');
+    const siteUrl = requestOrigin(req);
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     const session = await stripe.checkout.sessions.create({

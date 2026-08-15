@@ -47,6 +47,9 @@ export type GameState = {
   nextBondAt: number | null
   bondingMode: boolean
   lastDailyClaim: string | null
+  lastChandaVisitDate: string | null
+  lastDayCompleted: string | null
+  completedDays: number
   loginDays: number
   lastFedDate: string | null
   lastWateredDate: string | null
@@ -89,6 +92,7 @@ export type GameState = {
   completeBondVisit: () => { advanced: boolean; visit: number } | null
   visitReality: () => void
   enterDream: () => boolean
+  completeDay: () => boolean
   discoverDream: (id: string) => void
   grantDonation: (amount: number, badge: DonationBadge) => void
   setVerifiedDonations: (amount: number, badges: DonationBadge[]) => void
@@ -125,6 +129,9 @@ const initialPersistentState = {
   nextBondAt: null as number | null,
   bondingMode: false,
   lastDailyClaim: null as string | null,
+  lastChandaVisitDate: null as string | null,
+  lastDayCompleted: null as string | null,
+  completedDays: 0,
   loginDays: 0,
   lastFedDate: null as string | null,
   lastWateredDate: null as string | null,
@@ -166,9 +173,9 @@ export const useGame = create<GameState>()(
           food: state.food + 1,
           waterUnits: state.waterUnits + 1,
           treats: state.treats + 1,
-          gardenTokens: state.gardenTokens + 10,
+          gardenTokens: state.gardenTokens + 30,
           carePoints: state.carePoints + 15,
-          notification: 'Morning basket opened · food, water, a treat, and 10 garden tokens',
+          notification: 'Morning basket opened · food, water, a treat, and 30 garden tokens',
         })
         return true
       },
@@ -204,6 +211,7 @@ export const useGame = create<GameState>()(
       },
       visitPerson: (person) => set((state) => ({
         npcVisits: { ...state.npcVisits, [person]: state.npcVisits[person] + 1 },
+        lastChandaVisitDate: person === 'chanda' ? localDay() : state.lastChandaVisitDate,
         carePoints: state.carePoints + (state.npcVisits[person] === 0 ? 25 : 0),
       })),
       purchaseUpgrade: (upgrade, collarName) => {
@@ -239,7 +247,7 @@ export const useGame = create<GameState>()(
       claimShareReward: () => {
         const state = get()
         if (state.shareRewardClaimed) return false
-        set({ shareRewardClaimed: true, treats: state.treats + 2, gardenTokens: state.gardenTokens + 15, notification: 'Invitation copied · two treats and 15 garden tokens added' })
+        set({ shareRewardClaimed: true, treats: state.treats + 2, gardenTokens: state.gardenTokens + 25, notification: 'Invitation copied · two treats and 25 garden tokens added' })
         return true
       },
       collectFood: () => undefined,
@@ -286,6 +294,27 @@ export const useGame = create<GameState>()(
           return false
         }
         set({ dreamVisits: state.dreamVisits + 1, carePoints: state.carePoints + (state.dreamVisits === 0 ? 75 : 0), notification: state.dreamVisits === 0 ? 'Splotch let you into his dream · +75 care' : 'Welcome back to Splotch’s dream.' })
+        return true
+      },
+      completeDay: () => {
+        const state = get()
+        const today = localDay()
+        if (state.lastDayCompleted === today) {
+          set({ notification: 'Tonight’s dream is already in your journal.' })
+          return true
+        }
+        const progress = getDailyProgress(state)
+        if (progress.complete < progress.total) {
+          set({ notification: `${progress.total - progress.complete} daily ${progress.total - progress.complete === 1 ? 'step remains' : 'steps remain'} before Splotch dreams.` })
+          return false
+        }
+        set({
+          lastDayCompleted: today,
+          completedDays: state.completedDays + 1,
+          dreamVisits: state.dreamVisits + 1,
+          carePoints: state.carePoints + (state.dreamVisits === 0 ? 75 : 25),
+          notification: `Day ${state.completedDays + 1} saved · Splotch is dreaming`,
+        })
         return true
       },
       discoverDream: (id) => {
@@ -356,6 +385,9 @@ export const useGame = create<GameState>()(
         bondVisits: state.bondVisits,
         lastBondAt: state.lastBondAt,
         lastDailyClaim: state.lastDailyClaim,
+        lastChandaVisitDate: state.lastChandaVisitDate,
+        lastDayCompleted: state.lastDayCompleted,
+        completedDays: state.completedDays,
         loginDays: state.loginDays,
         lastFedDate: state.lastFedDate,
         lastWateredDate: state.lastWateredDate,
@@ -384,17 +416,32 @@ if (import.meta.env.DEV) {
   ;(window as typeof window & { __CAT_GARDENS_GAME__?: typeof useGame }).__CAT_GARDENS_GAME__ = useGame
 }
 
-export const getObjective = (state: Pick<GameState, 'lastDailyClaim' | 'npcVisits' | 'lastFedDate' | 'lastWateredDate' | 'blanketLevel' | 'waterBowlLevel' | 'hasBonded' | 'realityVisits' | 'dreamVisits'>) => {
+type DailyProgressState = Pick<GameState, 'lastDailyClaim' | 'lastChandaVisitDate' | 'lastFedDate' | 'lastWateredDate' | 'blanketLevel' | 'waterBowlLevel' | 'hasBonded' | 'realityVisits' | 'completedDays' | 'lastDayCompleted'>
+
+export const getDailyProgress = (state: DailyProgressState) => {
+  const today = localDay()
+  const firstDay = state.completedDays === 0
+  const steps = [
+    state.lastDailyClaim === today,
+    state.lastChandaVisitDate === today,
+    state.lastFedDate === today,
+    state.lastWateredDate === today,
+    ...(firstDay ? [state.blanketLevel > 0 && state.waterBowlLevel > 0, state.hasBonded && state.realityVisits > 0] : []),
+  ]
+  return { complete: steps.filter(Boolean).length, total: steps.length, ready: steps.every(Boolean) && state.lastDayCompleted !== today }
+}
+
+export const getObjective = (state: Pick<GameState, 'lastDailyClaim' | 'lastChandaVisitDate' | 'lastDayCompleted' | 'completedDays' | 'lastFedDate' | 'lastWateredDate' | 'blanketLevel' | 'waterBowlLevel' | 'hasBonded' | 'realityVisits' | 'dreamVisits'>) => {
   const today = localDay()
   if (state.lastDailyClaim !== today) return { chapter: 'MORNING · DAY BEGINS', title: 'Open today’s free care basket', detail: 'Food, water, a treat, and garden tokens are waiting.', progress: 0, total: 1 }
-  if (state.npcVisits.chanda < 1) return { chapter: 'PEOPLE · CHANDA', title: 'Meet the person behind the bowls', detail: 'Walk to Chanda and ask how you can help.', progress: 0, total: 1 }
+  if (state.lastChandaVisitDate !== today) return { chapter: 'PEOPLE · CHANDA', title: 'Check in with Chanda', detail: 'Some days she needs hands; every day she deserves to be seen.', progress: 0, total: 1 }
   if (state.lastFedDate !== today) return { chapter: 'CARE · SPLOTCH', title: 'Feed virtual Splotch', detail: 'The real Splotch is always cared for. This ritual grows your persistent garden.', progress: 0, total: 1 }
   if (state.lastWateredDate !== today) return { chapter: 'GARDEN · GROW', title: 'Water the young plant', detail: 'Chanda asked for one small, useful action.', progress: 0, total: 1 }
   if (state.blanketLevel < 1 || state.waterBowlLevel < 1) return { chapter: 'HOME · MAKE IT HIS', title: 'Add a blanket and water bowl', detail: 'Your 45 starter tokens cover both essentials.', progress: state.blanketLevel + Math.min(1, state.waterBowlLevel), total: 2 }
-  if (!state.hasBonded) return { chapter: 'RELATIONSHIP · CHOICE', title: 'Sit at Splotch’s level', detail: 'Petting is attention, not a purchase. Let him choose the final step.', progress: 0, total: 1 }
-  if (state.realityVisits < 1) return { chapter: 'REALITY · ONE LIFE', title: 'Open Splotch’s real-world portal', detail: 'See the real cat, reviewed needs, and the fulfillment trail.', progress: 0, total: 1 }
-  if (state.dreamVisits < 1) return { chapter: 'DREAM · MATHIKOLONI', title: 'Enter Splotch’s dream', detail: 'He is fed, watered, warm, and ready to dream of a safer home.', progress: 0, total: 1 }
-  return { chapter: 'LIVING GARDEN · TOMORROW', title: 'Return for the next morning basket', detail: 'Meet the others, improve the garden, or sit with Splotch again.', progress: 1, total: 1 }
+  if (state.completedDays === 0 && !state.hasBonded) return { chapter: 'RELATIONSHIP · CHOICE', title: 'Sit at Splotch’s level', detail: 'Petting is attention, not a purchase. Let him choose the final step.', progress: 0, total: 1 }
+  if (state.completedDays === 0 && state.realityVisits < 1) return { chapter: 'REALITY · ONE LIFE', title: 'Open Splotch’s real-world portal', detail: 'See the real cat, reviewed needs, and the fulfillment trail.', progress: 0, total: 1 }
+  if (state.lastDayCompleted !== today) return { chapter: 'EVENING · DREAM', title: 'End today’s adventure', detail: 'Splotch is ready to sleep—and show you the road from reality to Mathikoloni.', progress: 1, total: 1 }
+  return { chapter: 'LIVING GARDEN · TOMORROW', title: 'Tonight’s dream is saved', detail: 'Keep designing, meet another cat, or return for tomorrow’s free basket.', progress: 1, total: 1 }
 }
 
 export const getRelationshipText = (trust: number) => {

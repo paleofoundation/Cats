@@ -7,7 +7,7 @@ const allowedBadges: DonationBadge[] = ['bowl-bringer', 'gentle-hands', 'storyke
 type SavedGame = Partial<Pick<GameState,
   'started' | 'foodFound' | 'partsFound' | 'food' | 'parts' | 'hunger' | 'trust' | 'safety' | 'carePoints' |
   'waterUnits' | 'treats' | 'gardenTokens' | 'hasFed' | 'hasBonded' | 'shelterStage' | 'bondVisits' | 'lastBondAt' |
-  'lastDailyClaim' | 'loginDays' | 'lastFedDate' | 'lastWateredDate' | 'plantStage' | 'plantHydration' |
+  'lastDailyClaim' | 'lastChandaVisitDate' | 'lastDayCompleted' | 'completedDays' | 'loginDays' | 'lastFedDate' | 'lastWateredDate' | 'plantStage' | 'plantHydration' |
   'blanketLevel' | 'waterBowlLevel' | 'cuddleboxLevel' | 'benchPlaced' | 'pathStyle' | 'collarName' |
   'npcVisits' | 'chandaHelped' | 'shareRewardClaimed' | 'realityVisits' | 'dreamVisits' | 'dreamDiscoveries'
 >>
@@ -32,6 +32,9 @@ function snapshot(state: GameState): SavedGame {
     bondVisits: state.bondVisits,
     lastBondAt: state.lastBondAt,
     lastDailyClaim: state.lastDailyClaim,
+    lastChandaVisitDate: state.lastChandaVisitDate,
+    lastDayCompleted: state.lastDayCompleted,
+    completedDays: state.completedDays,
     loginDays: state.loginDays,
     lastFedDate: state.lastFedDate,
     lastWateredDate: state.lastWateredDate,
@@ -77,6 +80,9 @@ function mergeProgress(local: GameState, remote: SavedGame | null): SavedGame {
     bondVisits: Math.max(local.bondVisits, remote.bondVisits || 0),
     lastBondAt: Math.max(local.lastBondAt || 0, remote.lastBondAt || 0) || null,
     lastDailyClaim: [local.lastDailyClaim, remote.lastDailyClaim].filter((value): value is string => Boolean(value)).sort().at(-1) || null,
+    lastChandaVisitDate: [local.lastChandaVisitDate, remote.lastChandaVisitDate].filter((value): value is string => Boolean(value)).sort().at(-1) || null,
+    lastDayCompleted: [local.lastDayCompleted, remote.lastDayCompleted].filter((value): value is string => Boolean(value)).sort().at(-1) || null,
+    completedDays: Math.max(local.completedDays, remote.completedDays || 0),
     loginDays: Math.max(local.loginDays, remote.loginDays || 0),
     lastFedDate: [local.lastFedDate, remote.lastFedDate].filter((value): value is string => Boolean(value)).sort().at(-1) || null,
     lastWateredDate: [local.lastWateredDate, remote.lastWateredDate].filter((value): value is string => Boolean(value)).sort().at(-1) || null,

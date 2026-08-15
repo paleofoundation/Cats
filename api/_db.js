@@ -42,6 +42,22 @@ async function ensureSchema() {
           processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
       `
+      await sql`
+        CREATE TABLE IF NOT EXISTS garden_referral_codes (
+          code TEXT PRIMARY KEY,
+          user_id TEXT UNIQUE NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `
+      await sql`
+        CREATE TABLE IF NOT EXISTS garden_referral_claims (
+          invitee_user_id TEXT PRIMARY KEY,
+          referral_code TEXT NOT NULL REFERENCES garden_referral_codes(code),
+          referrer_user_id TEXT NOT NULL,
+          claimed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `
+      await sql`CREATE INDEX IF NOT EXISTS garden_referral_claims_referrer_idx ON garden_referral_claims (referrer_user_id)`
     })().catch((error) => {
       schemaPromise = undefined
       throw error

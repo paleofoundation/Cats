@@ -4,7 +4,7 @@ import mabel from '../assets/mabel.jpg'
 import charlie from '../assets/charlie_v2.jpg'
 import markos from '../assets/dr_ktori.jpg'
 import gardenConcept from '../assets/0_0.jpeg'
-import dreamGardenConcept from '../assets/mathikoloni-dream-concept.png'
+import dreamGardenConcept from '../assets/mathikoloni-dream-proposal-v2.png'
 import type { DonationBadge } from './game/store'
 
 export type Cat = {
@@ -15,6 +15,10 @@ export type Cat = {
   color: string
   role: string
   story: string
+  difficulty: 'easy' | 'advanced'
+  status: 'active' | 'passed'
+  careSummary: string
+  careTasks: string[]
 }
 
 export type Place = {
@@ -153,6 +157,10 @@ export const cats: Cat[] = [
     color: '#c86f39',
     role: 'Best first friend',
     story: 'Red, radiant, and never finished being petted. Sit in the garden and Splotch will consider your lap public infrastructure.',
+    difficulty: 'easy',
+    status: 'active',
+    careSummary: 'Social, stable, and reported to have no current health crisis. His routine focuses on food, safety, dental prevention, and human attention.',
+    careTasks: ['Daily food and fresh water', 'Unhurried petting time', 'Road-safety planning', 'Preventive dental care'],
   },
   {
     id: 'show-pony',
@@ -162,6 +170,10 @@ export const cats: Cat[] = [
     color: '#d99145',
     role: 'Signature personality',
     story: 'She earned “Show Pony” by leaping for pets with a move nobody can quite describe and everybody remembers.',
+    difficulty: 'easy',
+    status: 'active',
+    careSummary: 'A social resident whose full care profile is awaiting sanctuary review.',
+    careTasks: ['Daily food and fresh water', 'Observation', 'Social time'],
   },
   {
     id: 'mabel',
@@ -170,7 +182,11 @@ export const cats: Cat[] = [
     image: mabel,
     color: '#696a65',
     role: 'Gentle long-term resident',
-    story: 'A shy, deeply sweet FIV+ resident who needs a stable environment and selective feline company. She adores humans.',
+    story: 'A shy, deeply sweet FIV+ resident who needs a stable environment, her own special food, and carefully managed supportive care. She adores humans.',
+    difficulty: 'advanced',
+    status: 'active',
+    careSummary: 'Mabel is FIV positive and needs a higher-support routine. These tasks are sanctuary-reported; dates, doses, provider notes, and receipts will appear only after review.',
+    careTasks: ['Virbagen care with Dr. Stelios Parpounas', 'Scheduled injections', 'Daily red-light session', 'Hypochlorous-acid face care', 'Lactoferrin, Saccharomyces boulardii, and supportive supplements', 'Special food to prevent vomiting'],
   },
   {
     id: 'charlie',
@@ -180,6 +196,10 @@ export const cats: Cat[] = [
     color: '#7e6556',
     role: 'Road-risk rescue',
     story: 'Found with four siblings beside a football field and a busy Germasogeia road. Charlie is safe, healthy, and adoptable.',
+    difficulty: 'easy',
+    status: 'active',
+    careSummary: 'A healthy, adoptable resident whose care profile is awaiting sanctuary review.',
+    careTasks: ['Daily food and fresh water', 'Safe housing', 'Adoption preparation'],
   },
 ]
 

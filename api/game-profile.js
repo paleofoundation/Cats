@@ -16,6 +16,7 @@ const NUMBER_LIMITS = {
   shelterStage: [0, 4],
   bondVisits: [0, 6],
   loginDays: [0, 100000],
+  completedDays: [0, 100000],
   plantStage: [0, 4],
   plantHydration: [0, 100],
   blanketLevel: [0, 1],
@@ -37,7 +38,7 @@ function sanitizeState(input) {
     if (source[field] === null && field === 'lastBondAt') state[field] = null
     else if (Number.isFinite(source[field])) state[field] = Math.max(minimum, Math.min(maximum, Math.round(source[field])))
   }
-  for (const field of ['lastDailyClaim', 'lastFedDate', 'lastWateredDate']) {
+  for (const field of ['lastDailyClaim', 'lastChandaVisitDate', 'lastDayCompleted', 'lastFedDate', 'lastWateredDate']) {
     if (source[field] === null) state[field] = null
     else if (typeof source[field] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(source[field])) state[field] = source[field]
   }

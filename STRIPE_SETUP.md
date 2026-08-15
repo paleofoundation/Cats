@@ -8,7 +8,7 @@ In the Vercel project, add these variables:
 
 - `STRIPE_SECRET_KEY`: the Gardens Stripe secret key (`sk_test_...` while testing, then `sk_live_...` for production)
 - `STRIPE_WEBHOOK_SECRET`: the signing secret Stripe provides after the webhook is created (`whsec_...`)
-- `SITE_URL`: `https://gardensofstgertrude.org` in production
+- `SITE_URL`: `https://catgardens.com` in production
 
 Scope live keys to Production only. Use separate test-mode values for Preview and Development. Never paste secret values into GitHub, HTML, or chat.
 
@@ -16,7 +16,7 @@ Scope live keys to Production only. Use separate test-mode values for Preview an
 
 In Stripe Workbench, create an event destination with this endpoint:
 
-`https://gardensofstgertrude.org/api/stripe-webhook`
+`https://catgardens.com/api/stripe-webhook`
 
 Subscribe to:
 

@@ -3,6 +3,32 @@
    Theme: Garden Sanctuary (Premium, Trust, Calm)
 */
 
+.return-to-living-garden {
+  position: fixed;
+  z-index: 999;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  border: 1px solid rgba(255, 255, 255, .65);
+  border-radius: 999px;
+  padding: .8rem 1rem;
+  color: #273126;
+  background: #dfff6c;
+  box-shadow: 0 14px 38px rgba(25, 31, 27, .22);
+  font-size: .78rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.return-to-living-garden:hover { transform: translateY(-2px); }
+
+@media (max-width: 640px) {
+  .return-to-living-garden span { display: none; }
+  .return-to-living-garden { width: 3rem; height: 3rem; justify-content: center; padding: 0; }
+}
+
 :root {
   /* Palette - Garden Sanctuary */
   --color-primary: #2a4a3e;

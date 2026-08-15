@@ -11,7 +11,7 @@ function requestOrigin(req) {
   const host = req.headers['x-forwarded-host'] || req.headers.host
   const protocol = req.headers['x-forwarded-proto'] || 'https'
   if (host && /^[a-zA-Z0-9.-]+(?::\d+)?$/.test(host)) return `${protocol}://${host}`
-  return (process.env.SITE_URL || 'https://catgardens.org').replace(/\/$/, '')
+  return (process.env.SITE_URL || 'https://catgardens.com').replace(/\/$/, '')
 }
 
 module.exports = async function handler(req, res) {

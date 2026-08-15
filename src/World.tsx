@@ -295,7 +295,7 @@ function SplotchActor() {
     if (!group.current) return
     const player = new THREE.Vector3(playerPosition[0], 0, playerPosition[2])
     const distance = player.distanceTo(SPLOTCH_HOME)
-    const shouldFollow = hasBonded && !bondingMode && distance > 3 && distance < 15
+    const shouldFollow = lastFedDate === localDay() && !bondingMode && distance > 3 && distance < 15
     const target = shouldFollow
       ? player.clone().add(new THREE.Vector3(Math.sin(group.current.rotation.y + Math.PI) * 1.45, 0, Math.cos(group.current.rotation.y + Math.PI) * 1.45))
       : SPLOTCH_HOME
