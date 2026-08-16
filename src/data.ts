@@ -7,6 +7,7 @@ import markos from '../assets/dr_ktori.jpg'
 import gardenConcept from '../assets/0_0.jpeg'
 import dreamGardenConcept from '../assets/mathikoloni-dream-proposal-v2.png'
 import type { DonationBadge } from './game/store'
+import { getCompanionProfile, type CatSex, type CompanionPhenotype } from './game/companions'
 
 export type Cat = {
   id: string
@@ -21,6 +22,9 @@ export type Cat = {
   careSummary: string
   careTasks: string[]
   relationships?: string[]
+  sex?: CatSex
+  playable?: boolean
+  phenotype?: CompanionPhenotype
 }
 
 export type Place = {
@@ -172,6 +176,9 @@ export const cats: Cat[] = [
     status: 'active',
     careSummary: 'Social, stable, and reported to have no current health crisis. His routine focuses on food, safety, dental prevention, and human attention.',
     careTasks: ['Daily food and fresh water', 'Unhurried petting time', 'Road-safety planning', 'Preventive dental care'],
+    sex: 'male',
+    playable: true,
+    phenotype: getCompanionProfile('splotch').phenotype,
   },
   {
     id: 'gabriel',
@@ -268,7 +275,7 @@ export const cats: Cat[] = [
     name: 'Winona P. Gray',
     nickname: 'Gray Power’s sister',
     image: winonaPGray,
-    color: '#7b7d81',
+    color: '#f7f5ed',
     role: 'Sibling-story companion',
     story: 'Winona P. Gray is a real Cat Gardens resident and the sister of Gray Power. Her first real-life video dispatch is now published.',
     difficulty: 'easy',
@@ -276,6 +283,9 @@ export const cats: Cat[] = [
     careSummary: 'A fuller sanctuary-reviewed care and personality profile is being prepared. Her confirmed relationship with Gray Power remains part of her permanent record.',
     careTasks: ['Daily food and fresh water', 'Observation and social time', 'Preserve her sibling relationship'],
     relationships: ['Sister of Gray Power'],
+    sex: 'female',
+    playable: true,
+    phenotype: getCompanionProfile('winona-p-gray').phenotype,
   },
   {
     id: 'gray-power',
@@ -295,13 +305,16 @@ export const cats: Cat[] = [
     name: 'Mabel',
     nickname: 'Mabel Fish',
     image: mabel,
-    color: '#696a65',
+    color: '#f5f2e9',
     role: 'Gentle long-term resident',
     story: 'A shy, deeply sweet FIV+ resident who needs a stable environment, her own special food, and carefully managed supportive care. She adores humans.',
     difficulty: 'advanced',
     status: 'active',
     careSummary: 'Mabel is FIV positive and needs a higher-support routine. These tasks are sanctuary-reported; dates, doses, provider notes, and receipts will appear only after review.',
     careTasks: ['Virbagen care with Dr. Stelios Parpounas', 'Scheduled injections', 'Daily red-light session', 'Hypochlorous-acid face care', 'Lactoferrin, Saccharomyces boulardii, and supportive supplements', 'Special food to prevent vomiting'],
+    sex: 'female',
+    playable: true,
+    phenotype: getCompanionProfile('mabel').phenotype,
   },
   {
     id: 'charlie',
@@ -315,6 +328,36 @@ export const cats: Cat[] = [
     status: 'active',
     careSummary: 'A healthy resident whose care profile is awaiting sanctuary review.',
     careTasks: ['Daily food and fresh water', 'Safe housing', 'Observation and social time'],
+  },
+  {
+    id: 'morpheus',
+    name: 'Morpheus',
+    nickname: 'The Listener',
+    color: '#aaa59d',
+    role: 'Blind-cat companion in preparation',
+    story: 'Morpheus is completely blind and has no eyes. A playable likeness must communicate that truth without treating disability as horror or spectacle.',
+    difficulty: 'advanced',
+    status: 'active',
+    careSummary: 'Morpheus navigates through scent, sound, memory, whiskers, and consistent spatial cues. His photograph and full sanctuary-reviewed routine are still needed before his playable profile opens.',
+    careTasks: ['Keep paths and furniture consistent', 'Use sound and scent cues', 'Protect predictable quiet routes', 'Publish a verified visual reference'],
+    sex: 'unknown',
+    playable: false,
+    phenotype: getCompanionProfile('morpheus').phenotype,
+  },
+  {
+    id: 'cosmo',
+    name: 'Cosmo',
+    nickname: 'Cosmonaut · Plushie',
+    color: '#a49a8d',
+    role: 'Blind-cat companion in preparation',
+    story: 'Cosmo—also called Cosmonaut and Plushie—has one eye but is completely blind. His distinctive fur pattern needs a proper visual reference before the game reproduces it.',
+    difficulty: 'advanced',
+    status: 'active',
+    careSummary: 'Cosmo’s eventual companion design will preserve his one-eye anatomy, blindness, tactile navigation, and distinctive real coat rather than inventing cosmetic details.',
+    careTasks: ['Keep routes predictable', 'Use touch, sound, and scent cues', 'Protect blind-safe garden zones', 'Capture a verified coat reference'],
+    sex: 'male',
+    playable: false,
+    phenotype: getCompanionProfile('cosmo').phenotype,
   },
 ]
 

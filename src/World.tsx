@@ -5,6 +5,7 @@ import { Suspense, useCallback, useEffect, useMemo, useRef, type ReactNode } fro
 import * as THREE from 'three'
 import { SkeletonUtils } from 'three-stdlib'
 import { localDay, useGame, type NearbyAction, type PersonId } from './game/store'
+import { getCompanionProfile, sexLabel } from './game/companions'
 
 const START_POSITION: [number, number, number] = [0, 1, -9]
 const SPLOTCH_HOME = new THREE.Vector3(0, 0, 4.4)
@@ -151,6 +152,7 @@ function CaretakerPlayer() {
   const resetToken = useGame((state) => state.resetToken)
   const started = useGame((state) => state.started)
   const bondingMode = useGame((state) => state.bondingMode)
+  const avatarStyle = useGame((state) => state.avatarStyle)
   const setNearby = useGame((state) => state.setNearby)
   const setPlayerPosition = useGame((state) => state.setPlayerPosition)
 
@@ -159,10 +161,18 @@ function CaretakerPlayer() {
       if (object instanceof THREE.Mesh) {
         object.castShadow = true
         object.receiveShadow = true
-        if (object.material) object.material = (object.material as THREE.Material).clone()
+        if (object.material) {
+          const material = (object.material as THREE.MeshStandardMaterial).clone()
+          const name = object.name.toLowerCase()
+          if (name.includes('body')) material.color.set(avatarStyle.clothing)
+          else if (name.includes('leg')) material.color.set(avatarStyle.pants)
+          else if (name.includes('head')) material.color.set(avatarStyle.skin)
+          else if (name.includes('feet')) material.color.set('#3a332e')
+          object.material = material
+        }
       }
     })
-  }, [clone])
+  }, [avatarStyle, clone])
 
   const reset = useCallback(() => {
     if (!body.current) return
@@ -204,6 +214,9 @@ function CaretakerPlayer() {
       const settle = game.bondingMode ? THREE.MathUtils.smoothstep(game.bondingProgress, 0, 24) : 0
       model.current.position.y = THREE.MathUtils.damp(model.current.position.y, -1 - settle * .28, 7, delta)
       model.current.scale.y = THREE.MathUtils.damp(model.current.scale.y, .88 - settle * .12, 7, delta)
+      const frameWidth = avatarStyle.bodyFrame === 'masculine' ? .94 : avatarStyle.bodyFrame === 'feminine' ? .82 : .88
+      model.current.scale.x = THREE.MathUtils.damp(model.current.scale.x, frameWidth, 7, delta)
+      model.current.scale.z = THREE.MathUtils.damp(model.current.scale.z, .88, 7, delta)
       model.current.rotation.x = THREE.MathUtils.damp(model.current.rotation.x, -settle * .12, 7, delta)
       if (game.bondingMode) {
         const cat = new THREE.Vector3(...game.catPosition)
@@ -261,9 +274,23 @@ function CaretakerPlayer() {
       <CapsuleCollider args={[.58, .34]} position={[0, -.18, 0]} />
       <group ref={model} position={[0, -1, 0]} scale={.88}>
         <primitive object={clone} visible={!bondingMode} />
+        {!bondingMode && <AvatarIdentityDetails />}
         {bondingMode && <BondingCaretakerPose />}
       </group>
     </RigidBody>
+  )
+}
+
+function AvatarIdentityDetails() {
+  const style = useGame((state) => state.avatarStyle)
+  return (
+    <group position={[0, 1.73, .015]}>
+      {style.hairStyle !== 'close-cropped' && <mesh position={[0, .12, 0]} scale={[1.05, style.hairStyle === 'long' ? .82 : .62, 1.02]} castShadow><sphereGeometry args={[.245, 18, 12]} /><meshStandardMaterial color={style.hair} roughness={.95} /></mesh>}
+      {style.hairStyle === 'long' && <mesh position={[0, -.08, -.15]} scale={[.9, 1.55, .55]} castShadow><sphereGeometry args={[.18, 16, 10]} /><meshStandardMaterial color={style.hair} roughness={.96} /></mesh>}
+      {style.hairStyle === 'bun' && <mesh position={[0, .29, -.1]} castShadow><sphereGeometry args={[.105, 14, 10]} /><meshStandardMaterial color={style.hair} roughness={.96} /></mesh>}
+      {style.hairStyle === 'close-cropped' && <mesh position={[0, .105, 0]} scale={[1.02, .38, 1]} castShadow><sphereGeometry args={[.245, 18, 12]} /><meshStandardMaterial color={style.hair} roughness={.97} /></mesh>}
+      {[-.075, .075].map((x) => <mesh key={x} position={[x, -.005, .226]}><sphereGeometry args={[.022, 12, 8]} /><meshStandardMaterial color={style.eyes} emissive={style.eyes} emissiveIntensity={.2} roughness={.35} /></mesh>)}
+    </group>
   )
 }
 
@@ -300,17 +327,19 @@ function BondingCaretakerPose() {
       pettingArm.current.rotation.x = stroke * .025
     }
   })
-  const clothing = '#718e3e'
-  const pants = '#765c48'
-  const skin = '#d59b78'
-  const hair = '#5b3825'
+  const style = useGame((state) => state.avatarStyle)
+  const clothing = style.clothing
+  const pants = style.pants
+  const skin = style.skin
+  const hair = style.hair
+  const torsoWidth = style.bodyFrame === 'masculine' ? .47 : style.bodyFrame === 'feminine' ? .38 : .42
   return (
     <group ref={group}>
-      <mesh position={[0, 1.02, .02]} scale={[.42, .62, .28]} castShadow><capsuleGeometry args={[.42, .38, 7, 12]} /><meshStandardMaterial color={clothing} roughness={.94} /></mesh>
+      <mesh position={[0, 1.02, .02]} scale={[torsoWidth, .62, .28]} castShadow><capsuleGeometry args={[.42, .38, 7, 12]} /><meshStandardMaterial color={clothing} roughness={.94} /></mesh>
       <mesh position={[0, 1.62, .02]} castShadow><sphereGeometry args={[.27, 18, 12]} /><meshStandardMaterial color={skin} roughness={.92} /></mesh>
       <mesh position={[0, 1.77, -.035]} scale={[1.04, .64, 1.02]} castShadow><sphereGeometry args={[.275, 18, 12]} /><meshStandardMaterial color={hair} roughness={.98} /></mesh>
-      <mesh position={[-.082, 1.63, .264]}><sphereGeometry args={[.023, 10, 8]} /><meshStandardMaterial color="#4f9fd2" emissive="#4f9fd2" emissiveIntensity={.2} /></mesh>
-      <mesh position={[.082, 1.63, .264]}><sphereGeometry args={[.023, 10, 8]} /><meshStandardMaterial color="#4f9fd2" emissive="#4f9fd2" emissiveIntensity={.2} /></mesh>
+      <mesh position={[-.082, 1.63, .264]}><sphereGeometry args={[.023, 10, 8]} /><meshStandardMaterial color={style.eyes} emissive={style.eyes} emissiveIntensity={.2} /></mesh>
+      <mesh position={[.082, 1.63, .264]}><sphereGeometry args={[.023, 10, 8]} /><meshStandardMaterial color={style.eyes} emissive={style.eyes} emissiveIntensity={.2} /></mesh>
       <PoseLimb from={[-.18, .66, .02]} to={[-.3, .34, .34]} radius={.12} color={pants} />
       <PoseLimb from={[-.3, .34, .34]} to={[-.47, .12, .7]} radius={.105} color={pants} />
       <PoseLimb from={[.18, .66, .02]} to={[-.02, .3, .42]} radius={.12} color={pants} />
@@ -383,6 +412,8 @@ function SplotchActor() {
   const { scene, animations } = useGLTF('/models/kenney/animal-cat.glb')
   const clone = useMemo(() => SkeletonUtils.clone(scene), [scene])
   const { actions } = useAnimations(animations, group)
+  const selectedCompanionId = useGame((state) => state.selectedCompanionId)
+  const companion = getCompanionProfile(selectedCompanionId)
   const discovered = useGame((state) => state.splotchDiscovered)
   const hasBonded = useGame((state) => state.hasBonded)
   const lastFedDate = useGame((state) => state.lastFedDate)
@@ -397,14 +428,14 @@ function SplotchActor() {
         object.castShadow = true
         object.receiveShadow = true
         const material = (object.material as THREE.MeshStandardMaterial).clone()
-        material.color.set('#ffad63')
-        material.emissive = new THREE.Color('#6b2108')
+        material.color.set(companion.phenotype.baseColor)
+        material.emissive = new THREE.Color(companion.phenotype.secondaryColor)
         material.emissiveIntensity = .08
         material.roughness = .82
         object.material = material
       }
     })
-  }, [clone])
+  }, [clone, companion.phenotype.baseColor, companion.phenotype.secondaryColor])
   useFrame(({ clock }, delta) => {
     if (!group.current) return
     const game = useGame.getState()
@@ -459,11 +490,33 @@ function SplotchActor() {
   const fedToday = lastFedDate === localDay()
   return (
     <group ref={group} position={[SPLOTCH_HOME.x, 0, SPLOTCH_HOME.z]} rotation={[0, Math.PI, 0]}>
-      <primitive object={clone} scale={.98} />
-      {!bondingMode && <WorldTag title={discovered ? 'Splotch · orange male' : 'An orange cat is watching'} subtitle={fedToday ? 'fed today · choosing to follow' : shelterStage >= 3 ? 'his shelter is ready' : 'keep a little distance'} warm={!fedToday} />}
+      <primitive object={clone} scale={[companion.phenotype.scale * companion.phenotype.width, companion.phenotype.scale, companion.phenotype.scale * companion.phenotype.length]} />
+      <CatIdentityDetails />
+      {!bondingMode && <WorldTag title={discovered ? `${companion.name} · ${sexLabel(companion.sex)}` : `${companion.name} is watching`} subtitle={fedToday ? `fed today · choosing to follow` : shelterStage >= 3 ? `${companion.pronouns.possessive} shelter is ready` : 'keep a little distance'} warm={!fedToday} />}
       {collarName && <Text position={[0, .77, .28]} fontSize={.12} color="#fff4ca" anchorX="center">{collarName}</Text>}
       {hasBonded && <Sparkles count={10} scale={[2.1, 1.7, 2.1]} size={3} speed={.25} color="#f8f2bd" position={[0, .8, 0]} />}
       {bondingMode && <BondingResponse />}
+    </group>
+  )
+}
+
+function CatIdentityDetails() {
+  const selectedCompanionId = useGame((state) => state.selectedCompanionId)
+  const companion = getCompanionProfile(selectedCompanionId)
+  const phenotype = companion.phenotype
+  const scale = phenotype.scale
+  const visibleEyes = phenotype.eyeCount === 1 ? [-.13] : phenotype.eyeCount === 2 ? [-.13, .13] : []
+  return (
+    <group scale={scale}>
+      {visibleEyes.map((x) => <mesh key={x} position={[x, 1.17, .58]} scale={[1, .9, .55]}><sphereGeometry args={[.058, 12, 9]} /><meshStandardMaterial color={phenotype.blind ? '#d8dedb' : phenotype.eyeColor} emissive={phenotype.eyeColor} emissiveIntensity={phenotype.blind ? .04 : .2} roughness={phenotype.blind ? .9 : .3} /></mesh>)}
+      {phenotype.eyeCount < 2 && [phenotype.eyeCount === 0 ? -.13 : .13, .13].filter((value, index, values) => phenotype.eyeCount === 0 || values.indexOf(value) === index).map((x) => <mesh key={`closed-${x}`} position={[x, 1.17, .593]} scale={[1.6, .32, .3]}><sphereGeometry args={[.052, 12, 8]} /><meshStandardMaterial color={phenotype.secondaryColor} roughness={.96} /></mesh>)}
+      {phenotype.pattern === 'tabby' && <group>
+        {[-.18, 0, .18].map((x, index) => <mesh key={x} position={[x, 1.3 - Math.abs(x) * .25, .47]} rotation={[0, 0, x * 1.3]} scale={[.34, .055, .025]}><sphereGeometry args={[1, 12, 6]} /><meshStandardMaterial color={phenotype.secondaryColor} roughness={.92} /></mesh>)}
+        {[0, 1, 2].map((index) => <mesh key={index} position={[0, .75, -.05 - index * .18]} rotation={[Math.PI / 2, 0, 0]} scale={[.58, .08, .35]}><torusGeometry args={[.46, .055, 7, 24]} /><meshStandardMaterial color={phenotype.secondaryColor} roughness={.94} /></mesh>)}
+      </group>}
+      <mesh position={[0, .78, .37]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[.22, .025, 8, 32]} /><meshStandardMaterial color={companion.sex === 'female' ? '#efe4b8' : companion.sex === 'male' ? '#86a69c' : '#bbb7ae'} metalness={.3} roughness={.4} /></mesh>
+      <Text position={[0, .69, .57]} fontSize={.15} color="#fffdf0" anchorX="center" outlineWidth={.008} outlineColor="#302f2b">{companion.sex === 'female' ? '♀' : companion.sex === 'male' ? '♂' : '•'}</Text>
+      {phenotype.blind && <Text position={[0, 1.62, 0]} fontSize={.1} color="#f4f0d6" anchorX="center" outlineWidth={.006} outlineColor="#31302d">BLIND · REAL TRAIT</Text>}
     </group>
   )
 }
@@ -603,20 +656,21 @@ function CatHouse() {
 function GardenPortals() {
   const realityVisits = useGame((state) => state.realityVisits)
   const dreamReady = useGame((state) => state.shelterStage >= 3 && state.hasFed && state.blanketLevel > 0 && state.waterBowlLevel > 0)
+  const companion = getCompanionProfile(useGame((state) => state.selectedCompanionId))
   return (
     <group>
       <group position={[REALITY_PORTAL_POSITION.x, 0, REALITY_PORTAL_POSITION.z]} rotation={[0, -.5, 0]}>
         <RoundedBox args={[3.1, 2.55, .32]} position={[0, 1.4, 0]} radius={.18} smoothness={4} castShadow><meshStandardMaterial color="#f3ecd9" roughness={.65} /></RoundedBox>
         <mesh position={[0, 1.45, -.19]}><planeGeometry args={[2.55, 1.95]} /><meshStandardMaterial color="#263c36" emissive="#71b7a5" emissiveIntensity={.25} /></mesh>
-        <Text position={[0, 1.65, -.22]} rotation={[0, Math.PI, 0]} fontSize={.25} color="#f5ffdc" anchorX="center">THE REAL SPLOTCH</Text>
+        <Text position={[0, 1.65, -.22]} rotation={[0, Math.PI, 0]} fontSize={.25} color="#f5ffdc" anchorX="center">THE REAL {companion.name.toUpperCase()}</Text>
         <Text position={[0, 1.2, -.22]} rotation={[0, Math.PI, 0]} fontSize={.14} color="#b5d9ce" anchorX="center">PHOTOS · UPDATES · NEEDS</Text>
-        <WorldTag title="Reality Portal" subtitle={realityVisits ? 'open again' : 'meet the real Splotch · +40'} warm={!realityVisits} />
+        <WorldTag title="Reality Portal" subtitle={realityVisits ? 'open again' : `meet the real ${companion.name} · +40`} warm={!realityVisits} />
       </group>
       <group position={[DREAM_PORTAL_POSITION.x, 0, DREAM_PORTAL_POSITION.z]} rotation={[0, .5, 0]}>
         <mesh position={[0, 1.5, 0]}><torusGeometry args={[1.2, .16, 18, 72]} /><meshStandardMaterial color={dreamReady ? '#d4c4ff' : '#7c7889'} emissive={dreamReady ? '#8068dc' : '#393643'} emissiveIntensity={dreamReady ? 2 : .2} roughness={.3} /></mesh>
         <mesh position={[0, 1.5, .03]}><circleGeometry args={[1.04, 48]} /><meshBasicMaterial color={dreamReady ? '#8875b0' : '#5d5b64'} transparent opacity={.5} /></mesh>
         {dreamReady && <Sparkles count={38} scale={[3, 3.5, 2]} size={5} speed={.25} color="#fff5bd" position={[0, 1.5, 0]} />}
-        <WorldTag title="Splotch’s Dream" subtitle={dreamReady ? 'Mathikoloni is waiting' : 'needs food · blanket · water'} warm={dreamReady} />
+        <WorldTag title={`${companion.name}’s Dream`} subtitle={dreamReady ? 'Mathikoloni is waiting' : 'needs food · blanket · water'} warm={dreamReady} />
       </group>
     </group>
   )
@@ -660,6 +714,7 @@ function MorningBasket() {
 function SupplyShelf() {
   const food = useGame((state) => state.food)
   const tokens = useGame((state) => state.gardenTokens)
+  const companion = getCompanionProfile(useGame((state) => state.selectedCompanionId))
   return (
     <group position={[SUPPLY_POSITION.x, 0, SUPPLY_POSITION.z]} onClick={(event) => { event.stopPropagation(); runIfPlayerNear(SUPPLY_POSITION, () => useGame.getState().buyFood(), 'the food shelf') }}>
       <RoundedBox args={[2.25, 1.75, .62]} position={[0, .9, 0]} radius={.12} smoothness={4} castShadow receiveShadow><meshStandardMaterial color="#506458" roughness={.9} /></RoundedBox>
@@ -671,7 +726,7 @@ function SupplyShelf() {
         </group>
       ))}
       <Text position={[0, 1.98, 0]} fontSize={.23} color="#f4ffbd" anchorX="center">CAT GARDENS SUPPLY</Text>
-      <WorldTag title="Splotch’s food shelf" subtitle={food >= 3 ? 'food bag full' : tokens >= 15 ? 'one meal · 15 tokens' : 'earn tokens to pack a meal'} warm={food < 1 && tokens >= 15} />
+      <WorldTag title={`${companion.name}’s food shelf`} subtitle={food >= 3 ? 'food bag full' : tokens >= 15 ? 'one meal · 15 tokens' : 'earn tokens to pack a meal'} warm={food < 1 && tokens >= 15} />
     </group>
   )
 }

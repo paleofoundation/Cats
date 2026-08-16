@@ -4,6 +4,7 @@ const { database, ensureSchema } = require('./_db')
 const STRING_ARRAY_FIELDS = ['foodFound', 'partsFound', 'dreamDiscoveries', 'tvChannelsVisited']
 const BOOLEAN_FIELDS = ['started', 'hasFed', 'hasBonded', 'benchPlaced', 'chandaHelped', 'shareRewardClaimed']
 const NUMBER_LIMITS = {
+  storyVersion: [2, 2],
   food: [0, 20],
   parts: [0, 20],
   waterUnits: [0, 1000],
@@ -44,6 +45,34 @@ function sanitizeState(input) {
     else if (typeof source[field] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(source[field])) state[field] = source[field]
   }
   if (source.pathStyle === 'dirt' || source.pathStyle === 'gravel') state.pathStyle = source.pathStyle
+  if (typeof source.selectedCompanionId === 'string' && /^[a-z0-9-]{1,60}$/.test(source.selectedCompanionId)) state.selectedCompanionId = source.selectedCompanionId
+  if (source.avatarStyle && typeof source.avatarStyle === 'object') {
+    const avatar = source.avatarStyle
+    const clean = {}
+    if (typeof avatar.displayName === 'string') clean.displayName = avatar.displayName.replace(/[<>]/g, '').trim().slice(0, 30)
+    if (['feminine', 'masculine', 'androgynous'].includes(avatar.bodyFrame)) clean.bodyFrame = avatar.bodyFrame
+    if (['short', 'long', 'bun', 'close-cropped'].includes(avatar.hairStyle)) clean.hairStyle = avatar.hairStyle
+    for (const color of ['skin', 'hair', 'eyes', 'clothing', 'pants']) {
+      if (typeof avatar[color] === 'string' && /^#[0-9a-f]{6}$/i.test(avatar[color])) clean[color] = avatar[color].toLowerCase()
+    }
+    state.avatarStyle = clean
+  }
+  if (source.companionProgress && typeof source.companionProgress === 'object') {
+    state.companionProgress = {}
+    for (const [catId, progress] of Object.entries(source.companionProgress).slice(0, 100)) {
+      if (!/^[a-z0-9-]{1,60}$/.test(catId) || !progress || typeof progress !== 'object') continue
+      const clean = {}
+      for (const field of ['splotchDiscovered', 'hasFed', 'hasBonded']) if (typeof progress[field] === 'boolean') clean[field] = progress[field]
+      for (const [field, maximum] of [['hunger', 100], ['trust', 100], ['safety', 100], ['bondVisits', 6], ['realityVisits', 100000]]) {
+        if (Number.isFinite(progress[field])) clean[field] = Math.max(0, Math.min(maximum, Math.round(progress[field])))
+      }
+      if (progress.lastBondAt === null) clean.lastBondAt = null
+      else if (Number.isFinite(progress.lastBondAt)) clean.lastBondAt = Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.round(progress.lastBondAt)))
+      if (progress.lastFedDate === null) clean.lastFedDate = null
+      else if (typeof progress.lastFedDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(progress.lastFedDate)) clean.lastFedDate = progress.lastFedDate
+      state.companionProgress[catId] = clean
+    }
+  }
   if (source.collarName === null) state.collarName = null
   else if (typeof source.collarName === 'string') state.collarName = source.collarName.slice(0, 18)
   if (source.npcVisits && typeof source.npcVisits === 'object') {

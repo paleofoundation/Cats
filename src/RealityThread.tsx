@@ -28,6 +28,7 @@ export function RealityThread({
   onClose,
   onDonate,
   donationNeeds,
+  companionName,
 }: {
   feed: RealityFeed | null
   loading: boolean
@@ -37,6 +38,7 @@ export function RealityThread({
   onClose: () => void
   onDonate: (need: SplotchNeed) => void
   donationNeeds: SplotchNeed[]
+  companionName: string
 }) {
   const latest = feed?.events[0]
   return (
@@ -107,7 +109,7 @@ export function RealityThread({
 
         <section className="thread-notifications">
           <div className="thread-section-title"><div><p className="eyebrow">YOUR RETURN SIGNALS</p><h3>Something you helped make real</h3></div><span><Bell size={13} /> account updates</span></div>
-          {notifications.length === 0 && <p className="thread-empty">Sign in to carry Splotch’s verified updates between devices.</p>}
+          {notifications.length === 0 && <p className="thread-empty">Sign in to carry {companionName}’s verified updates between devices.</p>}
           <div>
             {notifications.slice(0, 6).map((notice) => (
               <button className={notice.read ? 'read' : ''} key={notice.notification_id} onClick={() => onMarkRead(notice.notification_id)}>

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { getCompanionProfile } from './companions'
 
 export type InputState = {
   forward: number
@@ -15,27 +16,43 @@ export type NearbyAction = 'basket' | 'build' | 'home' | 'supply' | 'cat' | 'pla
 export type CatAnimation = 'idle' | 'eat' | 'walk' | 'dance'
 export type DonationBadge = 'bowl-bringer' | 'gentle-hands' | 'storykeeper' | 'bright-bite' | 'safe-passage' | 'dream-builder' | 'garden-keeper' | 'broadcast-builder' | 'trust-keeper' | 'fluff-crew'
 export type GardenUpgrade = 'blanket' | 'simple-bowl' | 'automatic-bowl' | 'cuddlebox' | 'bench' | 'gravel' | 'collar'
+export type AvatarBodyFrame = 'feminine' | 'masculine' | 'androgynous'
+export type AvatarHairStyle = 'short' | 'long' | 'bun' | 'close-cropped'
+export type AvatarStyle = {
+  displayName: string
+  bodyFrame: AvatarBodyFrame
+  hairStyle: AvatarHairStyle
+  skin: string
+  hair: string
+  eyes: string
+  clothing: string
+  pants: string
+}
+export type CompanionProgress = Pick<GameState, 'splotchDiscovered' | 'hunger' | 'trust' | 'safety' | 'hasFed' | 'hasBonded' | 'bondVisits' | 'lastBondAt' | 'lastFedDate' | 'realityVisits'>
 
 export const upgradeCatalog: Record<GardenUpgrade, { title: string; detail: string; cost: number }> = {
-  blanket: { title: 'Soft blanket', detail: 'A washable blanket for Splotch’s first shelter.', cost: 20 },
+  blanket: { title: 'Soft blanket', detail: 'A washable blanket for your companion’s first shelter.', cost: 20 },
   'simple-bowl': { title: 'Water bowl', detail: 'A sturdy bowl for the garden house.', cost: 20 },
   'automatic-bowl': { title: 'Automatic water station', detail: 'A larger virtual reservoir with a quiet recirculating bowl.', cost: 120 },
   cuddlebox: { title: 'Real-style cuddlebox upgrade', detail: 'A protected, washable sleeping nook that is better than an exposed bed. Real sanctuary cuddleboxes cost about €50; this virtual version costs game tokens only.', cost: 150 },
-  bench: { title: 'Petting bench', detail: 'A place to sit beside Splotch instead of standing over him.', cost: 70 },
+  bench: { title: 'Petting bench', detail: 'A place to sit beside your companion instead of standing over them.', cost: 70 },
   gravel: { title: 'Pea-gravel path', detail: 'Replace the dusty path with a soft garden route.', cost: 80 },
-  collar: { title: 'Engraved virtual collar', detail: 'Add your chosen name to Splotch’s virtual garden collar.', cost: 100 },
+  collar: { title: 'Engraved virtual collar', detail: 'Add your chosen name to your companion’s virtual garden collar.', cost: 100 },
 }
 
 export const foodPrice = 15
 export const shelterBuildCatalog = [
-  { stage: 1, title: 'Lay the raised floor', detail: 'Lift Splotch above cold and damp ground.', cost: 15 },
-  { stage: 2, title: 'Build the shelter walls', detail: 'Give him shade, privacy, and a protected sleeping corner.', cost: 20 },
-  { stage: 3, title: 'Raise the weatherproof roof', detail: 'Finish a dry place that is unmistakably his.', cost: 25 },
+  { stage: 1, title: 'Lay the raised floor', detail: 'Lift your companion above cold and damp ground.', cost: 15 },
+  { stage: 2, title: 'Build the shelter walls', detail: 'Add shade, privacy, and a protected sleeping corner.', cost: 20 },
+  { stage: 3, title: 'Raise the weatherproof roof', detail: 'Finish a dry place that unmistakably belongs to your companion.', cost: 25 },
 ] as const
 
 export type GameState = {
   storyVersion: number
   started: boolean
+  selectedCompanionId: string
+  companionProgress: Record<string, CompanionProgress>
+  avatarStyle: AvatarStyle
   splotchDiscovered: boolean
   foodFound: string[]
   partsFound: string[]
@@ -92,6 +109,8 @@ export type GameState = {
   resetToken: number
   input: InputState
   start: () => void
+  selectCompanion: (id: string) => boolean
+  setAvatarStyle: (style: Partial<AvatarStyle>) => void
   discoverSplotch: () => boolean
   claimDailyBasket: () => boolean
   buildShelter: () => boolean
@@ -131,9 +150,49 @@ export type GameState = {
 const emptyInput: InputState = { forward: 0, backward: 0, left: 0, right: 0, brake: 0, boost: 0 }
 export const localDay = () => new Date().toLocaleDateString('en-CA')
 
+export const defaultAvatarStyle: AvatarStyle = {
+  displayName: 'Garden caretaker',
+  bodyFrame: 'androgynous',
+  hairStyle: 'short',
+  skin: '#d59b78',
+  hair: '#5b3825',
+  eyes: '#4f9fd2',
+  clothing: '#718e3e',
+  pants: '#765c48',
+}
+
+const defaultCompanionProgress = (): CompanionProgress => ({
+  splotchDiscovered: false,
+  hunger: 62,
+  trust: 8,
+  safety: 28,
+  hasFed: false,
+  hasBonded: false,
+  bondVisits: 0,
+  lastBondAt: null,
+  lastFedDate: null,
+  realityVisits: 0,
+})
+
+const captureCompanionProgress = (state: GameState): CompanionProgress => ({
+  splotchDiscovered: state.splotchDiscovered,
+  hunger: state.hunger,
+  trust: state.trust,
+  safety: state.safety,
+  hasFed: state.hasFed,
+  hasBonded: state.hasBonded,
+  bondVisits: state.bondVisits,
+  lastBondAt: state.lastBondAt,
+  lastFedDate: state.lastFedDate,
+  realityVisits: state.realityVisits,
+})
+
 const initialPersistentState = {
   storyVersion: 2,
   started: false,
+  selectedCompanionId: 'splotch',
+  companionProgress: {} as Record<string, CompanionProgress>,
+  avatarStyle: defaultAvatarStyle,
   splotchDiscovered: false,
   foodFound: [] as string[],
   partsFound: [] as string[],
@@ -196,14 +255,42 @@ export const useGame = create<GameState>()(
       resetToken: 0,
       input: emptyInput,
       start: () => set({ started: true, notification: 'Nothing has been built yet. Open the glowing supply crate by the gate.' }),
+      selectCompanion: (id) => {
+        const profile = getCompanionProfile(id)
+        if (!profile.playable) {
+          set({ notification: `${profile.name} needs a verified visual reference before becoming a playable companion.` })
+          return false
+        }
+        const state = get()
+        if (state.selectedCompanionId === profile.id) return true
+        const nextProgress = state.companionProgress[profile.id] || defaultCompanionProgress()
+        set({
+          ...nextProgress,
+          selectedCompanionId: profile.id,
+          companionProgress: {
+            ...state.companionProgress,
+            [state.selectedCompanionId]: captureCompanionProgress(state),
+          },
+          bondingMode: false,
+          bondingProgress: 0,
+          catAnimation: 'idle',
+          catPosition: [0, 0, 4.4],
+          nearby: null,
+          resetToken: state.resetToken + 1,
+          notification: `${profile.name} is now your companion. ${profile.visualNote}`,
+        })
+        return true
+      },
+      setAvatarStyle: (style) => set((state) => ({ avatarStyle: { ...state.avatarStyle, ...style } })),
       discoverSplotch: () => {
         const state = get()
         if (state.splotchDiscovered || state.nearby !== 'cat') return false
+        const companion = getCompanionProfile(state.selectedCompanionId)
         set({
           splotchDiscovered: true,
           trust: Math.max(12, state.trust),
           carePoints: state.carePoints + 10,
-          notification: 'Splotch stayed where you could see him · +10 care',
+          notification: `${companion.name} stayed where you could see ${companion.pronouns.object} · +10 care`,
         })
         return true
       },
@@ -228,13 +315,14 @@ export const useGame = create<GameState>()(
       },
       buildShelter: () => {
         const state = get()
+        const companion = getCompanionProfile(state.selectedCompanionId)
         if (state.lastDailyClaim !== localDay()) {
           set({ notification: 'Open the supply crate before beginning construction.' })
           return false
         }
         const next = shelterBuildCatalog[state.shelterStage]
         if (!next) {
-          set({ notification: 'Splotch’s first shelter is built. Add his blanket and water bowl next.' })
+          set({ notification: `${companion.name}’s first shelter is built. Add ${companion.pronouns.possessive} blanket and water bowl next.` })
           return false
         }
         if (state.gardenTokens < next.cost) {
@@ -255,6 +343,7 @@ export const useGame = create<GameState>()(
       },
       buyFood: () => {
         const state = get()
+        const companion = getCompanionProfile(state.selectedCompanionId)
         if (state.lastDailyClaim !== localDay()) {
           set({ notification: 'Open today’s supply crate before visiting the food shelf.' })
           return false
@@ -264,7 +353,7 @@ export const useGame = create<GameState>()(
           return false
         }
         if (state.gardenTokens < foodPrice) {
-          set({ notification: `Splotch’s virtual food needs ${foodPrice - state.gardenTokens} more garden tokens.` })
+          set({ notification: `${companion.name}’s virtual food needs ${foodPrice - state.gardenTokens} more garden tokens.` })
           return false
         }
         set({
@@ -272,14 +361,15 @@ export const useGame = create<GameState>()(
           gardenTokens: state.gardenTokens - foodPrice,
           carePoints: state.carePoints + 10,
           playerActionUntil: Date.now() + 900,
-          notification: `One Splotch meal packed · −${foodPrice} tokens · +10 care`,
+          notification: `One ${companion.name} meal packed · −${foodPrice} tokens · +10 care`,
         })
         return true
       },
       feedDaily: () => {
         const state = get()
+        const companion = getCompanionProfile(state.selectedCompanionId)
         if (state.shelterStage < 3) {
-          set({ notification: 'Finish Splotch’s dry shelter before settling him in for dinner.' })
+          set({ notification: `Finish ${companion.name}’s dry shelter before settling ${companion.pronouns.object} in for dinner.` })
           return false
         }
         if (state.food < 1 || state.lastFedDate === localDay() || state.nearby !== 'cat') return false
@@ -292,7 +382,7 @@ export const useGame = create<GameState>()(
           carePoints: state.carePoints + 35,
           catAnimation: 'eat',
           playerActionUntil: Date.now() + 900,
-          notification: 'Virtual Splotch is fed for today · +35 care',
+          notification: `Virtual ${companion.name} is fed for today · +35 care`,
         })
         window.setTimeout(() => useGame.getState().setCatAnimation('idle'), 2600)
         return true
@@ -327,9 +417,10 @@ export const useGame = create<GameState>()(
       })),
       purchaseUpgrade: (upgrade, collarName) => {
         const state = get()
+        const companion = getCompanionProfile(state.selectedCompanionId)
         const item = upgradeCatalog[upgrade]
         if (state.shelterStage < 3 && ['blanket', 'simple-bowl', 'automatic-bowl', 'cuddlebox'].includes(upgrade)) {
-          set({ notification: 'Build the shelter roof before furnishing Splotch’s home.' })
+          set({ notification: `Build the shelter roof before furnishing ${companion.name}’s home.` })
           return false
         }
         const owned = upgrade === 'blanket' ? state.blanketLevel > 0
@@ -347,7 +438,7 @@ export const useGame = create<GameState>()(
         const updates: Partial<GameState> = {
           gardenTokens: state.gardenTokens - item.cost,
           carePoints: state.carePoints + Math.round(item.cost / 2),
-          notification: `${item.title} added to Splotch’s virtual garden.`,
+          notification: `${item.title} added to ${companion.name}’s virtual garden.`,
         }
         if (upgrade === 'blanket') updates.blanketLevel = 1
         if (upgrade === 'simple-bowl') updates.waterBowlLevel = 1
@@ -371,7 +462,8 @@ export const useGame = create<GameState>()(
       bond: () => {
         const state = get()
         if (!state.hasFed || state.hasBonded || state.nearby !== 'cat') return false
-        set({ hasBonded: true, trust: Math.max(38, state.trust + 18), carePoints: state.carePoints + 50, catAnimation: 'dance', notification: 'Splotch chose to stay beside you · +50 care' })
+        const companion = getCompanionProfile(state.selectedCompanionId)
+        set({ hasBonded: true, trust: Math.max(38, state.trust + 18), carePoints: state.carePoints + 50, catAnimation: 'dance', notification: `${companion.name} chose to stay beside you · +50 care` })
         return true
       },
       build: () => get().buildShelter(),
@@ -386,6 +478,7 @@ export const useGame = create<GameState>()(
       completeBondVisit: () => {
         const state = get()
         if (!state.bondingMode || !state.hasFed) return null
+        const companion = getCompanionProfile(state.selectedCompanionId)
         const now = Date.now()
         const canAdvance = state.bondVisits < 6
         const nextVisits = canAdvance ? state.bondVisits + 1 : state.bondVisits
@@ -399,7 +492,7 @@ export const useGame = create<GameState>()(
           trust: canAdvance ? Math.min(100, state.trust + 7) : state.trust,
           carePoints: canAdvance ? state.carePoints + 35 : state.carePoints,
           catAnimation: 'idle',
-          notification: canAdvance ? `A new Splotch memory was saved · +35 care` : 'You stayed without needing another reward.',
+          notification: canAdvance ? `A new ${companion.name} memory was saved · +35 care` : 'You stayed without needing another reward.',
         })
         return { advanced: canAdvance, visit: Math.min(7, nextVisits + 1) }
       },
@@ -417,15 +510,17 @@ export const useGame = create<GameState>()(
       }),
       enterDream: () => {
         const state = get()
+        const companion = getCompanionProfile(state.selectedCompanionId)
         if (state.shelterStage < 3 || !state.hasFed || state.blanketLevel < 1 || state.waterBowlLevel < 1) {
-          set({ notification: 'Splotch dreams after food, a blanket, and a water bowl are ready.' })
+          set({ notification: `${companion.name} dreams after food, a blanket, and a water bowl are ready.` })
           return false
         }
-        set({ dreamVisits: state.dreamVisits + 1, carePoints: state.carePoints + (state.dreamVisits === 0 ? 75 : 0), notification: state.dreamVisits === 0 ? 'Splotch let you into his dream · +75 care' : 'Welcome back to Splotch’s dream.' })
+        set({ dreamVisits: state.dreamVisits + 1, carePoints: state.carePoints + (state.dreamVisits === 0 ? 75 : 0), notification: state.dreamVisits === 0 ? `${companion.name} let you into ${companion.pronouns.possessive} dream · +75 care` : `Welcome back to ${companion.name}’s dream.` })
         return true
       },
       completeDay: () => {
         const state = get()
+        const companion = getCompanionProfile(state.selectedCompanionId)
         const today = localDay()
         if (state.lastDayCompleted === today) {
           set({ notification: 'Tonight’s dream is already in your journal.' })
@@ -433,7 +528,7 @@ export const useGame = create<GameState>()(
         }
         const progress = getDailyProgress(state)
         if (progress.complete < progress.total) {
-          set({ notification: `${progress.total - progress.complete} daily ${progress.total - progress.complete === 1 ? 'step remains' : 'steps remain'} before Splotch dreams.` })
+          set({ notification: `${progress.total - progress.complete} daily ${progress.total - progress.complete === 1 ? 'step remains' : 'steps remain'} before ${companion.name} dreams.` })
           return false
         }
         set({
@@ -441,7 +536,7 @@ export const useGame = create<GameState>()(
           completedDays: state.completedDays + 1,
           dreamVisits: state.dreamVisits + 1,
           carePoints: state.carePoints + (state.dreamVisits === 0 ? 75 : 25),
-          notification: `Day ${state.completedDays + 1} saved · Splotch is dreaming`,
+          notification: `Day ${state.completedDays + 1} saved · ${companion.name} is dreaming`,
         })
         return true
       },
@@ -476,6 +571,8 @@ export const useGame = create<GameState>()(
       resetRover: () => set((state) => ({ resetToken: state.resetToken + 1, notification: 'Caretaker returned to the garden gate.' })),
       resetGame: () => set((state) => ({
         ...initialPersistentState,
+        selectedCompanionId: state.selectedCompanionId,
+        avatarStyle: state.avatarStyle,
         donationBadges: state.donationBadges,
         verifiedDonationTotal: state.verifiedDonationTotal,
         nearby: null,
@@ -491,7 +588,7 @@ export const useGame = create<GameState>()(
     }),
     {
       name: 'cat-gardens-splotch-relationship-v4',
-      version: 6,
+      version: 7,
       migrate: (persistedState, version) => {
         const state = persistedState as Partial<GameState>
         if (version < 6 || state.storyVersion !== 2) {
@@ -511,8 +608,11 @@ export const useGame = create<GameState>()(
           started: state.started ?? false,
           food: Math.min(3, state.food ?? 0),
           nextBondAt: null,
-        bondingMode: false,
-        bondingProgress: 0,
+          selectedCompanionId: getCompanionProfile(state.selectedCompanionId).id,
+          companionProgress: state.companionProgress || {},
+          avatarStyle: { ...defaultAvatarStyle, ...(state.avatarStyle || {}) },
+          bondingMode: false,
+          bondingProgress: 0,
           npcVisits: { ...initialPersistentState.npcVisits, ...(state.npcVisits || {}) },
           pathStyle: state.pathStyle === 'gravel' ? 'gravel' : 'dirt',
         } as GameState
@@ -520,6 +620,9 @@ export const useGame = create<GameState>()(
       partialize: (state) => ({
         storyVersion: state.storyVersion,
         started: state.started,
+        selectedCompanionId: state.selectedCompanionId,
+        companionProgress: state.companionProgress,
+        avatarStyle: state.avatarStyle,
         splotchDiscovered: state.splotchDiscovered,
         foodFound: state.foodFound,
         partsFound: state.partsFound,
@@ -592,30 +695,33 @@ export const getDailyProgress = (state: DailyProgressState) => {
   return { complete: steps.filter(Boolean).length, total: steps.length, ready: steps.every(Boolean) && state.lastDayCompleted !== today }
 }
 
-export const getObjective = (state: Pick<GameState, 'lastDailyClaim' | 'splotchDiscovered' | 'shelterStage' | 'food' | 'lastDayCompleted' | 'completedDays' | 'lastFedDate' | 'lastWateredDate' | 'blanketLevel' | 'waterBowlLevel' | 'hasBonded' | 'realityVisits' | 'dreamVisits' | 'dreamDiscoveries'>) => {
+export const getObjective = (state: Pick<GameState, 'selectedCompanionId' | 'lastDailyClaim' | 'splotchDiscovered' | 'shelterStage' | 'food' | 'lastDayCompleted' | 'completedDays' | 'lastFedDate' | 'lastWateredDate' | 'blanketLevel' | 'waterBowlLevel' | 'hasBonded' | 'realityVisits' | 'dreamVisits' | 'dreamDiscoveries'>) => {
   const today = localDay()
   const firstDay = state.completedDays === 0
+  const companion = getCompanionProfile(state.selectedCompanionId)
   if (state.lastDailyClaim !== today) return { chapter: firstDay ? 'ARRIVAL · NOTHING BUILT YET' : 'MORNING · DAY BEGINS', title: 'Open the glowing supply crate', detail: firstDay ? 'Your free starter supplies are waiting beside the gate.' : 'Today’s water, treat, and garden tokens are waiting.', progress: 0, total: 1 }
-  if (firstDay && !state.splotchDiscovered) return { chapter: 'DISCOVER · ONE REAL CAT', title: 'Find the orange cat watching you', detail: 'Approach slowly. Let him decide whether to stay.', progress: 0, total: 1 }
+  if (firstDay && !state.splotchDiscovered) return { chapter: 'DISCOVER · ONE REAL CAT', title: `Find ${companion.name} in the garden`, detail: `Approach slowly. Let ${companion.pronouns.object} decide whether to stay.`, progress: 0, total: 1 }
   if (state.shelterStage < 3) {
     const next = shelterBuildCatalog[state.shelterStage]
-    return { chapter: 'BUILD · BEFORE NIGHTFALL', title: next?.title || 'Finish Splotch’s shelter', detail: next?.detail || 'Give Splotch a dry place of his own.', progress: state.shelterStage, total: 3 }
+    return { chapter: 'BUILD · BEFORE NIGHTFALL', title: next?.title || `Finish ${companion.name}’s shelter`, detail: next?.detail || `Give ${companion.name} a dry place of ${companion.pronouns.possessive} own.`, progress: state.shelterStage, total: 3 }
   }
-  if (state.food < 1 && state.lastFedDate !== today) return { chapter: 'PROVISIONS · CHOOSE TO CARE', title: `Buy Splotch’s food · ${foodPrice} tokens`, detail: 'The food shelf is beside the gate. Your starter budget covers today’s care.', progress: 0, total: 1 }
-  if (firstDay && (state.blanketLevel < 1 || state.waterBowlLevel < 1)) return { chapter: 'HOME · MAKE IT HIS', title: 'Add a blanket and water bowl', detail: 'Walk to the shelter and furnish the place you built.', progress: state.blanketLevel + Math.min(1, state.waterBowlLevel), total: 2 }
-  if (state.lastFedDate !== today) return { chapter: 'CARE · SPLOTCH', title: 'Feed virtual Splotch', detail: 'The real Splotch is always cared for. This ritual grows your persistent garden.', progress: 0, total: 1 }
+  if (state.food < 1 && state.lastFedDate !== today) return { chapter: 'PROVISIONS · CHOOSE TO CARE', title: `Buy ${companion.name}’s food · ${foodPrice} tokens`, detail: 'The food shelf is beside the gate. Your starter budget covers today’s care.', progress: 0, total: 1 }
+  if (firstDay && (state.blanketLevel < 1 || state.waterBowlLevel < 1)) return { chapter: 'HOME · MAKE IT THEIRS', title: 'Add a blanket and water bowl', detail: 'Walk to the shelter and furnish the place you built.', progress: state.blanketLevel + Math.min(1, state.waterBowlLevel), total: 2 }
+  if (state.lastFedDate !== today) return { chapter: `CARE · ${companion.name.toUpperCase()}`, title: `Feed virtual ${companion.name}`, detail: `The real ${companion.name} is always cared for. This ritual grows your persistent garden.`, progress: 0, total: 1 }
   if (state.lastWateredDate !== today) return { chapter: 'GARDEN · GROW', title: 'Water the young plant', detail: 'Chanda asked for one small, useful action.', progress: 0, total: 1 }
-  if (firstDay && !state.hasBonded) return { chapter: 'RELATIONSHIP · CHOICE', title: 'Sit at Splotch’s level', detail: 'Petting is attention, not a purchase. Let him choose the final step.', progress: 0, total: 1 }
-  if (firstDay && state.realityVisits < 1) return { chapter: 'REALITY · ONE LIFE', title: 'Open Splotch’s real-world portal', detail: 'See the real cat behind the garden companion.', progress: 0, total: 1 }
-  if (state.lastDayCompleted !== today) return { chapter: 'EVENING · DREAM', title: 'End today’s adventure', detail: 'Splotch is ready to sleep—and show you the road from reality to Mathikoloni.', progress: 1, total: 1 }
-  if (state.dreamDiscoveries.length < 7) return { chapter: 'DREAM CHALLENGE · MATHIKOLONI', title: 'Discover Splotch’s seven-part future', detail: 'Open tonight’s dream and map every protection the proposed sanctuary could provide.', progress: state.dreamDiscoveries.length, total: 7 }
+  if (firstDay && !state.hasBonded) return { chapter: 'RELATIONSHIP · CHOICE', title: `Sit at ${companion.name}’s level`, detail: `Petting is attention, not a purchase. Let ${companion.pronouns.object} choose the final step.`, progress: 0, total: 1 }
+  if (firstDay && state.realityVisits < 1) return { chapter: 'REALITY · ONE LIFE', title: `Open ${companion.name}’s real-world portal`, detail: 'See the real cat behind the garden companion.', progress: 0, total: 1 }
+  if (state.lastDayCompleted !== today) return { chapter: 'EVENING · DREAM', title: 'End today’s adventure', detail: `${companion.name} is ready to sleep—and show you the road from reality to Mathikoloni.`, progress: 1, total: 1 }
+  if (state.dreamDiscoveries.length < 7) return { chapter: 'DREAM CHALLENGE · MATHIKOLONI', title: `Discover ${companion.name}’s seven-part future`, detail: 'Open tonight’s dream and map every protection the proposed sanctuary could provide.', progress: state.dreamDiscoveries.length, total: 7 }
   return { chapter: 'LIVING GARDEN · TOMORROW', title: 'Tonight’s dream is saved', detail: 'Keep designing, meet another cat, or return for tomorrow’s free basket.', progress: 1, total: 1 }
 }
 
-export const getRelationshipText = (trust: number) => {
-  if (trust >= 90) return 'He looks for you at the gate.'
-  if (trust >= 65) return 'He remembers your footsteps.'
-  if (trust >= 35) return 'He chooses to stay nearby.'
-  if (trust > 0) return 'He is learning your scent.'
-  return 'He is watching from a safe distance.'
+export const getRelationshipText = (trust: number, companionId = 'splotch') => {
+  const companion = getCompanionProfile(companionId)
+  const subject = companion.pronouns.subject[0].toUpperCase() + companion.pronouns.subject.slice(1)
+  if (trust >= 90) return `${subject} looks for you at the gate.`
+  if (trust >= 65) return `${subject} remembers your footsteps.`
+  if (trust >= 35) return `${subject} chooses to stay nearby.`
+  if (trust > 0) return `${subject} is learning your scent.`
+  return `${subject} is watching from a safe distance.`
 }
