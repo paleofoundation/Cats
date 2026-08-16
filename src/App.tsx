@@ -482,9 +482,14 @@ function GardenDesigner({ onClose, onDonate }: { onClose: () => void; onDonate: 
   const path = useGame((state) => state.pathStyle)
   const collar = useGame((state) => state.collarName)
   const shareRewardClaimed = useGame((state) => state.shareRewardClaimed)
+  const lastDailyClaim = useGame((state) => state.lastDailyClaim)
+  const completedDays = useGame((state) => state.completedDays)
   const purchase = useGame((state) => state.purchaseUpgrade)
+  const claimDailyBasket = useGame((state) => state.claimDailyBasket)
   const claimShareReward = useGame((state) => state.claimShareReward)
+  const [shortfallUpgrade, setShortfallUpgrade] = useState<GardenUpgrade | null>(null)
   const [referral, setReferral] = useState<{ code: string; acceptedCount: number; rewardPerFriend: number; friendWelcomeTokens: number } | null>(null)
+  const realWaterStation = splotchNeeds.find((need) => need.id === 'water-station')!
   useEffect(() => {
     if (!account.signedIn) return
     account.getToken().then((token) => token ? fetch('/api/referrals', { headers: { Authorization: `Bearer ${token}` } }) : null)
@@ -525,13 +530,18 @@ function GardenDesigner({ onClose, onDonate }: { onClose: () => void; onDonate: 
                   : <span>{id.includes('bowl') ? <Droplets /> : id === 'blanket' ? <Home /> : id === 'gravel' || id === 'bench' ? <Leaf /> : <Heart />}</span>}
                 <div><p>{isOwned ? 'IN YOUR GARDEN' : `${item.cost} TOKENS`}</p><h3>{item.title}</h3><small>{item.detail}</small></div>
                 <button disabled={isOwned || needsShelter} onClick={() => {
+                  if (tokens < item.cost) {
+                    setShortfallUpgrade(id)
+                    return
+                  }
                   if (id === 'collar') {
                     const name = window.prompt('What should the virtual collar say?', 'Garden Friend')
                     if (name) purchase(id, name)
                     return
                   }
                   purchase(id)
-                }}>{isOwned ? <><Check size={14} /> Added</> : needsShelter ? 'Build the roof first' : tokens >= item.cost ? 'Add to garden' : `Need ${item.cost - tokens} more`}</button>
+                }}>{isOwned ? <><Check size={14} /> Added</> : needsShelter ? 'Build the roof first' : tokens >= item.cost ? 'Add to garden' : `See how to earn ${item.cost - tokens} more`}</button>
+                {id === 'automatic-bowl' && <button className="real-water-button" onClick={() => onDonate(realWaterStation)}><CircleDollarSign size={13} /> Fund a real sanctuary station</button>}
               </article>
             )
           })}
@@ -551,6 +561,37 @@ function GardenDesigner({ onClose, onDonate }: { onClose: () => void; onDonate: 
             <button onClick={() => onDonate(splotchNeeds.find((need) => need.id === 'food')!)}>Support real daily care</button>
           </div>
         </section>
+        {shortfallUpgrade && (() => {
+          const item = upgradeCatalog[shortfallUpgrade]
+          const missing = Math.max(0, item.cost - tokens)
+          const starterCrate = completedDays === 0 && shelterStage === 0
+          const crateGrant = starterCrate ? 120 : 40
+          return (
+            <div className="upgrade-shortfall-backdrop" role="presentation">
+              <section className="upgrade-shortfall" role="dialog" aria-modal="true" aria-labelledby="upgrade-shortfall-title">
+                <button className="close-button" onClick={() => setShortfallUpgrade(null)} aria-label="Close token options"><X size={18} /></button>
+                <p className="eyebrow">VIRTUAL UPGRADE · FREE GAME CURRENCY</p>
+                <h2 id="upgrade-shortfall-title">{missing > 0 ? `${missing} more tokens unlock the ${item.title.toLowerCase()}.` : `You have enough for the ${item.title.toLowerCase()}.`}</h2>
+                <p>Garden tokens are earned through play. A charitable gift never purchases tokens and is never treated as money spent on this virtual object.</p>
+                <div className="shortfall-meter"><span><Coins size={18} /> Your balance</span><strong>{tokens} / {item.cost}</strong><i><b style={{ width: `${Math.min(100, Math.round(tokens / item.cost * 100))}%` }} /></i></div>
+                <div className="shortfall-actions">
+                  {missing === 0 && <button onClick={() => {
+                    if (shortfallUpgrade === 'collar') {
+                      const name = window.prompt('What should the virtual collar say?', 'Garden Friend')
+                      if (!name) return
+                      purchase(shortfallUpgrade, name)
+                    } else purchase(shortfallUpgrade)
+                    setShortfallUpgrade(null)
+                  }}>Add the virtual {item.title.toLowerCase()}</button>}
+                  {missing > 0 && lastDailyClaim !== localDay() && <button onClick={claimDailyBasket}><Gift size={16} /> Open today’s free crate · +{crateGrant}</button>}
+                  {missing > 0 && <button onClick={account.signedIn ? share : account.openSignIn}><Users size={16} /> {account.signedIn ? shareRewardClaimed ? `Invite a verified friend · +${referral?.rewardPerFriend || 100}` : 'Share your garden · +25' : 'Sign in to earn invitation rewards'}</button>}
+                  {missing > 0 && lastDailyClaim === localDay() && shareRewardClaimed && <small>Tomorrow’s free crate adds 40 tokens. A verified friend adds {referral?.rewardPerFriend || 100}.</small>}
+                </div>
+                {shortfallUpgrade === 'automatic-bowl' && <aside className="real-water-choice"><Droplets size={25} /><div><span>SEPARATE REAL-WORLD ACTION</span><h3>Help buy real hydration equipment.</h3><p>This optional donation supports an actual Cat Gardens water-station need. It creates a verified donation record and supporter badge—but does not unlock the virtual station or increase this token balance.</p><button onClick={() => onDonate(realWaterStation)}>Open the real donation portal <ArrowRight size={15} /></button></div></aside>}
+              </section>
+            </div>
+          )
+        })()}
       </article>
     </div>
   )

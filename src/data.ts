@@ -87,6 +87,18 @@ export const splotchNeeds: SplotchNeed[] = [
     badge: 'bowl-bringer',
   },
   {
+    id: 'water-station',
+    category: 'safety',
+    eyebrow: 'REAL HYDRATION EQUIPMENT · SANCTUARY-WIDE',
+    title: 'A real automatic water station for Cat Gardens',
+    detail: 'Help the sanctuary select and acquire durable automatic hydration equipment for the real cats. The chosen model, reviewed cost, purchase, installation, and receipt can be attached to the public reality record.',
+    status: 'Equipment model and reviewed cost pending',
+    suggestedAmount: 25,
+    badge: 'bowl-bringer',
+    catId: 'cat-gardens',
+    program: 'sanctuary',
+  },
+  {
     id: 'future-dental',
     category: 'preventive',
     eyebrow: 'PREVENTIVE HEALTH',

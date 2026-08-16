@@ -4,7 +4,7 @@ const { authenticateGardenRequest } = require('./_auth')
 
 const MINIMUM_AMOUNT_CENTS = 500
 const MAXIMUM_AMOUNT_CENTS = 50000000
-const NEEDS = new Set(['general-care', 'food', 'medical-care', 'care-team', 'full-month', 'future-dental', 'petting', 'media', 'tracker', 'mathikoloni', 'tv-pilot', 'tv-operations', 'gabriel-trust', 'fluff-care'])
+const NEEDS = new Set(['general-care', 'food', 'water-station', 'medical-care', 'care-team', 'full-month', 'future-dental', 'petting', 'media', 'tracker', 'mathikoloni', 'tv-pilot', 'tv-operations', 'gabriel-trust', 'fluff-care'])
 const BADGES = new Set(['bowl-bringer', 'gentle-hands', 'storykeeper', 'bright-bite', 'safe-passage', 'dream-builder', 'garden-keeper', 'broadcast-builder', 'trust-keeper', 'fluff-crew'])
 const CAT_IDS = new Set(['splotch', 'cat-gardens', 'gabriel', 'gabriel-and-poly'])
 const PROGRAMS = new Set(['cat-care', 'cat-gardens-tv', 'sanctuary'])
