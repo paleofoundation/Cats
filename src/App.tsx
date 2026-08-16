@@ -602,6 +602,10 @@ function BondingHUD({ onComplete, onCancel }: { onComplete: (result: { advanced:
   }, [holding])
 
   useEffect(() => {
+    useGame.getState().setBondingProgress(progress)
+  }, [progress])
+
+  useEffect(() => {
     if (progress < 100 || finishing.current) return
     finishing.current = true
     setHolding(false)
@@ -610,6 +614,16 @@ function BondingHUD({ onComplete, onCancel }: { onComplete: (result: { advanced:
     if (result) window.setTimeout(() => onComplete(result), 450)
   }, [onComplete, progress])
 
+  const response = progress < 18
+    ? { label: 'SETTLING', title: 'Your caretaker sits at his level.', detail: 'Splotch can still choose the distance.' }
+    : progress < 48
+      ? { label: 'WATCHING', title: 'Splotch notices the offered hand.', detail: 'No grabbing. No reward prompt. Just time.' }
+      : progress < 78
+        ? { label: 'CHOOSING', title: 'He closes the last step himself.', detail: 'Trust reads as movement—not a number alone.' }
+        : progress < 100
+          ? { label: 'CONTACT', title: 'Splotch leans into the touch.', detail: 'The avatar’s hand and his head now meet.' }
+          : { label: 'PURRING', title: 'He stayed.', detail: 'This moment becomes part of your shared history.' }
+
   return (
     <section className="bonding-hud" aria-label="Sit with Splotch">
       <button className="bonding-close" onClick={() => { useGame.getState().cancelBonding(); onCancel() }} aria-label="Stand up"><X size={18} /></button>
@@ -617,6 +631,10 @@ function BondingHUD({ onComplete, onCancel }: { onComplete: (result: { advanced:
         <span>SPLOTCH MEMORY {String(bondVisits + 1).padStart(2, '0')} · AT HIS LEVEL</span>
         <h2>{moment.title}</h2>
         <p>{moment.detail}</p>
+      </div>
+      <div className={`bonding-response response-${response.label.toLowerCase()}`} aria-live="polite">
+        <i><span /></i>
+        <div><small>{response.label} · LIVE RESPONSE</small><strong>{response.title}</strong><p>{response.detail}</p></div>
       </div>
       <button
         className={`stay-button ${holding ? 'holding' : ''}`}

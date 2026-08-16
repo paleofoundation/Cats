@@ -55,6 +55,7 @@ export type GameState = {
   lastBondAt: number | null
   nextBondAt: number | null
   bondingMode: boolean
+  bondingProgress: number
   lastDailyClaim: string | null
   lastChandaVisitDate: string | null
   lastDayCompleted: string | null
@@ -106,6 +107,7 @@ export type GameState = {
   bond: () => boolean
   build: () => boolean
   beginBonding: () => boolean
+  setBondingProgress: (progress: number) => void
   cancelBonding: () => void
   completeBondVisit: () => { advanced: boolean; visit: number } | null
   visitReality: () => void
@@ -151,6 +153,7 @@ const initialPersistentState = {
   lastBondAt: null as number | null,
   nextBondAt: null as number | null,
   bondingMode: false,
+  bondingProgress: 0,
   lastDailyClaim: null as string | null,
   lastChandaVisitDate: null as string | null,
   lastDayCompleted: null as string | null,
@@ -375,10 +378,11 @@ export const useGame = create<GameState>()(
       beginBonding: () => {
         const state = get()
         if (!state.hasFed || !state.splotchDiscovered || state.nearby !== 'cat') return false
-        set({ bondingMode: true, input: emptyInput, catAnimation: 'idle', notification: null })
+        set({ bondingMode: true, bondingProgress: 0, input: emptyInput, catAnimation: 'idle', notification: null })
         return true
       },
-      cancelBonding: () => set({ bondingMode: false, input: emptyInput, catAnimation: 'idle' }),
+      setBondingProgress: (progress) => set({ bondingProgress: Math.max(0, Math.min(100, progress)) }),
+      cancelBonding: () => set({ bondingMode: false, bondingProgress: 0, input: emptyInput, catAnimation: 'idle' }),
       completeBondVisit: () => {
         const state = get()
         if (!state.bondingMode || !state.hasFed) return null
@@ -387,6 +391,7 @@ export const useGame = create<GameState>()(
         const nextVisits = canAdvance ? state.bondVisits + 1 : state.bondVisits
         set({
           bondingMode: false,
+          bondingProgress: 0,
           hasBonded: true,
           bondVisits: nextVisits,
           lastBondAt: now,
@@ -506,7 +511,8 @@ export const useGame = create<GameState>()(
           started: state.started ?? false,
           food: Math.min(3, state.food ?? 0),
           nextBondAt: null,
-          bondingMode: false,
+        bondingMode: false,
+        bondingProgress: 0,
           npcVisits: { ...initialPersistentState.npcVisits, ...(state.npcVisits || {}) },
           pathStyle: state.pathStyle === 'gravel' ? 'gravel' : 'dirt',
         } as GameState

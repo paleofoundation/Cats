@@ -150,6 +150,7 @@ function CaretakerPlayer() {
   const smoothTarget = useRef(new THREE.Vector3(0, 1.2, -5))
   const resetToken = useGame((state) => state.resetToken)
   const started = useGame((state) => state.started)
+  const bondingMode = useGame((state) => state.bondingMode)
   const setNearby = useGame((state) => state.setNearby)
   const setPlayerPosition = useGame((state) => state.setPlayerPosition)
 
@@ -199,7 +200,21 @@ function CaretakerPlayer() {
       body.current.setLinvel({ x: 0, y: velocity.y, z: 0 }, true)
     }
 
-    const actionName = working ? 'Interact' : paused || magnitude < .02 ? 'Idle_Neutral' : running ? 'Run' : 'Walk'
+    if (model.current) {
+      const settle = game.bondingMode ? THREE.MathUtils.smoothstep(game.bondingProgress, 0, 24) : 0
+      model.current.position.y = THREE.MathUtils.damp(model.current.position.y, -1 - settle * .28, 7, delta)
+      model.current.scale.y = THREE.MathUtils.damp(model.current.scale.y, .88 - settle * .12, 7, delta)
+      model.current.rotation.x = THREE.MathUtils.damp(model.current.rotation.x, -settle * .12, 7, delta)
+      if (game.bondingMode) {
+        const cat = new THREE.Vector3(...game.catPosition)
+        const targetFacing = Math.atan2(cat.x - position.x, cat.z - position.z)
+        const difference = Math.atan2(Math.sin(targetFacing - facing.current), Math.cos(targetFacing - facing.current))
+        facing.current += difference * (1 - Math.exp(-delta * 7))
+        model.current.rotation.y = facing.current
+      }
+    }
+
+    const actionName = game.bondingMode && game.bondingProgress > 12 ? 'Interact' : working ? 'Interact' : paused || magnitude < .02 ? 'Idle_Neutral' : running ? 'Run' : 'Walk'
     if (currentAction.current !== actionName) {
       actions[currentAction.current]?.fadeOut(.18)
       ;(actions[actionName] ?? actions.Idle)?.reset().fadeIn(.18).play()
@@ -209,8 +224,11 @@ function CaretakerPlayer() {
     const flat = new THREE.Vector3(position.x, 0, position.z)
     if (game.bondingMode) {
       const cat = new THREE.Vector3(...game.catPosition)
-      camera.position.lerp(cat.clone().add(new THREE.Vector3(3.5, 2.15, -3.2)), 1 - Math.exp(-delta * 3.5))
-      smoothTarget.current.lerp(cat.clone().add(new THREE.Vector3(0, .75, 0)), 1 - Math.exp(-delta * 5))
+      const midpoint = flat.clone().lerp(cat, .5)
+      const bondAxis = cat.clone().sub(flat).setY(0).normalize()
+      const side = new THREE.Vector3(-bondAxis.z, 0, bondAxis.x)
+      camera.position.lerp(midpoint.clone().addScaledVector(side, 3.55).add(new THREE.Vector3(0, 1.85, 0)), 1 - Math.exp(-delta * 3.5))
+      smoothTarget.current.lerp(midpoint.add(new THREE.Vector3(0, .72, 0)), 1 - Math.exp(-delta * 5))
     } else {
       const desiredCamera = flat.clone().add(CAMERA_OFFSET)
       camera.position.lerp(desiredCamera, 1 - Math.exp(-delta * 4.4))
@@ -242,9 +260,73 @@ function CaretakerPlayer() {
     <RigidBody ref={body} colliders={false} position={START_POSITION} mass={1.1} canSleep={false} enabledRotations={[false, false, false]} linearDamping={8} friction={1.2}>
       <CapsuleCollider args={[.58, .34]} position={[0, -.18, 0]} />
       <group ref={model} position={[0, -1, 0]} scale={.88}>
-        <primitive object={clone} />
+        <primitive object={clone} visible={!bondingMode} />
+        {bondingMode && <BondingCaretakerPose />}
       </group>
     </RigidBody>
+  )
+}
+
+function PoseLimb({ from, to, radius, color }: { from: THREE.Vector3Tuple; to: THREE.Vector3Tuple; radius: number; color: string }) {
+  const transform = useMemo(() => {
+    const start = new THREE.Vector3(...from)
+    const end = new THREE.Vector3(...to)
+    const direction = end.clone().sub(start)
+    const length = direction.length()
+    const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize())
+    return { midpoint: start.add(end).multiplyScalar(.5), quaternion, length }
+  }, [from, to])
+  return (
+    <mesh position={transform.midpoint} quaternion={transform.quaternion} castShadow>
+      <capsuleGeometry args={[radius, Math.max(.03, transform.length - radius * 2), 6, 10]} />
+      <meshStandardMaterial color={color} roughness={.92} />
+    </mesh>
+  )
+}
+
+function BondingCaretakerPose() {
+  const group = useRef<THREE.Group>(null)
+  const pettingArm = useRef<THREE.Group>(null)
+  useFrame(({ clock }) => {
+    if (!group.current) return
+    const progress = useGame.getState().bondingProgress
+    const reach = THREE.MathUtils.smoothstep(progress, 24, 76)
+    group.current.rotation.x = -.03 - reach * .06 + Math.sin(clock.elapsedTime * 1.4) * .006
+    group.current.position.z = reach * .06
+    if (pettingArm.current) {
+      const stroke = Math.sin(clock.elapsedTime * 2.7) * reach
+      pettingArm.current.position.y = stroke * .018
+      pettingArm.current.position.z = stroke * .035
+      pettingArm.current.rotation.x = stroke * .025
+    }
+  })
+  const clothing = '#718e3e'
+  const pants = '#765c48'
+  const skin = '#d59b78'
+  const hair = '#5b3825'
+  return (
+    <group ref={group}>
+      <mesh position={[0, 1.02, .02]} scale={[.42, .62, .28]} castShadow><capsuleGeometry args={[.42, .38, 7, 12]} /><meshStandardMaterial color={clothing} roughness={.94} /></mesh>
+      <mesh position={[0, 1.62, .02]} castShadow><sphereGeometry args={[.27, 18, 12]} /><meshStandardMaterial color={skin} roughness={.92} /></mesh>
+      <mesh position={[0, 1.77, -.035]} scale={[1.04, .64, 1.02]} castShadow><sphereGeometry args={[.275, 18, 12]} /><meshStandardMaterial color={hair} roughness={.98} /></mesh>
+      <mesh position={[-.082, 1.63, .264]}><sphereGeometry args={[.023, 10, 8]} /><meshStandardMaterial color="#4f9fd2" emissive="#4f9fd2" emissiveIntensity={.2} /></mesh>
+      <mesh position={[.082, 1.63, .264]}><sphereGeometry args={[.023, 10, 8]} /><meshStandardMaterial color="#4f9fd2" emissive="#4f9fd2" emissiveIntensity={.2} /></mesh>
+      <PoseLimb from={[-.18, .66, .02]} to={[-.3, .34, .34]} radius={.12} color={pants} />
+      <PoseLimb from={[-.3, .34, .34]} to={[-.47, .12, .7]} radius={.105} color={pants} />
+      <PoseLimb from={[.18, .66, .02]} to={[-.02, .3, .42]} radius={.12} color={pants} />
+      <PoseLimb from={[-.02, .3, .42]} to={[.34, .12, .68]} radius={.105} color={pants} />
+      <PoseLimb from={[-.31, 1.27, .04]} to={[-.43, .93, .3]} radius={.095} color={clothing} />
+      <PoseLimb from={[-.43, .93, .3]} to={[-.22, .73, .55]} radius={.085} color={skin} />
+      <group ref={pettingArm}>
+        <PoseLimb from={[.31, 1.27, .04]} to={[.42, 1.05, .34]} radius={.095} color={clothing} />
+        <PoseLimb from={[.42, 1.05, .34]} to={[.18, 1.23, .63]} radius={.082} color={skin} />
+        <mesh position={[.16, 1.24, .65]} scale={[.12, .07, .16]} rotation={[.2, 0, -.18]} castShadow><sphereGeometry args={[1, 12, 8]} /><meshStandardMaterial color={skin} roughness={.9} /></mesh>
+        <group position={[.16, 1.24, .65]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[.16, .016, 8, 32]} /><meshBasicMaterial color="#efff9a" transparent opacity={.76} depthWrite={false} /></mesh>
+          <Sparkles count={7} scale={[.55, .55, .55]} size={3} speed={.32} color="#fff5c4" />
+        </group>
+      </group>
+    </group>
   )
 }
 
@@ -306,6 +388,7 @@ function SplotchActor() {
   const lastFedDate = useGame((state) => state.lastFedDate)
   const shelterStage = useGame((state) => state.shelterStage)
   const collarName = useGame((state) => state.collarName)
+  const bondingMode = useGame((state) => state.bondingMode)
   const currentAction = useRef('')
   const target = useRef(SPLOTCH_HOME.clone())
   useEffect(() => {
@@ -322,7 +405,7 @@ function SplotchActor() {
       }
     })
   }, [clone])
-  useFrame((_, delta) => {
+  useFrame(({ clock }, delta) => {
     if (!group.current) return
     const game = useGame.getState()
     const player = new THREE.Vector3(game.playerPosition[0], 0, game.playerPosition[2])
@@ -334,7 +417,10 @@ function SplotchActor() {
     if (game.catAnimation === 'eat') {
       target.current.copy(SPLOTCH_SHELTER_SPOT).add(new THREE.Vector3(-.6, 0, -.65))
     } else if (game.bondingMode) {
-      target.current.copy(player).add(new THREE.Vector3(.85, 0, .55))
+      const approach = THREE.MathUtils.smoothstep(game.bondingProgress, 18, 78)
+      const nuzzle = game.bondingProgress > 78 ? (Math.sin(clock.elapsedTime * 2.6) + 1) * .035 : 0
+      const contactOffset = new THREE.Vector3(.85, 0, .55).normalize().multiplyScalar(1.55 - approach * .32 - nuzzle)
+      target.current.copy(player).add(contactOffset)
     } else if (game.lastFedDate === localDay() && playerDistance > 3.1 && playerDistance < 13) {
       // Fixed world-space following offset: it never feeds Splotch's own yaw
       // back into his destination, which prevents the previous orbiting loop.
@@ -353,7 +439,14 @@ function SplotchActor() {
       const desiredFacing = Math.atan2(motion.x, motion.z)
       const turn = Math.atan2(Math.sin(desiredFacing - group.current.rotation.y), Math.cos(desiredFacing - group.current.rotation.y))
       group.current.rotation.y += turn * (1 - Math.exp(-delta * 8))
+    } else if (game.bondingMode) {
+      const desiredFacing = Math.atan2(player.x - position.x, player.z - position.z)
+      const turn = Math.atan2(Math.sin(desiredFacing - group.current.rotation.y), Math.cos(desiredFacing - group.current.rotation.y))
+      group.current.rotation.y += turn * (1 - Math.exp(-delta * 7))
     }
+
+    const groundedY = game.bondingMode && game.bondingProgress > 76 ? Math.sin(clock.elapsedTime * 3.1) * .018 : 0
+    group.current.position.y = THREE.MathUtils.damp(group.current.position.y, groundedY, 7, delta)
 
     const desiredAction = game.catAnimation === 'eat' ? 'eat' : game.catAnimation === 'dance' ? 'dance' : moving ? 'walk' : 'idle'
     if (currentAction.current !== desiredAction) {
@@ -367,9 +460,32 @@ function SplotchActor() {
   return (
     <group ref={group} position={[SPLOTCH_HOME.x, 0, SPLOTCH_HOME.z]} rotation={[0, Math.PI, 0]}>
       <primitive object={clone} scale={.98} />
-      <WorldTag title={discovered ? 'Splotch · orange male' : 'An orange cat is watching'} subtitle={fedToday ? 'fed today · choosing to follow' : shelterStage >= 3 ? 'his shelter is ready' : 'keep a little distance'} warm={!fedToday} />
+      {!bondingMode && <WorldTag title={discovered ? 'Splotch · orange male' : 'An orange cat is watching'} subtitle={fedToday ? 'fed today · choosing to follow' : shelterStage >= 3 ? 'his shelter is ready' : 'keep a little distance'} warm={!fedToday} />}
       {collarName && <Text position={[0, .77, .28]} fontSize={.12} color="#fff4ca" anchorX="center">{collarName}</Text>}
       {hasBonded && <Sparkles count={10} scale={[2.1, 1.7, 2.1]} size={3} speed={.25} color="#f8f2bd" position={[0, .8, 0]} />}
+      {bondingMode && <BondingResponse />}
+    </group>
+  )
+}
+
+function BondingResponse() {
+  const pulse = useRef<THREE.Group>(null)
+  useFrame(({ clock }) => {
+    if (!pulse.current) return
+    const progress = useGame.getState().bondingProgress
+    const strength = THREE.MathUtils.smoothstep(progress, 48, 92)
+    pulse.current.visible = strength > .02
+    const beat = 1 + Math.sin(clock.elapsedTime * 4.5) * .1
+    pulse.current.scale.setScalar((.72 + strength * .28) * beat)
+    pulse.current.rotation.y = -clock.elapsedTime * .22
+  })
+  return (
+    <group ref={pulse} position={[0, 1.22, .54]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[.28, .025, 9, 40]} />
+        <meshBasicMaterial color="#fff2ac" transparent opacity={.72} depthWrite={false} />
+      </mesh>
+      <Sparkles count={12} scale={[1.05, .9, 1.05]} size={3.5} speed={.38} color="#fff3bd" />
     </group>
   )
 }
