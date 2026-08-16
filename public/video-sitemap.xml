@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
   <url>
+    <loc>https://catgardens.org/Winona</loc>
+    <video:video>
+      <video:thumbnail_loc>https://catgardens.org/assets/winona-p-gray-youtube.jpg</video:thumbnail_loc>
+      <video:title>Meet Winona P. Gray</video:title>
+      <video:description>Meet Winona P. Gray, a real Cat Gardens resident in Cyprus and the sister of Gray Power.</video:description>
+      <video:player_loc>https://www.youtube.com/embed/avpx0oLfPmU</video:player_loc>
+      <video:publication_date>2026-08-16T00:00:00+03:00</video:publication_date>
+    </video:video>
+  </url>
+  <url>
     <loc>https://catgardens.org/Mabel</loc>
     <video:video>
       <video:thumbnail_loc>https://catgardens.org/videos/mabel-sunbeam.jpg</video:thumbnail_loc>

@@ -240,7 +240,9 @@ async function ensureSchema() {
           ('zucchini', 'Zucchini', 'Chili Pepper’s sibling. A fuller sanctuary-reviewed profile is being prepared.', 'easy', '/cats'),
           ('cucumber', 'Cucumber', 'Chili Pepper and Zucchini’s sibling, remembered after dying from FIP.', 'advanced', '/cats'),
           ('gemini', 'Gemini', 'One half of the inseparable pair known at Cat Gardens as the Honeymooners.', 'easy', '/cats'),
-          ('nelly', 'Nelly', 'Also called Nelly Belly; Gemini’s constant companion and the other Honeymooner.', 'easy', '/cats')
+          ('nelly', 'Nelly', 'Also called Nelly Belly; Gemini’s constant companion and the other Honeymooner.', 'easy', '/cats'),
+          ('winona-p-gray', 'Winona P. Gray', 'A Cat Gardens resident and the sister of Gray Power, with a real-life video dispatch now published.', 'easy', '/Winona'),
+          ('gray-power', 'Gray Power', 'Winona P. Gray’s sibling. A fuller sanctuary-reviewed profile is being prepared.', 'easy', '/cats')
         ON CONFLICT (cat_id) DO NOTHING
       `
 
@@ -252,7 +254,9 @@ async function ensureSchema() {
           ('chili-pepper', 'cucumber', 'siblings · Cucumber in memory'),
           ('zucchini', 'cucumber', 'siblings · Cucumber in memory'),
           ('gemini', 'nelly', 'bonded pair · The Honeymooners'),
-          ('nelly', 'gemini', 'bonded pair · The Honeymooners')
+          ('nelly', 'gemini', 'bonded pair · The Honeymooners'),
+          ('winona-p-gray', 'gray-power', 'siblings'),
+          ('gray-power', 'winona-p-gray', 'siblings')
         ON CONFLICT (cat_id, related_cat_id, relationship_label) DO NOTHING
       `
 
@@ -357,6 +361,83 @@ async function ensureSchema() {
           WHERE NOT EXISTS (
             SELECT 1 FROM garden_notifications WHERE event_id = ${mabelDispatch.event_id} AND user_id IS NULL
           )
+        `
+      }
+
+      const winonaDispatchRows = await sql`
+        INSERT INTO garden_care_events (
+          event_key, event_type, cat_id, need_id, title, detail, metadata, public, occurred_at, created_by
+        ) VALUES (
+          'winona-youtube-2026-08-16', 'dispatch.published', 'winona-p-gray', NULL,
+          'Meet Winona P. Gray',
+          'A first real-life video of Winona P. Gray, the sister of Gray Power, was published by Cat Gardens on YouTube.',
+          ${JSON.stringify({ world_artifact: 'winona-first-youtube-dispatch', source: 'Cat Gardens YouTube channel', youtube_id: 'avpx0oLfPmU', relationship: 'sister of Gray Power' })}::jsonb,
+          TRUE, '2026-08-16T00:00:00+03:00'::timestamptz, 'sanctuary'
+        )
+        ON CONFLICT (event_key) DO UPDATE SET
+          title = EXCLUDED.title,
+          detail = EXCLUDED.detail,
+          metadata = EXCLUDED.metadata,
+          public = TRUE
+        RETURNING event_id
+      `
+      const winonaDispatch = winonaDispatchRows[0] || (await sql`SELECT event_id FROM garden_care_events WHERE event_key = 'winona-youtube-2026-08-16' LIMIT 1`)[0]
+      if (winonaDispatch) {
+        await sql`
+          INSERT INTO garden_proof_assets (
+            proof_key, event_id, need_id, cat_id, kind, title, url, source, public, published_at, verified_by
+          ) VALUES (
+            'winona-youtube-avpx0oLfPmU', ${winonaDispatch.event_id}, NULL, 'winona-p-gray', 'video',
+            'Meet Winona P. Gray', 'https://www.youtube.com/shorts/avpx0oLfPmU', 'Cat Gardens YouTube channel', TRUE,
+            '2026-08-16T00:00:00+03:00'::timestamptz, 'Karen Pendergrass'
+          )
+          ON CONFLICT (proof_key) DO UPDATE SET
+            title = EXCLUDED.title,
+            url = EXCLUDED.url,
+            source = EXCLUDED.source,
+            public = TRUE
+        `
+        await sql`
+          INSERT INTO garden_notifications (event_id, cat_id, title, body, action_url)
+          SELECT ${winonaDispatch.event_id}, 'winona-p-gray', 'Meet Winona P. Gray', 'Winona P. Gray—the sister of Gray Power—has her first real-life Cat Gardens video.', '/Winona'
+          WHERE NOT EXISTS (
+            SELECT 1 FROM garden_notifications WHERE event_id = ${winonaDispatch.event_id} AND user_id IS NULL
+          )
+        `
+      }
+
+      const nightDispatchRows = await sql`
+        INSERT INTO garden_care_events (
+          event_key, event_type, cat_id, need_id, title, detail, metadata, public, occurred_at, created_by
+        ) VALUES (
+          'sanctuary-night-youtube-2026-08-16', 'dispatch.published', NULL, 'tv-pilot',
+          'Cat Sanctuary at night',
+          'An informal nighttime field note was published before the planned Cat Gardens camera system is installed.',
+          ${JSON.stringify({ world_artifact: 'sanctuary-night-field-note', source: 'Cat Gardens YouTube channel', youtube_id: 'QqOMbUFAkVw', camera_status: 'pre-installation' })}::jsonb,
+          TRUE, '2026-08-16T00:00:00+03:00'::timestamptz, 'sanctuary'
+        )
+        ON CONFLICT (event_key) DO UPDATE SET
+          title = EXCLUDED.title,
+          detail = EXCLUDED.detail,
+          metadata = EXCLUDED.metadata,
+          public = TRUE
+        RETURNING event_id
+      `
+      const nightDispatch = nightDispatchRows[0] || (await sql`SELECT event_id FROM garden_care_events WHERE event_key = 'sanctuary-night-youtube-2026-08-16' LIMIT 1`)[0]
+      if (nightDispatch) {
+        await sql`
+          INSERT INTO garden_proof_assets (
+            proof_key, event_id, need_id, cat_id, kind, title, url, source, public, published_at, verified_by
+          ) VALUES (
+            'sanctuary-night-youtube-QqOMbUFAkVw', ${nightDispatch.event_id}, 'tv-pilot', NULL, 'video',
+            'Cat Sanctuary at night', 'https://www.youtube.com/shorts/QqOMbUFAkVw', 'Cat Gardens YouTube channel', TRUE,
+            '2026-08-16T00:00:00+03:00'::timestamptz, 'Karen Pendergrass'
+          )
+          ON CONFLICT (proof_key) DO UPDATE SET
+            title = EXCLUDED.title,
+            url = EXCLUDED.url,
+            source = EXCLUDED.source,
+            public = TRUE
         `
       }
     })().catch((error) => {

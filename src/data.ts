@@ -1,6 +1,7 @@
 import splotch from '../assets/splotch.jpg'
 import showPony from '../assets/profile_ziggy.jpg'
 import mabel from '../assets/mabel.jpg'
+import winonaPGray from '../assets/winona-p-gray-youtube.jpg'
 import charlie from '../assets/charlie_v2.jpg'
 import markos from '../assets/dr_ktori.jpg'
 import gardenConcept from '../assets/0_0.jpeg'
@@ -261,6 +262,33 @@ export const cats: Cat[] = [
     careSummary: 'Nelly’s playable care story should preserve her daily relationship with Gemini.',
     careTasks: ['Daily food and water', 'Shared enrichment', 'Observe the bonded pair together'],
     relationships: ['Bonded with Gemini · The Honeymooners'],
+  },
+  {
+    id: 'winona-p-gray',
+    name: 'Winona P. Gray',
+    nickname: 'Gray Power’s sister',
+    image: winonaPGray,
+    color: '#7b7d81',
+    role: 'Sibling-story companion',
+    story: 'Winona P. Gray is a real Cat Gardens resident and the sister of Gray Power. Her first real-life video dispatch is now published.',
+    difficulty: 'easy',
+    status: 'active',
+    careSummary: 'A fuller sanctuary-reviewed care and personality profile is being prepared. Her confirmed relationship with Gray Power remains part of her permanent record.',
+    careTasks: ['Daily food and fresh water', 'Observation and social time', 'Preserve her sibling relationship'],
+    relationships: ['Sister of Gray Power'],
+  },
+  {
+    id: 'gray-power',
+    name: 'Gray Power',
+    nickname: 'Winona P. Gray’s sibling',
+    color: '#73767b',
+    role: 'Sibling-story companion',
+    story: 'Gray Power is Winona P. Gray’s sibling. A fuller sanctuary-reviewed profile is being prepared.',
+    difficulty: 'easy',
+    status: 'active',
+    careSummary: 'Real photographs, care history, and personality notes are awaiting sanctuary review.',
+    careTasks: ['Daily food and fresh water', 'Observation and social time', 'Preserve the sibling relationship'],
+    relationships: ['Sibling of Winona P. Gray'],
   },
   {
     id: 'mabel',

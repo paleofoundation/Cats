@@ -178,7 +178,7 @@ module.exports = async function handler(req, res) {
         RETURNING event_id
       `
       if (Boolean(req.body?.public) && rows[0]) {
-        await publishNotification(sql, { eventId: rows[0].event_id, catId, title, body: detail, actionUrl: catId ? `/${catId === 'splotch' ? 'Splotch' : catId === 'mabel' ? 'Mabel' : 'cats'}` : '/' })
+        await publishNotification(sql, { eventId: rows[0].event_id, catId, title, body: detail, actionUrl: catId ? `/${catId === 'splotch' ? 'Splotch' : catId === 'mabel' ? 'Mabel' : catId === 'winona-p-gray' ? 'Winona' : 'cats'}` : '/' })
       }
       return res.status(200).json({ published: true, eventId: Number(rows[0]?.event_id || 0) })
     }
@@ -213,7 +213,7 @@ module.exports = async function handler(req, res) {
           catId: resolvedCatId,
           title: event.title,
           body: event.detail,
-          actionUrl: resolvedCatId === 'splotch' ? '/Splotch' : resolvedCatId === 'mabel' ? '/Mabel' : '/cats',
+          actionUrl: resolvedCatId === 'splotch' ? '/Splotch' : resolvedCatId === 'mabel' ? '/Mabel' : resolvedCatId === 'winona-p-gray' ? '/Winona' : '/cats',
         })
       }
       return res.status(200).json({ published: true })
