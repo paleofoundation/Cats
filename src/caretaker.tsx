@@ -1,6 +1,6 @@
 import { StrictMode, useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { createRoot } from 'react-dom/client'
-import { ArrowLeft, BadgeCheck, CircleDollarSign, FileCheck2, LoaderCircle, LogIn, RefreshCw, Send, Shield, Users, Video } from 'lucide-react'
+import { ArrowLeft, BadgeCheck, CircleDollarSign, FileCheck2, LoaderCircle, LogIn, ReceiptText, RefreshCw, Send, Shield, Users, Video } from 'lucide-react'
 import { GardenAccountProvider, useGardenAccount } from './account'
 import './caretaker.css'
 
@@ -17,9 +17,10 @@ type CareNeed = {
 
 type CareEvent = { event_id: number; cat_id: string | null; need_id: string | null; title: string; detail: string; event_type: string; public: boolean; occurred_at: string }
 type CareProof = { proof_id: number; event_id: number | null; title: string; url: string; kind: string; public: boolean; published_at: string | null }
-type CareDonation = { session_id: string; amount_cents: number; currency: string; need_id: string | null; donor_name: string | null; allocation_status: string; allocated_amount_cents: number | null; created_at: string }
+type CareDonation = { session_id: string; amount_cents: number; currency: string; need_id: string | null; donor_name: string | null; allocation_status: string; allocation_id: number | null; allocated_amount_cents: number | null; spent_cents: number | null; created_at: string }
+type CareExpense = { expense_id: number; title: string; detail: string; vendor: string | null; amount_cents: number; linked_cents: number; currency: string; paid_at: string; cat_name: string | null; need_title: string | null; proof_title: string | null; proof_url: string | null }
 type ParticipationRequest = { request_id: number; request_type: string; full_name: string; email: string; location: string | null; availability: string | null; interests: string[]; message: string | null; status: string; created_at: string }
-type CaretakerData = { caretaker: { userId: string; role: string }; needs: CareNeed[]; events: CareEvent[]; proofs: CareProof[]; donations: CareDonation[]; participationRequests: ParticipationRequest[] }
+type CaretakerData = { caretaker: { userId: string; role: string }; needs: CareNeed[]; events: CareEvent[]; proofs: CareProof[]; donations: CareDonation[]; expenses: CareExpense[]; participationRequests: ParticipationRequest[] }
 
 const money = (cents: number, currency = 'usd') => new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() }).format(cents / 100)
 
@@ -101,6 +102,7 @@ function CaretakerRoom() {
   }, [api, refresh])
 
   const pendingDonations = useMemo(() => data?.donations.filter((item) => item.allocation_status === 'pending_sanctuary_review') || [], [data])
+  const spendableDonations = useMemo(() => data?.donations.filter((item) => item.allocation_id && item.allocation_status !== 'pending_sanctuary_review' && Number(item.allocated_amount_cents || 0) > Number(item.spent_cents || 0)) || [], [data])
 
   if (!account.loaded) return <main className="care-gate"><LoaderCircle className="care-spin" /><p>Opening the caretaker room…</p></main>
   if (!account.configured) return <main className="care-gate"><Shield /><h1>Account service is not configured.</h1><a href="/">Return to Cat Gardens</a></main>
@@ -126,6 +128,7 @@ function CaretakerRoom() {
             <article><small>PUBLISHED NEEDS</small><strong>{data.needs.length}</strong><span>no invented totals</span></article>
             <article><small>FIELD EVENTS</small><strong>{data.events.length}</strong><span>public and private</span></article>
             <article><small>PROOF ASSETS</small><strong>{data.proofs.length}</strong><span>receipts, photos, video</span></article>
+            <article><small>PAID EXPENSES</small><strong>{data.expenses.length}</strong><span>reviewed reality records</span></article>
             <article><small>PEOPLE OFFERING HELP</small><strong>{data.participationRequests.filter((item) => item.status === 'new').length}</strong><span>new private requests</span></article>
           </section>
 
@@ -135,12 +138,23 @@ function CaretakerRoom() {
           </section>
 
           <section className="care-section">
-            <div className="care-section-title"><div><p className="care-eyebrow">02 · REAL PEOPLE ENTER THE WORK</p><h2>Participation requests.</h2></div><Users /></div>
+            <div className="care-section-title"><div><p className="care-eyebrow">02 · SHOW WHAT WAS ACTUALLY PAID</p><h2>Close the impact loop.</h2></div><ReceiptText /></div>
+            <div className="expense-admin-grid">
+              <ExpensePublisher busy={busy} needs={data.needs} donations={spendableDonations} onPublish={(body) => mutate(body, 'The paid expense is now connected to the verified impact ledger.')} />
+              <div className="expense-register">
+                <p className="care-eyebrow">RECENT REVIEWED EXPENSES</p>
+                {data.expenses.length === 0 ? <p className="care-empty">No paid expenses have been entered yet.</p> : data.expenses.slice(0, 12).map((expense) => <article key={expense.expense_id}><div><small>{expense.cat_name || 'WHOLE SANCTUARY'} · {new Date(expense.paid_at).toLocaleDateString()}</small><strong>{expense.title}</strong><span>{expense.vendor || expense.need_title || 'Sanctuary record'}</span></div><div><b>{money(expense.amount_cents, expense.currency)}</b><small>{money(expense.linked_cents, expense.currency)} traced to verified gifts</small>{expense.proof_url && <a href={expense.proof_url} target="_blank" rel="noreferrer">{expense.proof_title || 'Open proof'}</a>}</div></article>)}
+              </div>
+            </div>
+          </section>
+
+          <section className="care-section">
+            <div className="care-section-title"><div><p className="care-eyebrow">03 · REAL PEOPLE ENTER THE WORK</p><h2>Participation requests.</h2></div><Users /></div>
             {data.participationRequests.length === 0 ? <p className="care-empty">No participation requests have arrived yet.</p> : <div className="participation-list">{data.participationRequests.map((request) => <ParticipationReview key={request.request_id} request={request} busy={busy} onReview={(body) => mutate(body, `${request.full_name}’s request was updated.`)} />)}</div>}
           </section>
 
           <section className="care-section">
-            <div className="care-section-title"><div><p className="care-eyebrow">03 · PUBLISH ONLY WHAT IS KNOWN</p><h2>Care needs.</h2></div><BadgeCheck /></div>
+            <div className="care-section-title"><div><p className="care-eyebrow">04 · PUBLISH ONLY WHAT IS KNOWN</p><h2>Care needs.</h2></div><BadgeCheck /></div>
             <div className="needs-admin-grid">{data.needs.map((need) => <NeedEditor key={`${need.need_id}-${need.status}-${need.fulfillment_status}-${need.goal_cents}`} need={need} busy={busy} onSave={(body) => mutate(body, `${need.title} was updated.`)} />)}</div>
           </section>
 
@@ -163,6 +177,35 @@ function AllocationEditor({ donation, needs, busy, onReview }: { donation: CareD
   const [needId, setNeedId] = useState(donation.need_id || 'general-care')
   const [note, setNote] = useState('')
   return <form className="allocation-row" onSubmit={(event) => { event.preventDefault(); onReview({ action: 'review_allocation', sessionId: donation.session_id, needId, status: 'allocated', amountCents: donation.amount_cents, note }) }}><div><small>VERIFIED STRIPE GIFT</small><strong>{money(donation.amount_cents, donation.currency)}</strong><span>{new Date(donation.created_at).toLocaleString()} · donor identity private</span></div><label>Allocate to<select value={needId} onChange={(event) => setNeedId(event.target.value)}>{needs.map((need) => <option value={need.need_id} key={need.need_id}>{need.title}</option>)}</select></label><label>Internal note<input value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional" /></label><button disabled={busy}><BadgeCheck size={14} /> Review</button></form>
+}
+
+function ExpensePublisher({ needs, donations, busy, onPublish }: { needs: CareNeed[]; donations: CareDonation[]; busy: boolean; onPublish: (body: Record<string, unknown>) => Promise<void> }) {
+  return <form className="publish-card expense-publisher" onSubmit={(event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
+    const amount = Number(form.get('amount'))
+    const fundedAmount = Number(form.get('fundedAmount'))
+    const sessionId = String(form.get('sessionId') || '')
+    onPublish({
+      action: 'record_expense', title: form.get('title'), detail: form.get('detail'), vendor: form.get('vendor'),
+      amountCents: Math.round(amount * 100), currency: form.get('currency'), paidAt: form.get('paidAt'),
+      catId: form.get('catId'), needId: form.get('needId'), sessionId,
+      fundedCents: sessionId ? Math.round(fundedAmount * 100) : 0,
+      proofUrl: form.get('proofUrl'), proofTitle: form.get('proofTitle'), public: form.get('public') === 'on',
+    }).then(() => formElement.reset())
+  }}>
+    <ReceiptText /><p className="care-eyebrow">PAID · REVIEWED · TRACEABLE</p><h2>Record a real expense.</h2>
+    <label>What was paid for<input name="title" required maxLength={160} placeholder="Splotch’s dental cleaning" /></label>
+    <label>What happened<textarea name="detail" required rows={3} maxLength={1600} placeholder="Plain-language description shown to the supporter" /></label>
+    <div className="care-form-row"><label>Vendor<input name="vendor" maxLength={160} placeholder="Clinic or supplier" /></label><label>Paid on<input name="paidAt" type="date" required defaultValue={new Date().toLocaleDateString('en-CA')} /></label><label>Currency<select name="currency"><option value="usd">USD</option><option value="eur">EUR</option><option value="gbp">GBP</option></select></label></div>
+    <div className="care-form-row"><label>Total expense<input name="amount" type="number" min="0.01" step="0.01" required /></label><label>Cat<select name="catId"><option value="">Whole sanctuary</option><option value="splotch">Splotch</option><option value="mabel">Mabel</option><option value="winona-p-gray">Winona P. Gray</option><option value="gray-power">Gray Power</option><option value="gabriel">Gabriel</option><option value="poly">Poly</option></select></label><label>Care need<select name="needId"><option value="">General expense</option>{needs.map((need) => <option value={need.need_id} key={need.need_id}>{need.title}</option>)}</select></label></div>
+    <label>Verified gift to trace<select name="sessionId"><option value="">Sanctuary funds · no individual attribution</option>{donations.map((donation) => <option value={donation.session_id} key={donation.session_id}>{money(Number(donation.allocated_amount_cents || donation.amount_cents) - Number(donation.spent_cents || 0), donation.currency)} available · {donation.need_id || 'general care'} · {new Date(donation.created_at).toLocaleDateString()}</option>)}</select></label>
+    <label>Amount of that gift used<input name="fundedAmount" type="number" min="0.01" step="0.01" placeholder="Leave empty when no gift is selected" /></label>
+    <div className="care-form-row"><label>Public/redacted proof URL<input name="proofUrl" type="text" placeholder="https://…" /></label><label>Proof label<input name="proofTitle" placeholder="Redacted receipt" /></label></div>
+    <label className="care-check"><input type="checkbox" name="public" /> Publish this expense and any attached redacted proof</label>
+    <button disabled={busy}><ReceiptText size={15} /> Add to verified impact</button>
+  </form>
 }
 
 function EventPublisher({ needs, busy, onPublish }: { needs: CareNeed[]; busy: boolean; onPublish: (body: Record<string, unknown>) => Promise<void> }) {

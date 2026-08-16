@@ -160,6 +160,39 @@ async function ensureSchema() {
         )
       `
       await sql`
+        CREATE TABLE IF NOT EXISTS garden_sanctuary_expenses (
+          expense_id BIGSERIAL PRIMARY KEY,
+          expense_key TEXT UNIQUE,
+          event_id BIGINT REFERENCES garden_care_events(event_id) ON DELETE SET NULL,
+          proof_id BIGINT REFERENCES garden_proof_assets(proof_id) ON DELETE SET NULL,
+          need_id TEXT REFERENCES garden_care_needs(need_id),
+          cat_id TEXT REFERENCES garden_cats(cat_id),
+          title TEXT NOT NULL,
+          detail TEXT NOT NULL,
+          vendor TEXT,
+          amount_cents BIGINT NOT NULL,
+          currency TEXT NOT NULL DEFAULT 'usd',
+          status TEXT NOT NULL DEFAULT 'paid',
+          paid_at TIMESTAMPTZ NOT NULL,
+          public BOOLEAN NOT NULL DEFAULT FALSE,
+          created_by TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `
+      await sql`CREATE INDEX IF NOT EXISTS garden_expenses_paid_idx ON garden_sanctuary_expenses (paid_at DESC, status)`
+      await sql`CREATE INDEX IF NOT EXISTS garden_expenses_cat_idx ON garden_sanctuary_expenses (cat_id, paid_at DESC)`
+      await sql`
+        CREATE TABLE IF NOT EXISTS garden_expense_funding (
+          expense_id BIGINT NOT NULL REFERENCES garden_sanctuary_expenses(expense_id) ON DELETE CASCADE,
+          allocation_id BIGINT NOT NULL REFERENCES garden_donation_allocations(allocation_id) ON DELETE CASCADE,
+          amount_cents BIGINT NOT NULL,
+          linked_by TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+          PRIMARY KEY (expense_id, allocation_id)
+        )
+      `
+      await sql`CREATE INDEX IF NOT EXISTS garden_expense_funding_allocation_idx ON garden_expense_funding (allocation_id)`
+      await sql`
         CREATE TABLE IF NOT EXISTS garden_notifications (
           notification_id BIGSERIAL PRIMARY KEY,
           event_id BIGINT REFERENCES garden_care_events(event_id) ON DELETE CASCADE,

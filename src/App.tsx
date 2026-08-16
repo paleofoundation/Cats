@@ -24,6 +24,8 @@ import {
   PawPrint,
   Play,
   Radio,
+  ReceiptText,
+  RefreshCw,
   RotateCcw,
   Shield,
   Sparkles,
@@ -44,7 +46,7 @@ import mathikoloniAerialPlot from '../assets/mathikoloni-aerial-plot.webp'
 import mathikoloniVisionSource from '../assets/mathikoloni-vision-source.webp'
 import { badgeLabels, cats, dreamGardenConcept, dreamSpaces, splotchNeeds, type SplotchNeed } from './data'
 import { tvChannels, tvFundingNeeds } from './catGardensTv'
-import { useGardenAccount } from './account'
+import { useGardenAccount, type GardenAccount } from './account'
 import { GameSync } from './GameSync'
 import { RealityThread } from './RealityThread'
 import { playPurr } from './game/audio'
@@ -968,6 +970,7 @@ function GardenProfile({ onClose, onDonate }: { onClose: () => void; onDonate: (
           <div><span>DREAM FOUND</span><strong>{dreamDiscoveries.length}/{dreamSpaces.length}</strong><small>free discoveries</small></div>
           <div><span>VERIFIED GIFTS</span><strong>${donationTotal.toLocaleString()}</strong><small>{account.signedIn ? 'synced from Stripe' : 'sign in to keep a record'}</small></div>
         </section>
+        <PlayerImpact account={account} />
         <section className="badge-vault">
           <div className="section-title"><div><p className="eyebrow">SUPPORTER BADGES</p><h3>Recognition follows verified payment.</h3></div><button onClick={() => onDonate(monthlyNeed)}>Become a Garden Keeper</button></div>
           <div className="badge-grid">
@@ -981,6 +984,147 @@ function GardenProfile({ onClose, onDonate }: { onClose: () => void; onDonate: (
       </article>
     </div>
   )
+}
+
+type ImpactMoney = { currency: string; amountCents: number }
+type ImpactCat = { catId: string | null; name: string; fundedCents: number; currency: string; paidItems: number }
+type ImpactExpense = {
+  expense_id: number
+  title: string
+  detail: string
+  vendor: string | null
+  amount_cents: number
+  player_funded_cents: number
+  currency: string
+  paid_at: string
+  need_title: string | null
+  cat_id: string | null
+  cat_name: string | null
+  proof_kind: string | null
+  proof_title: string | null
+  proof_url: string | null
+  proof_redacted: boolean | null
+}
+type ImpactDonation = {
+  session_id: string
+  amount_cents: number
+  allocated_amount_cents: number
+  spent_cents: number
+  currency: string
+  frequency: string
+  created_at: string
+  allocation_status: string
+  allocation_record_status: string | null
+  need_title: string | null
+  overflow_policy: string | null
+  cat_name: string | null
+}
+type PlayerImpactData = {
+  week: { week_start: string; week_end: string }
+  totals: { gifts: number; donatedByCurrency: ImpactMoney[]; paidByCurrency: ImpactMoney[]; pendingCents: number }
+  catsHelped: ImpactCat[]
+  weeklyExpenses: ImpactExpense[]
+  expenses: ImpactExpense[]
+  donations: ImpactDonation[]
+  gameWallet: { balance: number; label: string; note: string }
+  policy: string
+}
+
+const impactMoney = (cents: number, currency = 'usd') => new Intl.NumberFormat('en-US', {
+  style: 'currency', currency: currency.toUpperCase(), maximumFractionDigits: 2,
+}).format(cents / 100)
+
+function currencyTotals(items: ImpactMoney[]) {
+  if (!items.length) return '$0.00'
+  return items.map((item) => impactMoney(item.amountCents, item.currency)).join(' + ')
+}
+
+function impactStatus(donation: ImpactDonation) {
+  if (donation.spent_cents >= donation.allocated_amount_cents && donation.allocated_amount_cents > 0) return 'Paid into care'
+  if (donation.spent_cents > 0) return 'Partly paid into care'
+  if (donation.allocation_status === 'pending_sanctuary_review') return 'Awaiting sanctuary review'
+  return 'Allocated · awaiting a paid expense'
+}
+
+function PlayerImpact({ account }: { account: GardenAccount }) {
+  const [impact, setImpact] = useState<PlayerImpactData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const refresh = useCallback(async () => {
+    if (!account.signedIn) return
+    setLoading(true)
+    try {
+      const token = await account.getToken()
+      const response = await fetch('/api/player-impact', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      const payload = await response.json()
+      if (!response.ok) throw new Error(payload.error || 'Your impact record could not be opened.')
+      setImpact(payload)
+      setError(null)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Your impact record could not be opened.')
+    } finally {
+      setLoading(false)
+    }
+  }, [account.getToken, account.signedIn])
+
+  useEffect(() => { refresh().catch(() => undefined) }, [refresh])
+
+  if (!account.signedIn) return (
+    <section className="impact-gate">
+      <div><p className="eyebrow">MY REAL-WORLD IMPACT</p><h3>See exactly what your support changed.</h3><p>Sign in before giving so the verified Stripe gift, reviewed sanctuary allocation, paid expense, cat, and public proof can remain attached to your private care record.</p></div>
+      <button onClick={account.openSignIn}><LockKeyhole size={15} /> Sign in to see my impact</button>
+    </section>
+  )
+
+  return (
+    <section className="player-impact">
+      <header className="impact-title">
+        <div><p className="eyebrow">MY IMPACT · VERIFIED REALITY LEDGER</p><h3>What changed because you showed up.</h3><p>Payment, allocation, expense, cat, and proof remain separate until a sanctuary reviewer connects them.</p></div>
+        <button onClick={() => refresh()} disabled={loading}><RefreshCw className={loading ? 'impact-spin' : ''} size={14} /> {loading ? 'Checking…' : 'Refresh'}</button>
+      </header>
+      {error && <p className="impact-error">{error}</p>}
+      {loading && !impact && <div className="impact-loading"><RefreshCw className="impact-spin" /> Opening your private impact record…</div>}
+      {impact && <>
+        <div className="impact-summary">
+          <article><span>VERIFIED GIVING</span><strong>{currencyTotals(impact.totals.donatedByCurrency)}</strong><small>{impact.totals.gifts} Stripe-verified {impact.totals.gifts === 1 ? 'gift' : 'gifts'}</small></article>
+          <article><span>PAID INTO REAL CARE</span><strong>{currencyTotals(impact.totals.paidByCurrency)}</strong><small>only expenses linked by a sanctuary reviewer</small></article>
+          <article className="token-balance"><span>GAME BALANCE</span><strong><Coins size={22} /> {impact.gameWallet.balance.toLocaleString()}</strong><small>virtual tokens earned through play—not purchased</small></article>
+        </div>
+        <div className="impact-policy"><Shield size={17} /><p><strong>Two ledgers. One honest record.</strong>{impact.policy}</p></div>
+
+        <div className="impact-columns">
+          <section className="impact-week">
+            <div className="impact-section-heading"><div><p className="eyebrow">THIS WEEK · {impact.week.week_start}—{impact.week.week_end}</p><h4>What your support paid for.</h4></div><ReceiptText size={22} /></div>
+            {impact.weeklyExpenses.length === 0 ? <div className="impact-empty"><ClockNotice /><strong>No personally linked expense has been posted this week.</strong><p>Your gift remains visible below as pending or allocated until the sanctuary records a real payment. We will not invent an outcome to fill this space.</p></div> : <div className="impact-expense-list">{impact.weeklyExpenses.map((expense) => <ImpactExpenseCard expense={expense} key={expense.expense_id} />)}</div>}
+          </section>
+          <section className="impact-cats">
+            <div className="impact-section-heading"><div><p className="eyebrow">CATS + SHARED CARE</p><h4>Who you have helped.</h4></div><PawPrint size={22} /></div>
+            {impact.catsHelped.length === 0 ? <div className="impact-empty compact"><PawPrint /><strong>Your first paid care link will appear here.</strong><p>An intended cat is not counted as helped until a real expense is recorded.</p></div> : impact.catsHelped.map((cat) => <article key={cat.catId || 'sanctuary'}><span>{cat.catId ? <PawPrint size={17} /> : <Home size={17} />}</span><div><strong>{cat.name}</strong><small>{cat.paidItems} paid {cat.paidItems === 1 ? 'item' : 'items'} connected</small></div><b>{impactMoney(cat.fundedCents, cat.currency)}</b></article>)}
+          </section>
+        </div>
+
+        <section className="impact-history">
+          <div className="impact-section-heading"><div><p className="eyebrow">GIFT-BY-GIFT TRACE</p><h4>Every verified contribution.</h4></div><BadgeCheck size={22} /></div>
+          {impact.donations.length === 0 ? <div className="impact-empty compact"><ReceiptText /><strong>No verified gifts are attached to this account yet.</strong><p>If you gave while signed out, staff review is required before a gift can be claimed by an account.</p></div> : <div className="impact-gift-list">{impact.donations.map((donation) => {
+            const allocated = donation.allocated_amount_cents || donation.amount_cents
+            const progress = allocated > 0 ? Math.min(100, Math.round((donation.spent_cents / allocated) * 100)) : 0
+            return <article key={`${donation.session_id}-${donation.need_title || ''}`}><div className="gift-primary"><span>{new Date(donation.created_at).toLocaleDateString()} · {donation.frequency === 'monthly' ? 'MONTHLY' : 'ONE-TIME'}</span><strong>{impactMoney(donation.amount_cents, donation.currency)}</strong><small>{donation.cat_name ? `${donation.cat_name} · ` : ''}{donation.need_title || 'Sanctuary care review'}</small></div><div className="gift-progress"><div><span style={{ width: `${progress}%` }} /></div><b>{impactStatus(donation)}</b><small>{impactMoney(donation.spent_cents, donation.currency)} linked to paid expenses</small></div>{donation.overflow_policy && <details><summary>Allocation rule</summary><p>{donation.overflow_policy}</p></details>}</article>
+          })}</div>}
+        </section>
+
+        {impact.expenses.length > impact.weeklyExpenses.length && <section className="impact-all-expenses"><div className="impact-section-heading"><div><p className="eyebrow">YOUR COMPLETE IMPACT RECORD</p><h4>Previously paid sanctuary care.</h4></div></div><div className="impact-expense-list">{impact.expenses.filter((expense) => !impact.weeklyExpenses.some((weekly) => weekly.expense_id === expense.expense_id)).map((expense) => <ImpactExpenseCard expense={expense} key={expense.expense_id} />)}</div></section>}
+      </>}
+    </section>
+  )
+}
+
+function ClockNotice() {
+  return <span className="impact-clock" aria-hidden="true"><CalendarDays size={21} /></span>
+}
+
+function ImpactExpenseCard({ expense }: { expense: ImpactExpense }) {
+  return <article className="impact-expense"><span className="impact-expense-icon"><BadgeCheck size={18} /></span><div><small>{new Date(expense.paid_at).toLocaleDateString()} · {expense.cat_name || 'WHOLE SANCTUARY'}</small><strong>{expense.title}</strong><p>{expense.detail}</p><span>{expense.vendor || expense.need_title || 'Reviewed sanctuary record'}</span>{expense.proof_url && <a href={expense.proof_url} target="_blank" rel="noreferrer"><ReceiptText size={12} /> {expense.proof_title || 'Open redacted proof'} <ExternalLink size={11} /></a>}</div><b>{impactMoney(expense.player_funded_cents, expense.currency)}<small>of your gift</small></b></article>
 }
 
 function DonationDrawer({ need, onClose }: { need: SplotchNeed; onClose: () => void }) {
