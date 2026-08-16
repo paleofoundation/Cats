@@ -38,6 +38,7 @@ import { EmbeddedCheckout, EmbeddedCheckoutProvider } from '@stripe/react-stripe
 import { loadStripe, type Stripe } from '@stripe/stripe-js'
 import catGardensMark from '../assets/cat-gardens-icon.png'
 import splotchImage from '../assets/splotch.jpg'
+import cuddleboxImage from '../assets/hero_cuddleboxes.jpg'
 import mathikoloniGardenShell from '../assets/mathikoloni-garden-shell.webp'
 import mathikoloniAerialPlot from '../assets/mathikoloni-aerial-plot.webp'
 import mathikoloniVisionSource from '../assets/mathikoloni-vision-source.webp'
@@ -150,7 +151,7 @@ function CatCard() {
   return (
     <aside className="cat-status game-panel">
       <div className="cat-status-head">
-        <span className="cat-status-avatar"><PawPrint size={24} /></span>
+        <img className="cat-status-avatar" src={splotchImage} alt="Splotch, the real orange Cat Gardens cat" />
         <div><span>EASY MODE · {dayLabel} · MEMORY {Math.min(7, bondVisits + 1)}/7</span><strong>Splotch</strong><small>{getRelationshipText(trust)}</small></div>
       </div>
       <Vitals label="FULL" value={hunger} color="#efb55f" />
@@ -174,7 +175,8 @@ function ObjectiveCard() {
   const hasBonded = useGame((state) => state.hasBonded)
   const realityVisits = useGame((state) => state.realityVisits)
   const dreamVisits = useGame((state) => state.dreamVisits)
-  const objective = getObjective({ lastDailyClaim, splotchDiscovered, shelterStage, food, lastDayCompleted, completedDays, lastFedDate, lastWateredDate, blanketLevel, waterBowlLevel, hasBonded, realityVisits, dreamVisits })
+  const dreamDiscoveries = useGame((state) => state.dreamDiscoveries)
+  const objective = getObjective({ lastDailyClaim, splotchDiscovered, shelterStage, food, lastDayCompleted, completedDays, lastFedDate, lastWateredDate, blanketLevel, waterBowlLevel, hasBonded, realityVisits, dreamVisits, dreamDiscoveries })
   const episode = episodeFor(completedDays)
   const dayLabel = completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${episode.day}/7`
   return (
@@ -497,8 +499,10 @@ function GardenDesigner({ onClose, onDonate }: { onClose: () => void; onDonate: 
             const isOwned = owned(id)
             const needsShelter = shelterStage < 3 && ['blanket', 'simple-bowl', 'automatic-bowl', 'cuddlebox'].includes(id)
             return (
-              <article className={isOwned ? 'owned' : ''} key={id}>
-                <span>{id.includes('bowl') ? <Droplets /> : id === 'blanket' || id === 'cuddlebox' ? <Home /> : id === 'gravel' || id === 'bench' ? <Leaf /> : <Heart />}</span>
+              <article className={`${isOwned ? 'owned ' : ''}${id === 'cuddlebox' ? 'upgrade-cuddlebox' : ''}`.trim()} key={id}>
+                {id === 'cuddlebox'
+                  ? <figure className="upgrade-photo"><img src={cuddleboxImage} alt="Real cuddleboxes used as protected cat beds" /><figcaption>REAL CUDDLEBOX · ABOUT €50</figcaption></figure>
+                  : <span>{id.includes('bowl') ? <Droplets /> : id === 'blanket' ? <Home /> : id === 'gravel' || id === 'bench' ? <Leaf /> : <Heart />}</span>}
                 <div><p>{isOwned ? 'IN YOUR GARDEN' : `${item.cost} TOKENS`}</p><h3>{item.title}</h3><small>{item.detail}</small></div>
                 <button disabled={isOwned || needsShelter} onClick={() => {
                   if (id === 'collar') {
@@ -835,13 +839,15 @@ function DreamGarden({ onClose, onDonate }: { onClose: () => void; onDonate: (ne
   const [realityView, setRealityView] = useState(0)
   const dreamNeed = splotchNeeds.find((need) => need.id === 'mathikoloni')!
   const activeReality = mathikoloniRealityViews[realityView]
+  const dreamComplete = discoveries.length === dreamSpaces.length
+  const discoveriesRemaining = dreamSpaces.length - discoveries.length
   const chapterCopy = [
     { label: 'REALITY', title: 'Why this land.', detail: 'See the safety already present' },
     { label: 'TRANSFORMATION', title: 'How it changes.', detail: 'Explore the garden-first plan' },
     { label: 'DREAM', title: 'Who it protects.', detail: 'Enter Splotch’s future' },
   ] as const
   return (
-    <div className={`dream-screen dream-chapter-${chapter}`} role="dialog" aria-modal="true" aria-labelledby="dream-title">
+    <div className={`dream-screen dream-chapter-${chapter}${dreamComplete ? ' dream-complete' : ''}`} role="dialog" aria-modal="true" aria-labelledby="dream-title">
       {chapter === 0 && <img className="dream-background current-property" src={activeReality.image} alt={activeReality.title} />}
       {chapter === 1 && (
         <div className="dream-comparison">
@@ -892,25 +898,29 @@ function DreamGarden({ onClose, onDonate }: { onClose: () => void; onDonate: (ne
           <button onClick={() => setChapter(2)}>Enter tonight’s dream <ArrowRight size={15} /></button>
         </section>
       )}
-      {chapter === 2 && <section className="dream-discoveries">
-        <div className="dream-progress"><span>DREAM DISCOVERIES</span><strong>{discoveries.length} / {dreamSpaces.length}</strong><i><b style={{ width: `${(discoveries.length / dreamSpaces.length) * 100}%` }} /></i></div>
+      {chapter === 2 && <section className={`dream-discoveries ${dreamComplete ? 'complete' : ''}`}>
+        <header className="dream-challenge-intro">
+          <div><p>TONIGHT’S CHALLENGE · MATHIKOLONI</p><h3>Map Splotch’s safe future.</h3><small>Discover all seven parts of the sanctuary dream. Each one explains a real protection the property could provide.</small></div>
+          <strong>{dreamComplete ? <><span>7 / 7</span><b>Challenge complete</b></> : <><span>+20</span> each<b>+100 final bonus</b></>}</strong>
+        </header>
+        <div className="dream-progress"><span>{dreamComplete ? 'CHALLENGE COMPLETE' : 'DREAM DISCOVERIES'}</span><strong>{discoveries.length} / {dreamSpaces.length}</strong><i><b style={{ width: `${(discoveries.length / dreamSpaces.length) * 100}%` }} /></i></div>
         <div className="dream-space-list">
           {dreamSpaces.map((space) => {
             const found = discoveries.includes(space.id)
             return (
-              <button className={found ? 'found' : ''} key={space.id} onClick={() => discoverDream(space.id)}>
+              <button className={found ? 'found' : ''} aria-pressed={found} key={space.id} onClick={() => discoverDream(space.id)}>
                 <span>{found ? <Check size={14} /> : space.number}</span><div><strong>{space.title}</strong><small>{space.detail}</small></div><b>{found ? 'REMEMBERED' : '+20 CARE'}</b>
               </button>
             )
           })}
         </div>
       </section>}
-      {chapter === 2 && <aside className="dream-give">
+      {chapter === 2 && dreamComplete && <aside className="dream-give">
         <p>The dream is free to enter · the work is real</p>
         <strong>Help build the next piece of safety.</strong>
         <div><button onClick={() => onDonate(dreamNeed)}><Landmark size={17} /> Fund the transformation</button></div>
       </aside>}
-      <div className="dream-next">{chapter < 2 ? <button onClick={() => setChapter((chapter + 1) as 1 | 2)}>{chapter === 0 ? 'See transformation' : 'Enter the dream'} <ArrowRight size={15} /></button> : <button onClick={onClose}>Keep Splotch’s dream <MoonStar size={15} /></button>}</div>
+      <div className="dream-next">{chapter < 2 ? <button onClick={() => setChapter((chapter + 1) as 1 | 2)}>{chapter === 0 ? 'See transformation' : 'Enter the dream'} <ArrowRight size={15} /></button> : <button disabled={!dreamComplete} onClick={onClose}>{dreamComplete ? 'Challenge complete · keep the dream' : `Find ${discoveriesRemaining} more ${discoveriesRemaining === 1 ? 'discovery' : 'discoveries'}`} <MoonStar size={15} /></button>}</div>
     </div>
   )
 }

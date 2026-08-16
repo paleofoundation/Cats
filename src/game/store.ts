@@ -17,10 +17,10 @@ export type DonationBadge = 'bowl-bringer' | 'gentle-hands' | 'storykeeper' | 'b
 export type GardenUpgrade = 'blanket' | 'simple-bowl' | 'automatic-bowl' | 'cuddlebox' | 'bench' | 'gravel' | 'collar'
 
 export const upgradeCatalog: Record<GardenUpgrade, { title: string; detail: string; cost: number }> = {
-  blanket: { title: 'Soft blanket', detail: 'A washable blanket for Splotch’s basic cuddlebox.', cost: 20 },
+  blanket: { title: 'Soft blanket', detail: 'A washable blanket for Splotch’s first shelter.', cost: 20 },
   'simple-bowl': { title: 'Water bowl', detail: 'A sturdy bowl for the garden house.', cost: 20 },
   'automatic-bowl': { title: 'Automatic water station', detail: 'A larger virtual reservoir with a quiet recirculating bowl.', cost: 120 },
-  cuddlebox: { title: 'Upgraded cuddlebox', detail: 'A roomier insulated nook with a deep cushion.', cost: 150 },
+  cuddlebox: { title: 'Real-style cuddlebox upgrade', detail: 'A protected, washable sleeping nook that is better than an exposed bed. Real sanctuary cuddleboxes cost about €50; this virtual version costs game tokens only.', cost: 150 },
   bench: { title: 'Petting bench', detail: 'A place to sit beside Splotch instead of standing over him.', cost: 70 },
   gravel: { title: 'Pea-gravel path', detail: 'Replace the dusty path with a soft garden route.', cost: 80 },
   collar: { title: 'Engraved virtual collar', detail: 'Add your chosen name to Splotch’s virtual garden collar.', cost: 100 },
@@ -442,7 +442,15 @@ export const useGame = create<GameState>()(
       },
       discoverDream: (id) => {
         if (get().dreamDiscoveries.includes(id)) return
-        set((state) => ({ dreamDiscoveries: [...state.dreamDiscoveries, id], carePoints: state.carePoints + 20, notification: 'Dream discovered · +20 care' }))
+        set((state) => {
+          const completesChallenge = state.dreamDiscoveries.length === 6
+          const reward = completesChallenge ? 120 : 20
+          return {
+            dreamDiscoveries: [...state.dreamDiscoveries, id],
+            carePoints: state.carePoints + reward,
+            notification: completesChallenge ? 'Mathikoloni dream challenge complete · +120 care' : 'Dream discovered · +20 care',
+          }
+        })
       },
       grantDonation: (amount, badge) => set((state) => ({
         donationBadges: state.donationBadges.includes(badge) ? state.donationBadges : [...state.donationBadges, badge],
@@ -578,7 +586,7 @@ export const getDailyProgress = (state: DailyProgressState) => {
   return { complete: steps.filter(Boolean).length, total: steps.length, ready: steps.every(Boolean) && state.lastDayCompleted !== today }
 }
 
-export const getObjective = (state: Pick<GameState, 'lastDailyClaim' | 'splotchDiscovered' | 'shelterStage' | 'food' | 'lastDayCompleted' | 'completedDays' | 'lastFedDate' | 'lastWateredDate' | 'blanketLevel' | 'waterBowlLevel' | 'hasBonded' | 'realityVisits' | 'dreamVisits'>) => {
+export const getObjective = (state: Pick<GameState, 'lastDailyClaim' | 'splotchDiscovered' | 'shelterStage' | 'food' | 'lastDayCompleted' | 'completedDays' | 'lastFedDate' | 'lastWateredDate' | 'blanketLevel' | 'waterBowlLevel' | 'hasBonded' | 'realityVisits' | 'dreamVisits' | 'dreamDiscoveries'>) => {
   const today = localDay()
   const firstDay = state.completedDays === 0
   if (state.lastDailyClaim !== today) return { chapter: firstDay ? 'ARRIVAL · NOTHING BUILT YET' : 'MORNING · DAY BEGINS', title: 'Open the glowing supply crate', detail: firstDay ? 'Your free starter supplies are waiting beside the gate.' : 'Today’s water, treat, and garden tokens are waiting.', progress: 0, total: 1 }
@@ -594,6 +602,7 @@ export const getObjective = (state: Pick<GameState, 'lastDailyClaim' | 'splotchD
   if (firstDay && !state.hasBonded) return { chapter: 'RELATIONSHIP · CHOICE', title: 'Sit at Splotch’s level', detail: 'Petting is attention, not a purchase. Let him choose the final step.', progress: 0, total: 1 }
   if (firstDay && state.realityVisits < 1) return { chapter: 'REALITY · ONE LIFE', title: 'Open Splotch’s real-world portal', detail: 'See the real cat behind the garden companion.', progress: 0, total: 1 }
   if (state.lastDayCompleted !== today) return { chapter: 'EVENING · DREAM', title: 'End today’s adventure', detail: 'Splotch is ready to sleep—and show you the road from reality to Mathikoloni.', progress: 1, total: 1 }
+  if (state.dreamDiscoveries.length < 7) return { chapter: 'DREAM CHALLENGE · MATHIKOLONI', title: 'Discover Splotch’s seven-part future', detail: 'Open tonight’s dream and map every protection the proposed sanctuary could provide.', progress: state.dreamDiscoveries.length, total: 7 }
   return { chapter: 'LIVING GARDEN · TOMORROW', title: 'Tonight’s dream is saved', detail: 'Keep designing, meet another cat, or return for tomorrow’s free basket.', progress: 1, total: 1 }
 }
 
