@@ -107,7 +107,7 @@ export const splotchEpisode = [
     day: 6,
     eyebrow: 'COMMUNITY · INVITE',
     title: 'Make the circle larger',
-    detail: 'Invite a friend, share Splotch’s real page, or return simply to sit with him.',
+    detail: 'Invite a friend, share Splotch’s real page, or return simply to spend time nearby.',
     memory: 'Care became something another person could enter.',
   },
   {

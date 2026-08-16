@@ -5,6 +5,7 @@
     { "source": "/watch-mabel.html", "destination": "/Mabel", "permanent": true },
     { "source": "/watch-winona.html", "destination": "/Winona", "permanent": true },
     { "source": "/watch-splotch.html", "destination": "/Splotch", "permanent": true },
+    { "source": "/chanda.html", "destination": "/Chanda", "permanent": true },
     { "source": "/gallery.html", "destination": "/cats", "permanent": true },
     { "source": "/adoptions.html", "destination": "/cats", "permanent": true },
     { "source": "/sponsor.html", "destination": "/cats", "permanent": true },
@@ -15,6 +16,7 @@
     { "source": "/Mabel", "destination": "/watch-mabel.html" },
     { "source": "/Winona", "destination": "/watch-winona.html" },
     { "source": "/Splotch", "destination": "/watch-splotch.html" },
+    { "source": "/Chanda", "destination": "/chanda.html" },
     { "source": "/cats", "destination": "/cats.html" },
     { "source": "/sanctuary", "destination": "/sanctuary.html" },
     { "source": "/caretaker", "destination": "/caretaker.html" }

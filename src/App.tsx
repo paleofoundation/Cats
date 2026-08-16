@@ -40,6 +40,7 @@ import { EmbeddedCheckout, EmbeddedCheckoutProvider } from '@stripe/react-stripe
 import { loadStripe, type Stripe } from '@stripe/stripe-js'
 import catGardensMark from '../assets/cat-gardens-icon.png'
 import splotchImage from '../assets/splotch.jpg'
+import chandaImage from '../assets/chanda-caretaker.jpg'
 import cuddleboxImage from '../assets/hero_cuddleboxes.jpg'
 import mathikoloniGardenShell from '../assets/mathikoloni-garden-shell.webp'
 import mathikoloniAerialPlot from '../assets/mathikoloni-aerial-plot.webp'
@@ -90,11 +91,11 @@ const mathikoloniTransformationZones = [
 const CatGardenWorld = lazy(() => import('./World').then((module) => ({ default: module.CatGardenWorld })))
 
 const bondMoments = [
-  { title: 'Do less. Stay longer.', detail: 'Your caretaker has left the rover, lowered to Splotch’s level, and offered a hand. Press and hold. Trust is time—not tapping.', action: 'Hold to sit with Splotch', result: 'You stayed after the urgent work was over.' },
-  { title: 'Let him see your hand.', detail: 'No food crate this time. Approach slowly, stop short, and give Splotch the choice to close the last distance.', action: 'Hold your hand still', result: 'You gave him control of the distance.' },
+  { title: 'Do less. Stay longer.', detail: 'Your caretaker has stopped nearby and given Splotch room to decide what happens next. Press and hold. Trust is time—not tapping.', action: 'Hold to stay nearby', result: 'You stayed after the urgent work was over.' },
+  { title: 'Give him room to choose.', detail: 'No food crate this time. Approach slowly, stop short, and give Splotch the choice to close the last distance.', action: 'Hold your position', result: 'You gave him control of the distance.' },
   { title: 'Learn his rhythm.', detail: 'Watch his ears, shoulders, and breathing. A relationship starts when the person notices what the animal is already saying.', action: 'Hold to observe quietly', result: 'You paid attention to his body language.' },
-  { title: 'Make comfort familiar.', detail: 'Return without an emergency to solve. Familiar footsteps, a familiar posture, and an unhurried hand become their own kind of care.', action: 'Hold to keep the routine', result: 'Your return became part of the garden’s routine.' },
-  { title: 'Stay for the ordinary.', detail: 'Nothing dramatic is happening. That is the point. Sit through the quiet part and let safety become boring.', action: 'Hold through the quiet', result: 'You stayed when there was nothing to collect.' },
+  { title: 'Make comfort familiar.', detail: 'Return without an emergency to solve. Familiar footsteps, a familiar presence, and unhurried time become their own kind of care.', action: 'Hold to keep the routine', result: 'Your return became part of the garden’s routine.' },
+  { title: 'Stay for the ordinary.', detail: 'Nothing dramatic is happening. That is the point. Stay through the quiet part and let safety become boring.', action: 'Hold through the quiet', result: 'You stayed when there was nothing to collect.' },
   { title: 'Let him come to you.', detail: 'The last visit reverses the first: wait without summoning him. The relationship arc ends when Splotch chooses the final step.', action: 'Hold and wait for Splotch', result: 'He knew where to find you.' },
 ]
 
@@ -357,11 +358,11 @@ function ActionButton({ onAction }: { onAction: () => void }) {
       : food >= 3 ? 'Food bag full'
         : `Buy one ${companion.name} meal · ${foodPrice} tokens`
     if (nearby === 'cat') {
-      if (!discovered) return `Sit low and let ${companion.name} see you`
+      if (!discovered) return `Stop nearby and let ${companion.name} see you`
       if (shelterStage < 3) return `${companion.name} is watching you build`
       if (lastFedDate !== localDay()) return food > 0 ? `Feed virtual ${companion.name}` : `Buy food at the supply shelf · ${foodPrice} tokens`
-      if (!hasBonded) return `Sit down & pet ${companion.name}`
-      return bondVisits >= 6 ? `Sit with ${companion.name} again` : `Spend time together · memory ${bondVisits + 2}`
+      if (!hasBonded) return `Spend quiet time with ${companion.name}`
+      return bondVisits >= 6 ? `Stay with ${companion.name} again` : `Spend time together · memory ${bondVisits + 2}`
     }
     if (nearby === 'plant') return lastWateredDate === localDay() ? 'Plant watered today' : water > 0 ? 'Water the young plant' : 'Open the morning basket first'
     if (nearby === 'chanda') return 'Talk with Chanda'
@@ -424,9 +425,9 @@ function MorningBasketModal({ onClose }: { onClose: () => void }) {
 
 const personCopy: Record<PersonId, { eyebrow: string; title: string; body: (name: string) => string; request: string }> = {
   chanda: {
-    eyebrow: 'CHANDA · DAILY CARETAKER · FROM NEPAL',
+    eyebrow: 'CHANDA · FULL-TIME CARETAKER · FROM NEPAL',
     title: 'The bowls do not fill themselves.',
-    body: (name) => `Hi, ${name}. I feed and pet the cats every day. Sometimes it is much more work than it looks—but it is easier when somebody notices what still needs doing.`,
+    body: (name) => `Hi, ${name}. I care for the cats full time. Datsun is my pair-bonded cat. Sometimes the work is much more than it looks—but it is easier when somebody notices what still needs doing.`,
     request: 'Could you water the young plant while I finish the bowls?',
   },
   karen: {
@@ -453,13 +454,13 @@ function PersonDialogue({ person, onClose }: { person: PersonId; onClose: () => 
     <div className="story-backdrop person-backdrop" role="presentation">
       <article className={`person-dialogue person-${person}`} role="dialog" aria-modal="true" aria-labelledby="person-title">
         <button className="close-button" onClick={onClose} aria-label={`Close ${person} conversation`}><X size={19} /></button>
-        <div className="person-portrait"><UserRound /><span>{person.charAt(0).toUpperCase()}</span><i /></div>
+        <div className={`person-portrait ${person === 'chanda' ? 'real-person-portrait' : ''}`}>{person === 'chanda' ? <img src={chandaImage} alt="Chanda, Cat Gardens’ full-time caretaker, surrounded by sanctuary cats" /> : <><UserRound /><span>{person.charAt(0).toUpperCase()}</span><i /></>}</div>
         <div className="person-copy">
           <p className="eyebrow">{copy.eyebrow}</p>
           <h2 id="person-title">{copy.title}</h2>
           <p>“{copy.body(firstName)}”</p>
           <div className="person-request"><MessageCircle size={18} /><span>{companionCopy(copy.request, companion)}</span></div>
-          <button className="primary-button" onClick={onClose}>{person === 'chanda' ? 'I’ll help with the plant' : 'Keep walking'} <ArrowRight size={17} /></button>
+          {person === 'chanda' ? <div className="person-actions"><a className="primary-button" href="/Chanda">Meet the real Chanda <ArrowRight size={17} /></a><button className="secondary-button" onClick={onClose}>I’ll help with the plant</button></div> : <button className="primary-button" onClick={onClose}>Keep walking <ArrowRight size={17} /></button>}
           <small>Garden conversation {visits}. Dialogue is an in-game introduction based on each person’s real care role.</small>
         </div>
       </article>
@@ -578,7 +579,7 @@ function MemoryModal({ onClose }: { onClose: () => void }) {
           <p className="eyebrow">TRUST · 48</p>
           <h2 id="story-title">{companion.pronouns.subject[0].toUpperCase() + companion.pronouns.subject.slice(1)} learned the sound of your arrival.</h2>
           <p>{companion.visualNote}. Food solved the immediate need. Staying is what starts the relationship.</p>
-          <p>After the shelter is built, the vehicle stops being the hero. You step out, approach slowly, and sit with {companion.pronouns.object} yourself.</p>
+          <p>After the shelter is built, the vehicle stops being the hero. You step out, approach slowly, stop nearby, and let {companion.pronouns.object} choose the distance.</p>
           <button className="primary-button" onClick={onClose}>Build somewhere dry <ArrowRight size={17} /></button>
         </div>
       </article>
@@ -598,7 +599,7 @@ function CompletionModal({ onClose, onBeginBond }: { onClose: () => void; onBegi
         <p>{companion.name} can sleep safely enough to dream. The Reality Portal now holds what is known today; the violet Dream Portal shows the future {companion.pronouns.subject} deserves. You can also continue the relationship on foot.</p>
         <div className="seven-visit-preview"><b>1</b><i /><b>2</b><i /><span>3</span><i /><span>4</span><i /><span>5</span><i /><span>6</span><i /><span>7</span></div>
         <div className="complete-actions">
-          <button className="primary-button" onClick={onBeginBond}><UserRound size={17} /> Sit with {companion.name} on foot</button>
+          <button className="primary-button" onClick={onBeginBond}><UserRound size={17} /> Spend quiet time with {companion.name}</button>
           <button className="secondary-button" onClick={onClose}>Find the two portals</button>
         </div>
         <small>Donation remains optional and separate. First, the game earns the player’s care.</small>
@@ -636,18 +637,18 @@ function BondingHUD({ onComplete, onCancel }: { onComplete: (result: { advanced:
   }, [onComplete, progress])
 
   const response = progress < 18
-    ? { label: 'SETTLING', title: `Your caretaker sits at ${companion.pronouns.possessive} level.`, detail: `${companion.name} can still choose the distance.` }
+    ? { label: 'PAUSING', title: 'Your caretaker stops nearby.', detail: `${companion.name} can still choose the distance.` }
     : progress < 48
-      ? { label: 'WATCHING', title: `${companion.name} notices the offered hand.`, detail: 'No grabbing. No reward prompt. Just time.' }
+      ? { label: 'WATCHING', title: `${companion.name} notices the quiet company.`, detail: 'No grabbing. No reward prompt. Just time.' }
       : progress < 78
         ? { label: 'CHOOSING', title: `${companion.pronouns.subject[0].toUpperCase() + companion.pronouns.subject.slice(1)} closes the last step ${companion.sex === 'male' ? 'himself' : companion.sex === 'female' ? 'herself' : 'themself'}.`, detail: 'Trust reads as movement—not a number alone.' }
         : progress < 100
-          ? { label: 'CONTACT', title: `${companion.name} leans into the touch.`, detail: `The avatar’s hand and ${companion.pronouns.possessive} head now meet.` }
+          ? { label: 'NEARBY', title: `${companion.name} chooses to stay close.`, detail: 'Proximity is shown honestly; the game does not fake physical contact.' }
           : { label: 'PURRING', title: `${companion.pronouns.subject[0].toUpperCase() + companion.pronouns.subject.slice(1)} stayed.`, detail: 'This moment becomes part of your shared history.' }
 
   return (
-    <section className="bonding-hud" aria-label={`Sit with ${companion.name}`}>
-      <button className="bonding-close" onClick={() => { useGame.getState().cancelBonding(); onCancel() }} aria-label="Stand up"><X size={18} /></button>
+    <section className="bonding-hud" aria-label={`Spend quiet time with ${companion.name}`}>
+      <button className="bonding-close" onClick={() => { useGame.getState().cancelBonding(); onCancel() }} aria-label="Leave quiet moment"><X size={18} /></button>
       <div className="bonding-copy">
         <span>{companion.name.toUpperCase()} MEMORY {String(bondVisits + 1).padStart(2, '0')} · AT {companion.pronouns.possessive.toUpperCase()} LEVEL</span>
         <h2>{moment.title}</h2>
@@ -685,7 +686,7 @@ function BondResultModal({ result, onClose }: { result: { advanced: boolean; vis
         <span className="result-paw"><PawPrint /></span>
         <p className="eyebrow">{result.advanced ? `VISIT ${bondVisits + 1} SAVED · +35 CARE` : 'YOU STAYED ANYWAY'}</p>
         <h2 id="bond-result-title">{result.advanced ? completedMoment.result : `${companion.name} had your attention, not another transaction.`}</h2>
-        <p>{result.advanced ? `The relationship now persists in this browser. ${companion.pronouns.possessive[0].toUpperCase() + companion.pronouns.possessive.slice(1)} trust changed because you gave ${companion.pronouns.object} time after the urgent work was over.` : `There were no new points to collect. You sat with ${companion.pronouns.object} because the relationship itself was worth returning to.`}</p>
+        <p>{result.advanced ? `The relationship now persists in this browser. ${companion.pronouns.possessive[0].toUpperCase() + companion.pronouns.possessive.slice(1)} trust changed because you gave ${companion.pronouns.object} time after the urgent work was over.` : `There were no new points to collect. You stayed nearby because the relationship itself was worth returning to.`}</p>
         <div className="return-promise">
           <CalendarDays size={20} />
           <div><span>RELATIONSHIP STATUS</span><strong>{bondVisits >= 6 ? 'The first seven memories are saved. The relationship continues.' : 'The next memory is ready whenever you are.'}</strong><small>Nothing bad happens while you are away.</small></div>
@@ -997,23 +998,22 @@ function AvatarCreator({ onClose }: { onClose: () => void }) {
   const setAvatarStyle = useGame((state) => state.setAvatarStyle)
   const [draft, setDraft] = useState<AvatarStyle>(() => ({ ...useGame.getState().avatarStyle }))
   const update = <K extends keyof AvatarStyle>(key: K, value: AvatarStyle[K]) => setDraft((current) => ({ ...current, [key]: value }))
-  const colors: Array<{ key: 'skin' | 'hair' | 'eyes' | 'clothing' | 'pants'; label: string }> = [
-    { key: 'skin', label: 'Skin' }, { key: 'hair', label: 'Hair' }, { key: 'eyes', label: 'Eyes' }, { key: 'clothing', label: 'Shirt' }, { key: 'pants', label: 'Trousers' },
+  const colors: Array<{ key: 'clothing' | 'pants'; label: string }> = [
+    { key: 'clothing', label: 'Shirt' }, { key: 'pants', label: 'Trousers' },
   ]
   return (
     <div className="profile-backdrop avatar-backdrop" role="presentation">
       <article className="avatar-creator" role="dialog" aria-modal="true" aria-labelledby="avatar-title">
         <button className="close-button" onClick={onClose} aria-label="Close caretaker creator"><X size={19} /></button>
-        <div className="avatar-creator-preview" style={{ '--avatar-skin': draft.skin, '--avatar-hair': draft.hair, '--avatar-eyes': draft.eyes, '--avatar-shirt': draft.clothing, '--avatar-pants': draft.pants } as React.CSSProperties}>
-          <div className={`avatar-figure frame-${draft.bodyFrame} hair-${draft.hairStyle}`}><i className="avatar-hair" /><i className="avatar-head"><b /><b /></i><i className="avatar-body" /><i className="avatar-legs" /></div>
-          <span>LIVE 3D PALETTE</span><strong>{draft.displayName || 'Garden caretaker'}</strong><small>Your identity is chosen by you. It is never inferred from your account.</small>
+        <div className="avatar-creator-preview" style={{ '--avatar-shirt': draft.clothing, '--avatar-pants': draft.pants } as React.CSSProperties}>
+          <div className={`avatar-figure frame-${draft.bodyFrame}`}><i className="avatar-body" /><i className="avatar-legs" /></div>
+          <span>STABLE CARETAKER MODEL</span><strong>{draft.displayName || 'Garden caretaker'}</strong><small>Choose the body frame and clothing palette. The unstable custom head, eyes, hair, and seated replacement have been removed.</small>
         </div>
         <div className="avatar-creator-controls">
           <p className="eyebrow">CREATE YOUR CARETAKER</p><h2 id="avatar-title">Who walks into the garden?</h2>
           <label className="avatar-name-field">Display name<input value={draft.displayName} maxLength={30} onChange={(event) => update('displayName', event.target.value)} /></label>
           <fieldset><legend>Body frame</legend><div className="avatar-choice-row">{(['feminine', 'masculine', 'androgynous'] as const).map((value) => <button type="button" className={draft.bodyFrame === value ? 'selected' : ''} key={value} onClick={() => update('bodyFrame', value)}>{value}</button>)}</div></fieldset>
-          <fieldset><legend>Hair style</legend><div className="avatar-choice-row">{(['short', 'long', 'bun', 'close-cropped'] as const).map((value) => <button type="button" className={draft.hairStyle === value ? 'selected' : ''} key={value} onClick={() => update('hairStyle', value)}>{value.replace('-', ' ')}</button>)}</div></fieldset>
-          <fieldset><legend>Colors</legend><div className="avatar-color-row">{colors.map(({ key, label }) => <label key={key}><input type="color" value={draft[key]} onChange={(event) => update(key, event.target.value)} /><span>{label}</span></label>)}</div></fieldset>
+          <fieldset><legend>Clothing colors</legend><div className="avatar-color-row">{colors.map(({ key, label }) => <label key={key}><input type="color" value={draft[key]} onChange={(event) => update(key, event.target.value)} /><span>{label}</span></label>)}</div></fieldset>
           <div className="avatar-save-row"><button className="primary-button" onClick={() => { setAvatarStyle({ ...draft, displayName: draft.displayName.trim() || 'Garden caretaker' }); onClose() }}>Save caretaker <ArrowRight size={17} /></button><small>You can change this at any time.</small></div>
         </div>
       </article>

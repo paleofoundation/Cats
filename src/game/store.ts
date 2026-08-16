@@ -35,7 +35,7 @@ export const upgradeCatalog: Record<GardenUpgrade, { title: string; detail: stri
   'simple-bowl': { title: 'Water bowl', detail: 'A sturdy bowl for the garden house.', cost: 20 },
   'automatic-bowl': { title: 'Automatic water station', detail: 'A larger virtual reservoir with a quiet recirculating bowl.', cost: 120 },
   cuddlebox: { title: 'Real-style cuddlebox upgrade', detail: 'A protected, washable sleeping nook that is better than an exposed bed. Real sanctuary cuddleboxes cost about €50; this virtual version costs game tokens only.', cost: 150 },
-  bench: { title: 'Petting bench', detail: 'A place to sit beside your companion instead of standing over them.', cost: 70 },
+  bench: { title: 'Companion bench', detail: 'A quiet garden landmark beside your companion’s shelter.', cost: 70 },
   gravel: { title: 'Pea-gravel path', detail: 'Replace the dusty path with a soft garden route.', cost: 80 },
   collar: { title: 'Engraved virtual collar', detail: 'Add your chosen name to your companion’s virtual garden collar.', cost: 100 },
 }
@@ -709,7 +709,7 @@ export const getObjective = (state: Pick<GameState, 'selectedCompanionId' | 'las
   if (firstDay && (state.blanketLevel < 1 || state.waterBowlLevel < 1)) return { chapter: 'HOME · MAKE IT THEIRS', title: 'Add a blanket and water bowl', detail: 'Walk to the shelter and furnish the place you built.', progress: state.blanketLevel + Math.min(1, state.waterBowlLevel), total: 2 }
   if (state.lastFedDate !== today) return { chapter: `CARE · ${companion.name.toUpperCase()}`, title: `Feed virtual ${companion.name}`, detail: `The real ${companion.name} is always cared for. This ritual grows your persistent garden.`, progress: 0, total: 1 }
   if (state.lastWateredDate !== today) return { chapter: 'GARDEN · GROW', title: 'Water the young plant', detail: 'Chanda asked for one small, useful action.', progress: 0, total: 1 }
-  if (firstDay && !state.hasBonded) return { chapter: 'RELATIONSHIP · CHOICE', title: `Sit at ${companion.name}’s level`, detail: `Petting is attention, not a purchase. Let ${companion.pronouns.object} choose the final step.`, progress: 0, total: 1 }
+  if (firstDay && !state.hasBonded) return { chapter: 'RELATIONSHIP · CHOICE', title: `Spend quiet time with ${companion.name}`, detail: `Attention is not a purchase. Stop nearby and let ${companion.pronouns.object} choose the final step.`, progress: 0, total: 1 }
   if (firstDay && state.realityVisits < 1) return { chapter: 'REALITY · ONE LIFE', title: `Open ${companion.name}’s real-world portal`, detail: 'See the real cat behind the garden companion.', progress: 0, total: 1 }
   if (state.lastDayCompleted !== today) return { chapter: 'EVENING · DREAM', title: 'End today’s adventure', detail: `${companion.name} is ready to sleep—and show you the road from reality to Mathikoloni.`, progress: 1, total: 1 }
   if (state.dreamDiscoveries.length < 7) return { chapter: 'DREAM CHALLENGE · MATHIKOLONI', title: `Discover ${companion.name}’s seven-part future`, detail: 'Open tonight’s dream and map every protection the proposed sanctuary could provide.', progress: state.dreamDiscoveries.length, total: 7 }

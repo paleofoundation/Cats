@@ -166,7 +166,6 @@ function CaretakerPlayer() {
           const name = object.name.toLowerCase()
           if (name.includes('body')) material.color.set(avatarStyle.clothing)
           else if (name.includes('leg')) material.color.set(avatarStyle.pants)
-          else if (name.includes('head')) material.color.set(avatarStyle.skin)
           else if (name.includes('feet')) material.color.set('#3a332e')
           object.material = material
         }
@@ -211,13 +210,12 @@ function CaretakerPlayer() {
     }
 
     if (model.current) {
-      const settle = game.bondingMode ? THREE.MathUtils.smoothstep(game.bondingProgress, 0, 24) : 0
-      model.current.position.y = THREE.MathUtils.damp(model.current.position.y, -1 - settle * .28, 7, delta)
-      model.current.scale.y = THREE.MathUtils.damp(model.current.scale.y, .88 - settle * .12, 7, delta)
+      model.current.position.y = THREE.MathUtils.damp(model.current.position.y, -1, 7, delta)
+      model.current.scale.y = THREE.MathUtils.damp(model.current.scale.y, .88, 7, delta)
       const frameWidth = avatarStyle.bodyFrame === 'masculine' ? .94 : avatarStyle.bodyFrame === 'feminine' ? .82 : .88
       model.current.scale.x = THREE.MathUtils.damp(model.current.scale.x, frameWidth, 7, delta)
       model.current.scale.z = THREE.MathUtils.damp(model.current.scale.z, .88, 7, delta)
-      model.current.rotation.x = THREE.MathUtils.damp(model.current.rotation.x, -settle * .12, 7, delta)
+      model.current.rotation.x = THREE.MathUtils.damp(model.current.rotation.x, 0, 7, delta)
       if (game.bondingMode) {
         const cat = new THREE.Vector3(...game.catPosition)
         const targetFacing = Math.atan2(cat.x - position.x, cat.z - position.z)
@@ -227,7 +225,7 @@ function CaretakerPlayer() {
       }
     }
 
-    const actionName = game.bondingMode && game.bondingProgress > 12 ? 'Interact' : working ? 'Interact' : paused || magnitude < .02 ? 'Idle_Neutral' : running ? 'Run' : 'Walk'
+    const actionName = working ? 'Interact' : paused || magnitude < .02 ? 'Idle_Neutral' : running ? 'Run' : 'Walk'
     if (currentAction.current !== actionName) {
       actions[currentAction.current]?.fadeOut(.18)
       ;(actions[actionName] ?? actions.Idle)?.reset().fadeIn(.18).play()
@@ -273,89 +271,9 @@ function CaretakerPlayer() {
     <RigidBody ref={body} colliders={false} position={START_POSITION} mass={1.1} canSleep={false} enabledRotations={[false, false, false]} linearDamping={8} friction={1.2}>
       <CapsuleCollider args={[.58, .34]} position={[0, -.18, 0]} />
       <group ref={model} position={[0, -1, 0]} scale={.88}>
-        <primitive object={clone} visible={!bondingMode} />
-        {!bondingMode && <AvatarIdentityDetails />}
-        {bondingMode && <BondingCaretakerPose />}
+        <primitive object={clone} />
       </group>
     </RigidBody>
-  )
-}
-
-function AvatarIdentityDetails() {
-  const style = useGame((state) => state.avatarStyle)
-  return (
-    <group position={[0, 1.73, .015]}>
-      {style.hairStyle !== 'close-cropped' && <mesh position={[0, .12, 0]} scale={[1.05, style.hairStyle === 'long' ? .82 : .62, 1.02]} castShadow><sphereGeometry args={[.245, 18, 12]} /><meshStandardMaterial color={style.hair} roughness={.95} /></mesh>}
-      {style.hairStyle === 'long' && <mesh position={[0, -.08, -.15]} scale={[.9, 1.55, .55]} castShadow><sphereGeometry args={[.18, 16, 10]} /><meshStandardMaterial color={style.hair} roughness={.96} /></mesh>}
-      {style.hairStyle === 'bun' && <mesh position={[0, .29, -.1]} castShadow><sphereGeometry args={[.105, 14, 10]} /><meshStandardMaterial color={style.hair} roughness={.96} /></mesh>}
-      {style.hairStyle === 'close-cropped' && <mesh position={[0, .105, 0]} scale={[1.02, .38, 1]} castShadow><sphereGeometry args={[.245, 18, 12]} /><meshStandardMaterial color={style.hair} roughness={.97} /></mesh>}
-      {[-.075, .075].map((x) => <mesh key={x} position={[x, -.005, .226]}><sphereGeometry args={[.022, 12, 8]} /><meshStandardMaterial color={style.eyes} emissive={style.eyes} emissiveIntensity={.2} roughness={.35} /></mesh>)}
-    </group>
-  )
-}
-
-function PoseLimb({ from, to, radius, color }: { from: THREE.Vector3Tuple; to: THREE.Vector3Tuple; radius: number; color: string }) {
-  const transform = useMemo(() => {
-    const start = new THREE.Vector3(...from)
-    const end = new THREE.Vector3(...to)
-    const direction = end.clone().sub(start)
-    const length = direction.length()
-    const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize())
-    return { midpoint: start.add(end).multiplyScalar(.5), quaternion, length }
-  }, [from, to])
-  return (
-    <mesh position={transform.midpoint} quaternion={transform.quaternion} castShadow>
-      <capsuleGeometry args={[radius, Math.max(.03, transform.length - radius * 2), 6, 10]} />
-      <meshStandardMaterial color={color} roughness={.92} />
-    </mesh>
-  )
-}
-
-function BondingCaretakerPose() {
-  const group = useRef<THREE.Group>(null)
-  const pettingArm = useRef<THREE.Group>(null)
-  useFrame(({ clock }) => {
-    if (!group.current) return
-    const progress = useGame.getState().bondingProgress
-    const reach = THREE.MathUtils.smoothstep(progress, 24, 76)
-    group.current.rotation.x = -.03 - reach * .06 + Math.sin(clock.elapsedTime * 1.4) * .006
-    group.current.position.z = reach * .06
-    if (pettingArm.current) {
-      const stroke = Math.sin(clock.elapsedTime * 2.7) * reach
-      pettingArm.current.position.y = stroke * .018
-      pettingArm.current.position.z = stroke * .035
-      pettingArm.current.rotation.x = stroke * .025
-    }
-  })
-  const style = useGame((state) => state.avatarStyle)
-  const clothing = style.clothing
-  const pants = style.pants
-  const skin = style.skin
-  const hair = style.hair
-  const torsoWidth = style.bodyFrame === 'masculine' ? .47 : style.bodyFrame === 'feminine' ? .38 : .42
-  return (
-    <group ref={group}>
-      <mesh position={[0, 1.02, .02]} scale={[torsoWidth, .62, .28]} castShadow><capsuleGeometry args={[.42, .38, 7, 12]} /><meshStandardMaterial color={clothing} roughness={.94} /></mesh>
-      <mesh position={[0, 1.62, .02]} castShadow><sphereGeometry args={[.27, 18, 12]} /><meshStandardMaterial color={skin} roughness={.92} /></mesh>
-      <mesh position={[0, 1.77, -.035]} scale={[1.04, .64, 1.02]} castShadow><sphereGeometry args={[.275, 18, 12]} /><meshStandardMaterial color={hair} roughness={.98} /></mesh>
-      <mesh position={[-.082, 1.63, .264]}><sphereGeometry args={[.023, 10, 8]} /><meshStandardMaterial color={style.eyes} emissive={style.eyes} emissiveIntensity={.2} /></mesh>
-      <mesh position={[.082, 1.63, .264]}><sphereGeometry args={[.023, 10, 8]} /><meshStandardMaterial color={style.eyes} emissive={style.eyes} emissiveIntensity={.2} /></mesh>
-      <PoseLimb from={[-.18, .66, .02]} to={[-.3, .34, .34]} radius={.12} color={pants} />
-      <PoseLimb from={[-.3, .34, .34]} to={[-.47, .12, .7]} radius={.105} color={pants} />
-      <PoseLimb from={[.18, .66, .02]} to={[-.02, .3, .42]} radius={.12} color={pants} />
-      <PoseLimb from={[-.02, .3, .42]} to={[.34, .12, .68]} radius={.105} color={pants} />
-      <PoseLimb from={[-.31, 1.27, .04]} to={[-.43, .93, .3]} radius={.095} color={clothing} />
-      <PoseLimb from={[-.43, .93, .3]} to={[-.22, .73, .55]} radius={.085} color={skin} />
-      <group ref={pettingArm}>
-        <PoseLimb from={[.31, 1.27, .04]} to={[.42, 1.05, .34]} radius={.095} color={clothing} />
-        <PoseLimb from={[.42, 1.05, .34]} to={[.18, 1.23, .63]} radius={.082} color={skin} />
-        <mesh position={[.16, 1.24, .65]} scale={[.12, .07, .16]} rotation={[.2, 0, -.18]} castShadow><sphereGeometry args={[1, 12, 8]} /><meshStandardMaterial color={skin} roughness={.9} /></mesh>
-        <group position={[.16, 1.24, .65]}>
-          <mesh rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[.16, .016, 8, 32]} /><meshBasicMaterial color="#efff9a" transparent opacity={.76} depthWrite={false} /></mesh>
-          <Sparkles count={7} scale={[.55, .55, .55]} size={3} speed={.32} color="#fff5c4" />
-        </group>
-      </group>
-    </group>
   )
 }
 
