@@ -139,6 +139,48 @@ function StormClouds() {
   )
 }
 
+function RoadCar({ offset, color, direction = 1 }: { offset: number; color: string; direction?: 1 | -1 }) {
+  const group = useRef<THREE.Group>(null)
+  useFrame(({ clock }) => {
+    if (!group.current) return
+    const travel = ((clock.elapsedTime * 3.1 + offset) % 54) - 27
+    group.current.position.x = travel * direction
+  })
+  return (
+    <group ref={group} position={[0, .2, 0]} rotation={[0, direction === 1 ? 0 : Math.PI, 0]}>
+      <RoundedBox args={[2.25, .56, 1.05]} position={[0, .35, 0]} radius={.18} smoothness={4} castShadow><meshStandardMaterial color={color} metalness={.1} roughness={.62} /></RoundedBox>
+      <RoundedBox args={[1.08, .48, .9]} position={[-.18, .75, 0]} radius={.16} smoothness={4} castShadow><meshStandardMaterial color="#b7c9cf" metalness={.2} roughness={.34} /></RoundedBox>
+      {[-.68, .68].flatMap((x) => [-.49, .49].map((z) => <mesh key={`${x}-${z}`} position={[x, .2, z]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[.25, .25, .15, 18]} /><meshStandardMaterial color="#272928" roughness={1} /></mesh>))}
+    </group>
+  )
+}
+
+function RoadRisk() {
+  return (
+    <group position={[0, 0, 22]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[62, 5.2]} /><meshStandardMaterial color="#565d60" roughness={.96} /></mesh>
+      {Array.from({ length: 15 }, (_, index) => <mesh key={index} position={[-27 + index * 4, .035, 0]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[2.1, .12]} /><meshBasicMaterial color="#e9e2c6" /></mesh>)}
+      <RoadCar offset={2} color="#d6a45d" />
+      <RoadCar offset={19} color="#879cb0" direction={-1} />
+      <group position={[0, 0, -3]}>{[-24, -18, -12, -6, 1, 7, 13, 19, 25].map((x, index) => <group key={x} position={[x, 0, 0]} rotation={[0, 0, index === 4 ? -.2 : 0]}><mesh position={[0, .65, 0]}><boxGeometry args={[.11, 1.3, .11]} /><meshStandardMaterial color="#8b795f" /></mesh>{index !== 4 && <mesh position={[1.45, .68, 0]}><boxGeometry args={[2.8, .08, .08]} /><meshStandardMaterial color="#9b896d" /></mesh>}</group>)}</group>
+      <Html center position={[17, 2.3, -2.7]} distanceFactor={13} zIndexRange={[4, 0]}><div className="risk-world-label"><b>ROAD RISK</b><span>The garden needs protected routes</span></div></Html>
+    </group>
+  )
+}
+
+function MathikoloniHorizon() {
+  return (
+    <group position={[-14, 1.2, 17]} rotation={[0, .18, 0]}>
+      <group position={[0, 1.2, 0]}>
+        <RoundedBox args={[6.8, 1.8, 2.7]} radius={.2} smoothness={4}><meshStandardMaterial color="#e8edcf" transparent opacity={.3} emissive="#c8dc70" emissiveIntensity={.35} wireframe /></RoundedBox>
+        <mesh position={[0, 1.25, 0]} rotation={[0, 0, -.12]}><boxGeometry args={[7.4, .16, 3.2]} /><meshStandardMaterial color="#f2f0d8" transparent opacity={.34} emissive="#dfff6c" emissiveIntensity={.45} /></mesh>
+        {[[-2.1, -1.65], [0, -1.65], [2.1, -1.65]].map(([x, z]) => <pointLight key={x} position={[x, .45, z]} color="#dfff6c" intensity={1.2} distance={5} />)}
+      </group>
+      <WorldTag title="THE MATHIKOLONI DREAM" subtitle="proposed property · not yet acquired" warm />
+    </group>
+  )
+}
+
 function CaretakerPlayer() {
   const body = useRef<RapierRigidBody>(null)
   const model = useRef<THREE.Group>(null)
@@ -370,10 +412,11 @@ function SplotchActor() {
       const nuzzle = game.bondingProgress > 78 ? (Math.sin(clock.elapsedTime * 2.6) + 1) * .035 : 0
       const contactOffset = new THREE.Vector3(.85, 0, .55).normalize().multiplyScalar(1.55 - approach * .32 - nuzzle)
       target.current.copy(player).add(contactOffset)
-    } else if (game.lastFedDate === localDay() && playerDistance > 3.1 && playerDistance < 13) {
+    } else if (game.lastFedDate === localDay() && playerDistance > 3.1 && playerDistance < 13 && (companion.id !== 'mabel' || game.hasBonded)) {
       // Fixed world-space following offset: it never feeds Splotch's own yaw
       // back into his destination, which prevents the previous orbiting loop.
-      target.current.copy(player).add(new THREE.Vector3(1.25, 0, -1.25))
+      const followDistance = companion.id === 'winona-p-gray' ? .9 : 1.25
+      target.current.copy(player).add(new THREE.Vector3(followDistance, 0, -followDistance))
     } else if (game.lastFedDate !== localDay() && playerDistance < 1.05) {
       const away = position.clone().sub(player).setY(0)
       if (away.lengthSq() > .001) target.current.copy(position).add(away.normalize().multiplyScalar(.75))
@@ -414,6 +457,59 @@ function SplotchActor() {
       {collarName && <Text position={[0, .77, .28]} fontSize={.12} color="#fff4ca" anchorX="center">{collarName}</Text>}
       {hasBonded && <Sparkles count={10} scale={[2.1, 1.7, 2.1]} size={3} speed={.25} color="#f8f2bd" position={[0, .8, 0]} />}
       {bondingMode && <BondingResponse />}
+    </group>
+  )
+}
+
+function VisitingCatActor() {
+  const group = useRef<THREE.Group>(null)
+  const { scene, animations } = useGLTF('/models/kenney/animal-cat.glb')
+  const clone = useMemo(() => SkeletonUtils.clone(scene), [scene])
+  const { actions } = useAnimations(animations, group)
+  const selected = useGame((state) => state.selectedCompanionId)
+  const realityVisits = useGame((state) => state.realityVisits)
+  const visitor = getCompanionProfile(selected === 'splotch' ? 'mabel' : 'splotch')
+  useEffect(() => {
+    clone.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return
+      object.castShadow = true
+      const material = (object.material as THREE.MeshStandardMaterial).clone()
+      material.color.set(visitor.phenotype.baseColor)
+      material.emissive = new THREE.Color(visitor.phenotype.secondaryColor)
+      material.emissiveIntensity = .05
+      material.roughness = .88
+      object.material = material
+    })
+  }, [clone, visitor.phenotype.baseColor, visitor.phenotype.secondaryColor])
+  useEffect(() => {
+    const action = actions.idle ?? actions.Idle
+    action?.reset().fadeIn(.2).play()
+    return () => { action?.fadeOut(.2) }
+  }, [actions])
+  if (realityVisits < 1) return null
+  return (
+    <group ref={group} position={[-1.9, 0, 7.8]} rotation={[0, -1.7, 0]}>
+      <primitive object={clone} scale={[visitor.phenotype.scale * visitor.phenotype.width, visitor.phenotype.scale, visitor.phenotype.scale * visitor.phenotype.length]} />
+      <WorldTag title={`${visitor.name} is visiting`} subtitle="a new relationship appeared" warm />
+    </group>
+  )
+}
+
+function ComfortMapOverlay({ visible }: { visible: boolean }) {
+  if (!visible) return null
+  const zones = [
+    { position: [3.25, .025, 6.1] as [number, number, number], radius: 3.7, color: '#7ee1ce', title: 'PROTECTED REST', detail: 'cover · warmth · retreat' },
+    { position: [-3.2, .028, 3.6] as [number, number, number], radius: 2.4, color: '#a8d76a', title: 'PLANTED COVER', detail: 'shade · scent · concealment' },
+    { position: [-4.6, .03, -7.3] as [number, number, number], radius: 2.5, color: '#efb55f', title: 'RESOURCE POINT', detail: 'food away from sleeping' },
+    { position: [0, .032, 17.8] as [number, number, number], radius: 5.2, color: '#f2816d', title: 'EXPOSED EDGE', detail: 'road buffer still needed' },
+  ]
+  return (
+    <group>
+      {zones.map((zone) => <group key={zone.title} position={zone.position}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={4}><circleGeometry args={[zone.radius, 64]} /><meshBasicMaterial color={zone.color} transparent opacity={.2} depthWrite={false} /></mesh>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .02, 0]} renderOrder={5}><ringGeometry args={[zone.radius - .08, zone.radius, 64]} /><meshBasicMaterial color={zone.color} transparent opacity={.88} depthWrite={false} /></mesh>
+        <Html center position={[0, .7, 0]} distanceFactor={11} zIndexRange={[8, 0]}><div className="comfort-world-label" style={{ borderColor: zone.color }}><b style={{ color: zone.color }}>{zone.title}</b><span>{zone.detail}</span></div></Html>
+      </group>)}
     </group>
   )
 }
@@ -573,16 +669,17 @@ function CatHouse() {
 
 function GardenPortals() {
   const realityVisits = useGame((state) => state.realityVisits)
+  const realityReady = useGame((state) => state.shelterStage >= 3)
   const dreamReady = useGame((state) => state.shelterStage >= 3 && state.hasFed && state.blanketLevel > 0 && state.waterBowlLevel > 0)
   const companion = getCompanionProfile(useGame((state) => state.selectedCompanionId))
   return (
     <group>
       <group position={[REALITY_PORTAL_POSITION.x, 0, REALITY_PORTAL_POSITION.z]} rotation={[0, -.5, 0]}>
         <RoundedBox args={[3.1, 2.55, .32]} position={[0, 1.4, 0]} radius={.18} smoothness={4} castShadow><meshStandardMaterial color="#f3ecd9" roughness={.65} /></RoundedBox>
-        <mesh position={[0, 1.45, -.19]}><planeGeometry args={[2.55, 1.95]} /><meshStandardMaterial color="#263c36" emissive="#71b7a5" emissiveIntensity={.25} /></mesh>
-        <Text position={[0, 1.65, -.22]} rotation={[0, Math.PI, 0]} fontSize={.25} color="#f5ffdc" anchorX="center">THE REAL {companion.name.toUpperCase()}</Text>
-        <Text position={[0, 1.2, -.22]} rotation={[0, Math.PI, 0]} fontSize={.14} color="#b5d9ce" anchorX="center">PHOTOS · UPDATES · NEEDS</Text>
-        <WorldTag title="Reality Portal" subtitle={realityVisits ? 'open again' : `meet the real ${companion.name} · +40`} warm={!realityVisits} />
+        <mesh position={[0, 1.45, -.19]}><planeGeometry args={[2.55, 1.95]} /><meshStandardMaterial color={realityReady ? '#263c36' : '#535856'} emissive={realityReady ? '#71b7a5' : '#252928'} emissiveIntensity={realityReady ? .25 : .05} /></mesh>
+        <Text position={[0, 1.65, -.22]} rotation={[0, Math.PI, 0]} fontSize={.25} color={realityReady ? '#f5ffdc' : '#c8ccc4'} anchorX="center">THE REAL {companion.name.toUpperCase()}</Text>
+        <Text position={[0, 1.2, -.22]} rotation={[0, Math.PI, 0]} fontSize={.14} color={realityReady ? '#b5d9ce' : '#9b9f9a'} anchorX="center">{realityReady ? 'PHOTOS · UPDATES · NEEDS' : 'BUILD TRUST THROUGH ACTION'}</Text>
+        <WorldTag title={realityReady ? `See ${companion.name} in real life` : 'Real-life record'} subtitle={realityReady ? realityVisits ? 'open again' : 'unlocked by the shelter you built · +40' : 'build the first protected place'} warm={realityReady && !realityVisits} />
       </group>
       <group position={[DREAM_PORTAL_POSITION.x, 0, DREAM_PORTAL_POSITION.z]} rotation={[0, .5, 0]}>
         <mesh position={[0, 1.5, 0]}><torusGeometry args={[1.2, .16, 18, 72]} /><meshStandardMaterial color={dreamReady ? '#d4c4ff' : '#7c7889'} emissive={dreamReady ? '#8068dc' : '#393643'} emissiveIntensity={dreamReady ? 2 : .2} roughness={.3} /></mesh>
@@ -660,7 +757,7 @@ function BoundaryColliders() {
   )
 }
 
-function Scene() {
+function Scene({ comfortMap }: { comfortMap: boolean }) {
   const completedDays = useGame((state) => state.completedDays)
   const realityVisits = useGame((state) => state.realityVisits)
   const unlockedPeople = (Object.keys(PEOPLE) as PersonId[]).filter((id) => isPersonUnlocked(id, completedDays, realityVisits))
@@ -674,28 +771,32 @@ function Scene() {
       <directionalLight castShadow position={[-14, 28, -18]} intensity={4.4} color="#fffef1" shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={1} shadow-camera-far={70} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} shadow-bias={-.00018} />
       <StormClouds />
       <Landscape />
+      <RoadRisk />
+      <MathikoloniHorizon />
       <BoundaryColliders />
       <MorningBasket />
       <SupplyShelf />
       <PlantPlot />
       <CatHouse />
       <SplotchActor />
+      <VisitingCatActor />
       {unlockedPeople.map((id) => <PersonActor key={id} id={id} />)}
       <GardenPortals />
       <VerifiedRealityArtifacts />
+      <ComfortMapOverlay visible={comfortMap} />
       <CaretakerPlayer />
     </>
   )
 }
 
-export function CatGardenWorld() {
+export function CatGardenWorld({ comfortMap = false }: { comfortMap?: boolean }) {
   return (
     <Canvas shadows dpr={[1, 1.7]} camera={{ position: [0, 4.5, -15], fov: 46, near: .1, far: 170 }} gl={{ antialias: true, powerPreference: 'high-performance', alpha: false }} onCreated={({ gl }) => {
       gl.toneMapping = THREE.ACESFilmicToneMapping
       gl.toneMappingExposure = 1.3
       gl.outputColorSpace = THREE.SRGBColorSpace
     }}>
-      <Suspense fallback={null}><Physics gravity={[0, -18, 0]} timeStep="vary"><Scene /></Physics></Suspense>
+      <Suspense fallback={null}><Physics gravity={[0, -18, 0]} timeStep="vary"><Scene comfortMap={comfortMap} /></Physics></Suspense>
     </Canvas>
   )
 }

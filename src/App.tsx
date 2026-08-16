@@ -51,7 +51,7 @@ import { useGardenAccount, type GardenAccount } from './account'
 import { GameSync } from './GameSync'
 import { RealityThread } from './RealityThread'
 import { playPurr } from './game/audio'
-import { foodPrice, getDailyProgress, getObjective, getRelationshipText, localDay, shelterBuildCatalog, upgradeCatalog, useGame, type AvatarStyle, type DonationBadge, type GardenUpgrade, type PersonId } from './game/store'
+import { foodPrice, getDailyProgress, getObjective, getRelationshipText, localDay, shelterBuildCatalog, upgradeCatalog, useGame, type AvatarStyle, type DonationBadge, type GardenPromise, type GardenUpgrade, type KeeperStyle, type PersonId } from './game/store'
 import { companionCopy, getCompanionProfile, sexLabel } from './game/companions'
 import { episodeFor, useGardenNotifications, useRealityFeed } from './reality'
 
@@ -99,40 +99,120 @@ const bondMoments = [
   { title: 'Let him come to you.', detail: 'The last visit reverses the first: wait without summoning him. The relationship arc ends when Splotch chooses the final step.', action: 'Hold and wait for Splotch', result: 'He knew where to find you.' },
 ]
 
-function StartMission({ onStart, onChooseCompanion, onCreateAvatar }: { onStart: () => void; onChooseCompanion: () => void; onCreateAvatar: () => void }) {
-  const selectedCompanionId = useGame((state) => state.selectedCompanionId)
-  const companion = getCompanionProfile(selectedCompanionId)
-  const cat = cats.find((candidate) => candidate.id === selectedCompanionId) || cats[0]
-  const companionImage = cat.image || splotchImage
+type ChoosingAnswer = {
+  label: string
+  detail: string
+  cat: 'splotch' | 'mabel' | 'winona-p-gray'
+  style: KeeperStyle
+  promise: GardenPromise
+}
+
+const choosingQuestions: Array<{ eyebrow: string; title: string; detail: string; answers: ChoosingAnswer[] }> = [
+  {
+    eyebrow: '01 · A CAT PAUSES NEAR YOU',
+    title: 'What do you do first?',
+    detail: 'There is no wrong answer. The cats are noticing how you move through their world.',
+    answers: [
+      { label: 'Wait quietly', detail: 'Give the cat control of the distance.', cat: 'mabel', style: 'gentle', promise: 'shelter' },
+      { label: 'Offer a game', detail: 'Let curiosity begin the conversation.', cat: 'splotch', style: 'explorer', promise: 'adventure' },
+      { label: 'Build some cover', detail: 'Make the space safer before asking anything.', cat: 'winona-p-gray', style: 'builder', promise: 'shelter' },
+    ],
+  },
+  {
+    eyebrow: '02 · YOUR FIRST GARDEN',
+    title: 'Which place feels most like yours?',
+    detail: 'Your answer changes the kind of garden the cats imagine with you.',
+    answers: [
+      { label: 'A quiet shaded room', detail: 'Warmth, privacy and somewhere to exhale.', cat: 'mabel', style: 'gentle', promise: 'shelter' },
+      { label: 'A social porch', detail: 'A broad cushion and room for friends.', cat: 'splotch', style: 'builder', promise: 'adventure' },
+      { label: 'A winding garden path', detail: 'Small discoveries around every corner.', cat: 'winona-p-gray', style: 'explorer', promise: 'adventure' },
+    ],
+  },
+  {
+    eyebrow: '03 · MAKE ONE PROMISE',
+    title: 'What should never be missing?',
+    detail: 'This becomes the first principle of the garden you build together.',
+    answers: [
+      { label: 'Clean water', detail: 'Fresh, distributed and easy to reach.', cat: 'winona-p-gray', style: 'builder', promise: 'water' },
+      { label: 'A protected place', detail: 'Cover, warmth and more than one way out.', cat: 'mabel', style: 'gentle', promise: 'shelter' },
+      { label: 'A reason to return', detail: 'Play, company and something new tomorrow.', cat: 'splotch', style: 'explorer', promise: 'adventure' },
+    ],
+  },
+]
+
+function ChoosingCeremony({ onComplete }: { onComplete: (id: string, gardenName: string, style: KeeperStyle, promise: GardenPromise) => void }) {
+  const [step, setStep] = useState(0)
+  const [answers, setAnswers] = useState<ChoosingAnswer[]>([])
+  const [chosenId, setChosenId] = useState('splotch')
+  const [gardenName, setGardenName] = useState('')
+  const question = choosingQuestions[step - 1]
+  const chosenCat = cats.find((cat) => cat.id === chosenId) || cats[0]
+  const chosenCompanion = getCompanionProfile(chosenId)
+  const candidates = ['splotch', 'mabel', 'winona-p-gray'].map((id) => cats.find((cat) => cat.id === id)!).filter(Boolean)
+
+  const answerQuestion = (answer: ChoosingAnswer) => {
+    const nextAnswers = [...answers, answer]
+    setAnswers(nextAnswers)
+    if (step < 3) {
+      setStep(step + 1)
+      return
+    }
+    const score = nextAnswers.reduce<Record<string, number>>((total, choice) => ({ ...total, [choice.cat]: (total[choice.cat] || 0) + 1 }), {})
+    const match = [...candidates].sort((a, b) => (score[b.id] || 0) - (score[a.id] || 0))[0]
+    setChosenId(match.id)
+    setGardenName(`${match.name}’s Garden`)
+    setStep(4)
+  }
+
+  const finish = () => onComplete(chosenId, gardenName, answers[0]?.style || 'gentle', answers[2]?.promise || 'shelter')
+
   return (
-    <div className="mission-start">
-      <section className="mission-card">
-        <div className="mission-cat-stage mission-splotch-photo">
-          <img src={companionImage} alt={`${companion.name}, the real ${sexLabel(companion.sex)} cat in Cyprus`} />
-          <div className="likeness-note">
-            <span><i /> REAL CAT · CYPRUS</span>
-            <strong>{companion.visualNote}.</strong>
-            <p>You will care for a sanctuary-controlled likeness, then open a portal to {companion.name}’s real photographs, updates, expenses, and dreams.</p>
-          </div>
-          <div className="visit-strip"><b>01</b><i /><span>Your first living garden</span></div>
+    <div className="choosing-shell">
+      <section className={`choosing-stage choosing-step-${step}`}>
+        <div className="choosing-visual">
+          <img src={(step >= 4 ? chosenCat.image : splotchImage) || splotchImage} alt={step >= 4 ? `The real ${chosenCat.name} at Cat Gardens` : 'A real Cat Gardens cat watching from the garden'} />
+          <i className="foliage foliage-one" /><i className="foliage foliage-two" /><i className="foliage foliage-three" />
+          <div className="choosing-signal"><span /><b>LIVE RELATIONSHIP</b><small>Based on a real cat in Cyprus</small></div>
+          {step >= 5 && <div className="chosen-nameplate"><small>{chosenCompanion.visualNote}</small><strong>{chosenCat.name}</strong><span>{chosenCat.nickname}</span></div>}
         </div>
-        <div className="mission-copy">
-          <p className="eyebrow">{companion.name.toUpperCase()} · THE FIRST SEVEN DAYS · CYPRUS</p>
-          <h1>What happens here<br />can become real.</h1>
-          <p className="mission-lede">The cat is real. The garden is the interface. Build {companion.name}’s first virtual shelter, earn {companion.pronouns.possessive} trust, and watch verified sanctuary actions cross the screen from Cyprus.</p>
-          <ol className="mission-steps">
-            <li><span>01</span><div><strong>Find him</strong><small>Approach on his terms</small></div></li>
-            <li><span>02</span><div><strong>Build</strong><small>Floor, walls, roof</small></div></li>
-            <li><span>03</span><div><strong>Return</strong><small>Seven days, then a living garden</small></div></li>
-          </ol>
-          <div className="mission-entry-actions">
-            <button className="primary-button" onClick={onStart}>Enter with {companion.name} <ArrowRight size={18} /></button>
-            <button className="secondary-button" onClick={onChooseCompanion}><PawPrint size={16} /> Choose companion</button>
-            <button className="secondary-button" onClick={onCreateAvatar}><UserRound size={16} /> Create caretaker</button>
-            <a className="mission-about-link" href="/sanctuary">How the real sanctuary works</a>
-          </div>
-          <div className="entry-truth-boundary"><Shield size={17} /><p><strong>Virtual tokens remain game currency.</strong><span>Real money is never represented as fictional currency or treated as something the player “spent” on an imaginary object.</span></p></div>
-          <p className="free-note"><Shield size={14} /> {companion.name}’s real care never depends on a player logging in. Your daily ritual grows the virtual garden; optional gifts support the real sanctuary.</p>
+
+        <div className="choosing-copy">
+          {step === 0 && <>
+            <p className="eyebrow">CAT GARDENS · THE LIVING SANCTUARY</p>
+            <h1>A real cat is<br />about to choose you.</h1>
+            <p className="choosing-lede">Build the garden of their dreams. Help make it real in Cyprus.</p>
+            <button className="primary-button choosing-primary" onClick={() => setStep(1)}>Let a cat choose me <ArrowRight size={18} /></button>
+            <p className="choosing-trust"><Shield size={15} /> Free to play. Donations optional. Every sidekick is based on a real Cat Gardens cat.</p>
+          </>}
+
+          {question && <>
+            <div className="choosing-progress"><span style={{ width: `${step / 3 * 100}%` }} /><b>{step} / 3</b></div>
+            <p className="eyebrow">{question.eyebrow}</p>
+            <h2>{question.title}</h2>
+            <p className="choosing-lede">{question.detail}</p>
+            <div className="choosing-answers">
+              {question.answers.map((answer) => <button key={answer.label} onClick={() => answerQuestion(answer)}><span><PawPrint size={18} /></span><div><strong>{answer.label}</strong><small>{answer.detail}</small></div><ArrowRight size={16} /></button>)}
+            </div>
+          </>}
+
+          {step === 4 && <>
+            <p className="eyebrow">THREE CATS NOTICED YOU</p>
+            <h2>One of them stayed.</h2>
+            <p className="choosing-lede">The others were not rejected. You will meet them later, as friends and visitors in the garden.</p>
+            <div className="candidate-glimpses">{candidates.map((cat) => <span key={cat.id}><img src={cat.image} alt="" /><b>{cat.name}</b></span>)}</div>
+            <button className="primary-button choosing-primary" onClick={() => setStep(5)}>See who chose me <ArrowRight size={18} /></button>
+          </>}
+
+          {step === 5 && <>
+            <p className="eyebrow">THE CHOOSING · COMPLETE</p>
+            <h2>{chosenCat.name} chose you.</h2>
+            <p className="choosing-lede">{chosenCat.story} Your first task is not to browse. It is to build somewhere safe together.</p>
+            <label className="garden-name-field"><span>NAME YOUR SHARED GARDEN</span><input value={gardenName} onChange={(event) => setGardenName(event.target.value)} maxLength={32} aria-label="Name your garden" /></label>
+            <div className="choosing-final-actions">
+              <button className="primary-button" onClick={finish}>Enter {gardenName || 'the garden'} <ArrowRight size={18} /></button>
+            </div>
+            <div className="entry-truth-boundary"><Shield size={17} /><p><strong>Virtual tokens remain game currency.</strong><span>Real money is never represented as fictional currency or treated as something the player “spent” on an imaginary object.</span></p></div>
+          </>}
         </div>
       </section>
     </div>
@@ -192,7 +272,9 @@ function ObjectiveCard() {
   const objective = getObjective({ selectedCompanionId, lastDailyClaim, splotchDiscovered, shelterStage, food, lastDayCompleted, completedDays, lastFedDate, lastWateredDate, blanketLevel, waterBowlLevel, hasBonded, realityVisits, dreamVisits, dreamDiscoveries })
   const episode = episodeFor(completedDays)
   const companion = getCompanionProfile(selectedCompanionId)
+  const gardenName = useGame((state) => state.gardenName)
   const dayLabel = completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${episode.day}/7`
+  const dailyProgress = getDailyProgress({ lastDailyClaim, splotchDiscovered, shelterStage, lastFedDate, lastWateredDate, blanketLevel, waterBowlLevel, hasBonded, realityVisits, completedDays, lastDayCompleted })
   return (
     <section className="objective-hud game-panel">
       <div className="objective-copy">
@@ -202,6 +284,12 @@ function ObjectiveCard() {
       </div>
       <div className="objective-count"><b>{objective.progress}</b><span>/ {objective.total}</span></div>
       <div className="objective-progress"><i style={{ width: `${(objective.progress / objective.total) * 100}%` }} /></div>
+      <div className="goal-timeframes">
+        <span><b>NOW</b>{objective.title}</span>
+        <span><b>TODAY</b>{dailyProgress.complete}/{dailyProgress.total} garden rituals</span>
+        <span><b>HORIZON</b>{dreamDiscoveries.length}/7 Mathikoloni protections</span>
+      </div>
+      <small className="garden-identity">{gardenName}</small>
     </section>
   )
 }
@@ -214,14 +302,14 @@ function Inventory() {
   const carePoints = useGame((state) => state.carePoints)
   return (
     <aside className="inventory-hud game-panel">
-      <div className="care-score"><span>GARDEN TOKENS</span><strong>{tokens.toLocaleString()}</strong><Coins size={15} /></div>
+      <div className="care-score"><span>SUNBEAMS</span><strong>{tokens.toLocaleString()}</strong><Coins size={15} /></div>
       <div className="inventory-items">
         <span><Utensils size={14} /> Food <b>{food}</b></span>
         <span><Droplets size={14} /> Water <b>{water}</b></span>
         <span><Heart size={14} /> Treats <b>{treats}</b></span>
       </div>
       <small className="care-points-line">{carePoints.toLocaleString()} care points</small>
-      <small className="token-boundary-line"><Shield size={10} /> virtual game currency only</small>
+      <small className="token-boundary-line"><Shield size={10} /> free game points · no cash value</small>
     </aside>
   )
 }
@@ -597,31 +685,46 @@ function GardenDesigner({ onClose, onDonate }: { onClose: () => void; onDonate: 
   )
 }
 
-function MemoryModal({ onClose }: { onClose: () => void }) {
+function MemoryModal({ onClose, account }: { onClose: () => void; account: GardenAccount }) {
   const companion = getCompanionProfile(useGame((state) => state.selectedCompanionId))
+  const cat = cats.find((candidate) => candidate.id === companion.id) || cats[0]
+  const gardenName = useGame((state) => state.gardenName)
+  const chosenAt = useGame((state) => state.chosenAt)
+  const nextDiscoveryAt = useGame((state) => state.nextDiscoveryAt)
+  const discovered = useGame((state) => state.splotchDiscovered)
+  const shelterStage = useGame((state) => state.shelterStage)
+  const hasFed = useGame((state) => state.hasFed)
+  const bondVisits = useGame((state) => state.bondVisits)
+  const realityVisits = useGame((state) => state.realityVisits)
+  const dreamVisits = useGame((state) => state.dreamVisits)
+  const completedDays = useGame((state) => state.completedDays)
+  const returnGiftClaimed = useGame((state) => state.returnGiftClaimed)
+  const mementos = useGame((state) => state.mementos)
+  const claimReturnGift = useGame((state) => state.claimReturnGift)
+  const memories = [
+    { title: `${companion.name} chose you`, detail: chosenAt ? new Date(chosenAt).toLocaleDateString() : 'The relationship begins', earned: Boolean(chosenAt) },
+    { title: 'First eye contact', detail: `${companion.name} stayed where you could see ${companion.pronouns.object}.`, earned: discovered },
+    { title: 'The shelter you built', detail: shelterStage >= 3 ? 'Floor, walls and a weatherproof roof.' : `${shelterStage} of 3 construction stages complete.`, earned: shelterStage >= 3 },
+    { title: 'First meal together', detail: 'Care became a shared routine.', earned: hasFed },
+    { title: 'Quiet company', detail: `${companion.name} chose the distance.`, earned: bondVisits > 0 },
+    { title: `The real ${companion.name}`, detail: 'A permanent real-life record opened from Cyprus.', earned: realityVisits > 0 },
+    { title: 'The Mathikoloni dream', detail: 'Reality, transformation and the protected garden ahead.', earned: dreamVisits > 0 },
+  ]
+  const earnedCount = memories.filter((memory) => memory.earned).length
+  const hoursUntilDiscovery = nextDiscoveryAt ? Math.max(0, Math.ceil((nextDiscoveryAt - Date.now()) / 3600000)) : null
   return (
-    <div className="story-backdrop" role="presentation">
-      <article className="story-card relationship-story" role="dialog" aria-modal="true" aria-labelledby="story-title">
+    <div className="story-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
+      <article className="memory-book" role="dialog" aria-modal="true" aria-labelledby="memory-title">
         <button className="close-button" onClick={onClose} aria-label={`Close ${companion.name}'s story`}><X size={19} /></button>
-        <div className="story-relationship-map">
-          <span className="story-paw"><PawPrint size={38} /></span>
-          <p>THE RELATIONSHIP HAS STARTED</p>
-          <ol className="relationship-steps compact">
-            <li className="complete"><b>01</b><span>Food + shelter</span></li>
-            <li className="active"><b>02</b><span>Sit together</span></li>
-            <li><b>03</b><span>Familiar hand</span></li>
-            <li><b>04</b><span>Choose comfort</span></li>
-            <li><b>05</b><span>Garden route</span></li>
-            <li><b>06</b><span>Care journal</span></li>
-            <li><b>07</b><span>{companion.pronouns.subject[0].toUpperCase() + companion.pronouns.subject.slice(1)} greets you</span></li>
-          </ol>
+        <div className="memory-cover">
+          <img src={cat.image || splotchImage} alt={`The real ${companion.name} at Cat Gardens`} />
+          <div><p>MY SIDEKICK · REAL CAT · CYPRUS</p><h2 id="memory-title">{gardenName}</h2><span>{companion.name} remembers what happened here.</span></div>
         </div>
-        <div className="story-copy">
-          <p className="eyebrow">TRUST · 48</p>
-          <h2 id="story-title">{companion.pronouns.subject[0].toUpperCase() + companion.pronouns.subject.slice(1)} learned the sound of your arrival.</h2>
-          <p>{companion.visualNote}. Food solved the immediate need. Staying is what starts the relationship.</p>
-          <p>After the shelter is built, the vehicle stops being the hero. You step out, approach slowly, stop nearby, and let {companion.pronouns.object} choose the distance.</p>
-          <button className="primary-button" onClick={onClose}>Build somewhere dry <ArrowRight size={17} /></button>
+        <div className="memory-pages">
+          <header><div><p className="eyebrow">MEMORY BOOK · {earnedCount}/7 REMEMBERED</p><h3>A relationship that accumulates.</h3></div><strong>{completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${Math.max(1, completedDays + 1)}`}</strong></header>
+          <ol>{memories.map((memory, index) => <li className={memory.earned ? 'earned' : ''} key={memory.title}><b>{String(index + 1).padStart(2, '0')}</b><span><strong>{memory.title}</strong><small>{memory.earned ? memory.detail : 'Still waiting in the garden'}</small></span>{memory.earned ? <Check size={18} /> : <LockKeyhole size={15} />}</li>)}</ol>
+          <aside className="return-discovery"><MoonStar size={22} /><div><span>{mementos ? `${mementos} MEMENTO SAVED` : 'NEXT GARDEN DISCOVERY'}</span><strong>{hoursUntilDiscovery === null ? 'Finish the first shelter to begin the return clock.' : hoursUntilDiscovery > 0 ? `${companion.name} will explore after sunset · about ${hoursUntilDiscovery}h` : returnGiftClaimed ? `${companion.name}’s first garden seed is pressed into this book.` : `${companion.name} found something while you were away.`}</strong><small>Nothing bad happens while you are gone. The garden keeps growing.</small>{hoursUntilDiscovery === 0 && !returnGiftClaimed && <button onClick={claimReturnGift}>Open {companion.name}’s gift <Gift size={13} /></button>}</div></aside>
+          {!account.signedIn && <div className="memory-save"><div><span>SAVE AFTER THE REWARD</span><strong>Keep {gardenName} on every device.</strong><small>Your local progress is already safe in this browser.</small></div><button onClick={account.openSignIn}>Save this relationship <ArrowRight size={14} /></button></div>}
         </div>
       </article>
     </div>
@@ -1354,15 +1457,17 @@ export default function App() {
   const notification = useGame((state) => state.notification)
   const setNotification = useGame((state) => state.setNotification)
   const setInput = useGame((state) => state.setInput)
-  const start = useGame((state) => state.start)
+  const completeChoosing = useGame((state) => state.completeChoosing)
   const resetRover = useGame((state) => state.resetRover)
   const bondingMode = useGame((state) => state.bondingMode)
   const bondVisits = useGame((state) => state.bondVisits)
   const lastDailyClaim = useGame((state) => state.lastDailyClaim)
-  const splotchDiscovered = useGame((state) => state.splotchDiscovered)
   const shelterStage = useGame((state) => state.shelterStage)
   const completedDays = useGame((state) => state.completedDays)
   const realityVisits = useGame((state) => state.realityVisits)
+  const gardenName = useGame((state) => state.gardenName)
+  const nextDiscoveryAt = useGame((state) => state.nextDiscoveryAt)
+  const returnGiftClaimed = useGame((state) => state.returnGiftClaimed)
   const [bondResult, setBondResult] = useState<{ advanced: boolean; visit: number } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
   const [realityOpen, setRealityOpen] = useState(false)
@@ -1370,12 +1475,14 @@ export default function App() {
   const [tvOpen, setTvOpen] = useState(false)
   const [dreamOpen, setDreamOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [memoryOpen, setMemoryOpen] = useState(false)
   const [rosterOpen, setRosterOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [designerOpen, setDesignerOpen] = useState(false)
   const [morningOpen, setMorningOpen] = useState(false)
   const [personOpen, setPersonOpen] = useState<PersonId | null>(null)
   const [donationNeed, setDonationNeed] = useState<SplotchNeed | null>(null)
+  const [comfortMap, setComfortMap] = useState(false)
   const [requestedCompanion] = useState(() => new URLSearchParams(window.location.search).get('companion'))
   useEffect(() => {
     if (!requestedCompanion) return
@@ -1450,7 +1557,10 @@ export default function App() {
       game.visitPerson(game.nearby)
       setPersonOpen(game.nearby)
     }
-    if (game.nearby === 'reality') setRealityOpen(true)
+    if (game.nearby === 'reality') {
+      if (game.shelterStage < 3) game.setNotification(`Build ${getCompanionProfile(game.selectedCompanionId).name}’s first protected place before opening the real-life record.`)
+      else setRealityOpen(true)
+    }
     if (game.nearby === 'dream') {
       if (game.lastDayCompleted === localDay()) setDreamOpen(true)
       else game.setNotification(`Finish today’s care adventure to enter ${getCompanionProfile(game.selectedCompanionId).name}’s dream.`)
@@ -1501,6 +1611,11 @@ export default function App() {
   }, [notification, setNotification])
 
   useEffect(() => {
+    if (!started || !nextDiscoveryAt || returnGiftClaimed || Date.now() < nextDiscoveryAt) return
+    setNotification(`${companion.name} found something while you were away. Open the Memory Book.`)
+  }, [companion.name, nextDiscoveryAt, returnGiftClaimed, setNotification, started])
+
+  useEffect(() => {
     const query = new URLSearchParams(window.location.search)
     if (query.get('donation') !== 'complete') return
     const sessionId = query.get('session_id')
@@ -1539,32 +1654,39 @@ export default function App() {
     setDonationNeed(need)
   }, [])
 
-  const paused = !started || bondResult || helpOpen || realityOpen || threadOpen || tvOpen || dreamOpen || profileOpen || rosterOpen || avatarOpen || designerOpen || morningOpen || personOpen || donationNeed
+  const paused = !started || bondResult || helpOpen || realityOpen || threadOpen || tvOpen || dreamOpen || profileOpen || memoryOpen || rosterOpen || avatarOpen || designerOpen || morningOpen || personOpen || donationNeed
 
   return (
     <main className={`game-shell ${paused ? 'is-paused' : ''} ${bondingMode ? 'is-bonding' : ''}`}>
       <GameSync />
       <div className="world-canvas">
         <Suspense fallback={<div className="world-loading"><i /><span>Growing {companion.name}’s living garden…</span></div>}>
-          <CatGardenWorld />
+          <CatGardenWorld comfortMap={comfortMap} />
         </Suspense>
       </div>
 
-      <header className="game-header game-panel">
-        <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>{companion.name.toUpperCase()} · {completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${episodeFor(completedDays).day}/7`} · MEMORY {Math.min(7, bondVisits + 1)}/7</small></a>
+      {started && <header className="game-header game-panel">
+        <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>{gardenName.toUpperCase()} · {completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${episodeFor(completedDays).day}/7`} · MEMORY {Math.min(7, bondVisits + 1)}/7</small></a>
         <nav>
-          {completedDays > 0 && <button className="tv-nav" onClick={() => setTvOpen(true)}><Radio size={17} /><span>Cat Gardens TV</span></button>}
-          {splotchDiscovered && <button className="reality-nav" onClick={() => setRealityOpen(true)}><Video size={17} /><span>Reality</span></button>}
-          <button className="thread-nav" onClick={() => setThreadOpen(true)}><BadgeCheck size={17} /><span>Live record</span>{gardenNotifications.unread > 0 && <b>{gardenNotifications.unread}</b>}</button>
-          <button className="cats-nav" onClick={() => setRosterOpen(true)}><PawPrint size={17} /><span>Cats</span></button>
-          <button className="avatar-nav" onClick={() => setAvatarOpen(true)}><UserRound size={17} /><span>Caretaker</span></button>
-          {shelterStage >= 3 && <button className="design-nav" onClick={() => setDesignerOpen(true)}><Leaf size={17} /><span>Design Garden</span></button>}
-          <button className="profile-nav" onClick={() => setProfileOpen(true)}><UserRound size={17} /><span>My Profile</span></button>
-          <button className="gift-nav" onClick={() => setMorningOpen(true)}><Gift size={17} /><span>{lastDailyClaim === localDay() ? 'Basket' : 'Free Gift'}</span></button>
-          <button className="help-nav" onClick={() => setHelpOpen(true)}><CircleHelp size={17} /><span>Help</span></button>
+          {shelterStage >= 3 && <button className="reality-nav" onClick={() => setRealityOpen(true)}><Video size={17} /><span>Real {companion.name}</span></button>}
+          <button className="memory-nav" onClick={() => setMemoryOpen(true)}><Camera size={17} /><span>My Cat</span></button>
+          <button className={comfortMap ? 'comfort-nav active' : 'comfort-nav'} onClick={() => setComfortMap((current) => !current)}><Eye size={17} /><span>Explore</span></button>
+          {shelterStage >= 3 && <button className="design-nav" onClick={() => setDesignerOpen(true)}><Leaf size={17} /><span>Build</span></button>}
+          <button className="thread-nav" onClick={() => setThreadOpen(true)}><BadgeCheck size={17} /><span>Grove</span>{gardenNotifications.unread > 0 && <b>{gardenNotifications.unread}</b>}</button>
           {realityVisits > 0 && <button className="donate-nav" onClick={() => setDonationNeed(splotchNeeds.find((need) => need.id === 'food')!)}><CircleDollarSign size={17} /> Donate</button>}
+          <details className="game-more-menu">
+            <summary aria-label="Open game menu"><CircleHelp size={17} /><span>More</span></summary>
+            <div>
+              {completedDays > 0 && <button onClick={() => setTvOpen(true)}><Radio size={16} /> Cat Gardens TV</button>}
+              <button onClick={() => setRosterOpen(true)}><PawPrint size={16} /> Meet other cats</button>
+              <button onClick={() => setAvatarOpen(true)}><UserRound size={16} /> My caretaker</button>
+              <button onClick={() => setProfileOpen(true)}><BadgeCheck size={16} /> My impact</button>
+              <button onClick={() => setMorningOpen(true)}><Gift size={16} /> {lastDailyClaim === localDay() ? 'Today’s basket' : 'Free daily gift'}</button>
+              <button onClick={() => setHelpOpen(true)}><CircleHelp size={16} /> Controls & safety</button>
+            </div>
+          </details>
         </nav>
-      </header>
+      </header>}
 
       {started && !bondingMode && (
         <>
@@ -1587,7 +1709,7 @@ export default function App() {
         />
       )}
 
-      {!started && <StartMission onStart={start} onChooseCompanion={() => setRosterOpen(true)} onCreateAvatar={() => setAvatarOpen(true)} />}
+      {!started && <ChoosingCeremony onComplete={(id, name, style, promise) => completeChoosing(id, name, style, promise)} />}
       {morningOpen && <MorningBasketModal onClose={() => setMorningOpen(false)} />}
       {personOpen && <PersonDialogue person={personOpen} onClose={() => setPersonOpen(null)} />}
       {bondResult && <BondResultModal result={bondResult} onClose={() => setBondResult(null)} />}
@@ -1600,6 +1722,7 @@ export default function App() {
       {avatarOpen && <AvatarCreator onClose={() => setAvatarOpen(false)} />}
       {designerOpen && <GardenDesigner onClose={() => setDesignerOpen(false)} onDonate={openDonation} />}
       {profileOpen && <GardenProfile onClose={() => setProfileOpen(false)} onDonate={openDonation} />}
+      {memoryOpen && <MemoryModal onClose={() => setMemoryOpen(false)} account={account} />}
       {donationNeed && <DonationDrawer need={donationNeed} onClose={() => setDonationNeed(null)} />}
     </main>
   )

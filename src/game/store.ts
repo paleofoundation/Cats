@@ -12,6 +12,8 @@ export type InputState = {
 }
 
 export type PersonId = 'chanda' | 'karen' | 'kimberly'
+export type KeeperStyle = 'gentle' | 'builder' | 'explorer'
+export type GardenPromise = 'water' | 'shelter' | 'adventure'
 export type NearbyAction = 'basket' | 'build' | 'home' | 'supply' | 'cat' | 'plant' | 'chanda' | 'karen' | 'kimberly' | 'reality' | 'dream' | null
 export type CatAnimation = 'idle' | 'eat' | 'walk' | 'dance'
 export type DonationBadge = 'bowl-bringer' | 'gentle-hands' | 'storykeeper' | 'bright-bite' | 'safe-passage' | 'dream-builder' | 'garden-keeper' | 'broadcast-builder' | 'trust-keeper' | 'fluff-crew'
@@ -50,6 +52,14 @@ export const shelterBuildCatalog = [
 export type GameState = {
   storyVersion: number
   started: boolean
+  choosingComplete: boolean
+  gardenName: string
+  keeperStyle: KeeperStyle | null
+  gardenPromise: GardenPromise | null
+  chosenAt: number | null
+  nextDiscoveryAt: number | null
+  returnGiftClaimed: boolean
+  mementos: number
   selectedCompanionId: string
   companionProgress: Record<string, CompanionProgress>
   avatarStyle: AvatarStyle
@@ -109,6 +119,7 @@ export type GameState = {
   resetToken: number
   input: InputState
   start: () => void
+  completeChoosing: (id: string, gardenName: string, style: KeeperStyle, promise: GardenPromise) => boolean
   selectCompanion: (id: string) => boolean
   setAvatarStyle: (style: Partial<AvatarStyle>) => void
   discoverSplotch: () => boolean
@@ -120,6 +131,7 @@ export type GameState = {
   visitPerson: (person: PersonId) => void
   purchaseUpgrade: (upgrade: GardenUpgrade, collarName?: string) => boolean
   claimShareReward: () => boolean
+  claimReturnGift: () => boolean
   collectFood: (id: string) => void
   collectPart: (id: string) => void
   feed: () => boolean
@@ -188,8 +200,16 @@ const captureCompanionProgress = (state: GameState): CompanionProgress => ({
 })
 
 const initialPersistentState = {
-  storyVersion: 2,
+  storyVersion: 3,
   started: false,
+  choosingComplete: false,
+  gardenName: 'The First Garden',
+  keeperStyle: null as KeeperStyle | null,
+  gardenPromise: null as GardenPromise | null,
+  chosenAt: null as number | null,
+  nextDiscoveryAt: null as number | null,
+  returnGiftClaimed: false,
+  mementos: 0,
   selectedCompanionId: 'splotch',
   companionProgress: {} as Record<string, CompanionProgress>,
   avatarStyle: defaultAvatarStyle,
@@ -255,6 +275,29 @@ export const useGame = create<GameState>()(
       resetToken: 0,
       input: emptyInput,
       start: () => set({ started: true, notification: 'Nothing has been built yet. Open the glowing supply crate by the gate.' }),
+      completeChoosing: (id, gardenName, style, promise) => {
+        const profile = getCompanionProfile(id)
+        if (!profile.playable) return false
+        const state = get()
+        const nextProgress = state.companionProgress[profile.id] || defaultCompanionProgress()
+        set({
+          ...nextProgress,
+          selectedCompanionId: profile.id,
+          choosingComplete: true,
+          started: true,
+          gardenName: gardenName.trim().slice(0, 32) || `${profile.name}’s Garden`,
+          keeperStyle: style,
+          gardenPromise: promise,
+          chosenAt: Date.now(),
+          companionProgress: {
+            ...state.companionProgress,
+            [state.selectedCompanionId]: captureCompanionProgress(state),
+          },
+          resetToken: state.resetToken + 1,
+          notification: `${profile.name} chose you. The first garden is waiting.`,
+        })
+        return true
+      },
       selectCompanion: (id) => {
         const profile = getCompanionProfile(id)
         if (!profile.playable) {
@@ -337,6 +380,7 @@ export const useGame = create<GameState>()(
           safety: Math.min(100, state.safety + (nextStage === 3 ? 24 : 12)),
           carePoints: state.carePoints + next.cost,
           playerActionUntil: Date.now() + 1500,
+          nextDiscoveryAt: nextStage === 3 && !state.nextDiscoveryAt ? Date.now() + 8 * 60 * 60 * 1000 : state.nextDiscoveryAt,
           notification: `${next.title} complete · −${next.cost} tokens · +${next.cost} care`,
         })
         return true
@@ -454,6 +498,20 @@ export const useGame = create<GameState>()(
         const state = get()
         if (state.shareRewardClaimed) return false
         set({ shareRewardClaimed: true, treats: state.treats + 2, gardenTokens: state.gardenTokens + 25, notification: 'Invitation copied · two treats and 25 garden tokens added' })
+        return true
+      },
+      claimReturnGift: () => {
+        const state = get()
+        const companion = getCompanionProfile(state.selectedCompanionId)
+        if (!state.nextDiscoveryAt || Date.now() < state.nextDiscoveryAt || state.returnGiftClaimed) return false
+        set({
+          returnGiftClaimed: true,
+          mementos: state.mementos + 1,
+          gardenTokens: state.gardenTokens + 35,
+          treats: state.treats + 1,
+          carePoints: state.carePoints + 25,
+          notification: `${companion.name} left a garden seed · +35 Sunbeams · first memento saved`,
+        })
         return true
       },
       collectFood: () => undefined,
@@ -588,10 +646,10 @@ export const useGame = create<GameState>()(
     }),
     {
       name: 'cat-gardens-splotch-relationship-v4',
-      version: 7,
+      version: 8,
       migrate: (persistedState, version) => {
         const state = persistedState as Partial<GameState>
-        if (version < 6 || state.storyVersion !== 2) {
+        if (version < 6) {
           return {
             ...initialPersistentState,
             donationBadges: state.donationBadges || [],
@@ -605,6 +663,15 @@ export const useGame = create<GameState>()(
         return {
           ...initialPersistentState,
           ...state,
+          storyVersion: 3,
+          choosingComplete: state.choosingComplete ?? Boolean(state.started),
+          gardenName: state.gardenName || `${getCompanionProfile(state.selectedCompanionId).name}’s Garden`,
+          keeperStyle: state.keeperStyle || 'gentle',
+          gardenPromise: state.gardenPromise || 'shelter',
+          chosenAt: state.chosenAt || null,
+          nextDiscoveryAt: state.nextDiscoveryAt || null,
+          returnGiftClaimed: state.returnGiftClaimed || false,
+          mementos: state.mementos || 0,
           started: state.started ?? false,
           food: Math.min(3, state.food ?? 0),
           nextBondAt: null,
@@ -620,6 +687,14 @@ export const useGame = create<GameState>()(
       partialize: (state) => ({
         storyVersion: state.storyVersion,
         started: state.started,
+        choosingComplete: state.choosingComplete,
+        gardenName: state.gardenName,
+        keeperStyle: state.keeperStyle,
+        gardenPromise: state.gardenPromise,
+        chosenAt: state.chosenAt,
+        nextDiscoveryAt: state.nextDiscoveryAt,
+        returnGiftClaimed: state.returnGiftClaimed,
+        mementos: state.mementos,
         selectedCompanionId: state.selectedCompanionId,
         companionProgress: state.companionProgress,
         avatarStyle: state.avatarStyle,
