@@ -16,6 +16,21 @@ function requestOrigin(req) {
   return (process.env.SITE_URL || 'https://catgardens.org').replace(/\/$/, '')
 }
 
+function checkoutReturnOrigin(value, fallback) {
+  if (typeof value !== 'string') return fallback
+  try {
+    const candidate = new URL(value)
+    const allowed = new Set([
+      'https://catgardens.org',
+      'https://www.catgardens.org',
+      'https://cat-gardens-living.kmfp.chatgpt.site',
+    ])
+    return candidate.protocol === 'https:' && allowed.has(candidate.origin) ? candidate.origin : fallback
+  } catch {
+    return fallback
+  }
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST')
@@ -24,7 +39,7 @@ module.exports = async function handler(req, res) {
   if (!process.env.STRIPE_SECRET_KEY) return res.status(503).json({ error: 'Secure checkout is not configured.' })
 
   try {
-    const { amount, frequency, needId, needTitle, badge, email, donorName, catId, program, returnTo } = req.body || {}
+    const { amount, frequency, needId, needTitle, badge, email, donorName, catId, program, returnTo, returnOrigin } = req.body || {}
     const account = await authenticateGardenRequest(req, { optional: true })
     const amountCents = Math.round(Number(amount) * 100)
     const isMonthly = frequency === 'monthly'
@@ -44,7 +59,7 @@ module.exports = async function handler(req, res) {
     const safeName = typeof donorName === 'string' ? donorName.trim().slice(0, 100) : ''
     const safeUserId = account?.userId || ''
     const awardedBadge = isMonthly ? 'garden-keeper' : badge
-    const origin = requestOrigin(req)
+    const origin = checkoutReturnOrigin(returnOrigin, requestOrigin(req))
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-06-24.dahlia' })
     const integrationIdentifier = `cat-gardens-${randomBytes(4).toString('hex')}`
     const sharedMetadata = {

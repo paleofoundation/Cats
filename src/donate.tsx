@@ -179,7 +179,7 @@ function GivingPortal() {
             <button className="checkout-button" disabled={!stripePromise || Boolean(error) || amount < 5} onClick={() => setCheckoutOpen(true)}><WalletCards size={18} /> Continue to secure {frequency === 'monthly' ? 'monthly ' : ''}donation</button>
             {error && <p className="give-error">{error}</p>}<small className="wallet-note">Eligible devices may show Apple Pay or other secure payment methods selected dynamically by Stripe.</small>
           </> : <div className="checkout-stage"><button className="edit-gift" onClick={() => setCheckoutOpen(false)}><ArrowLeft size={14} /> Edit gift</button><div className="checkout-summary"><span>{frequency === 'monthly' ? 'MONTHLY' : 'ONE TIME'}</span><strong>${amount.toLocaleString()} USD</strong><small>{selectedProgram.name}</small></div>{stripePromise && <EmbeddedCheckoutProvider stripe={stripePromise} options={{ fetchClientSecret }}><EmbeddedCheckout /></EmbeddedCheckoutProvider>}</div>}
-          <footer><Shield size={15} /><span>Virtual tokens remain game currency. Real money is never represented as fictional currency or treated as something the player “spent” on an imaginary object.</span></footer>
+          <footer><Shield size={15} /><span>Verified gifts support Gardens of St. Gertrude and grant Garden Tokens in Cat Gardens. Tokens are a game reward with no cash value.</span></footer>
         </aside>
       </section>
 

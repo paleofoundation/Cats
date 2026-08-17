@@ -610,11 +610,17 @@ export const useGame = create<GameState>()(
           }
         })
       },
-      grantDonation: (amount, badge) => set((state) => ({
-        donationBadges: state.donationBadges.includes(badge) ? state.donationBadges : [...state.donationBadges, badge],
-        verifiedDonationTotal: state.verifiedDonationTotal + amount,
-        notification: 'A real contribution was verified · no virtual-currency conversion',
-      })),
+      grantDonation: (amount, badge) => set((state) => {
+        const safeAmount = Math.max(0, Number(amount) || 0)
+        const multiplier = safeAmount >= 100 ? 1.3 : safeAmount >= 50 ? 1.2 : safeAmount >= 25 ? 1.1 : 1
+        const tokenGrant = Math.round(safeAmount * 100 * multiplier)
+        return {
+          donationBadges: state.donationBadges.includes(badge) ? state.donationBadges : [...state.donationBadges, badge],
+          verifiedDonationTotal: state.verifiedDonationTotal + safeAmount,
+          gardenTokens: state.gardenTokens + tokenGrant,
+          notification: `Real contribution verified · +${tokenGrant.toLocaleString()} garden tokens`,
+        }
+      }),
       setVerifiedDonations: (amount, badges) => set({ verifiedDonationTotal: Math.max(0, amount), donationBadges: [...new Set(badges)] }),
       setVerifiedRealityArtifacts: (artifacts) => set({ verifiedRealityArtifacts: [...new Set(artifacts)] }),
       setNearby: (nearby) => { if (get().nearby !== nearby) set({ nearby }) },

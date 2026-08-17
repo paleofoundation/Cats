@@ -211,7 +211,7 @@ function ChoosingCeremony({ onComplete }: { onComplete: (id: string, gardenName:
             <div className="choosing-final-actions">
               <button className="primary-button" onClick={finish}>Enter {gardenName || 'the garden'} <ArrowRight size={18} /></button>
             </div>
-            <div className="entry-truth-boundary"><Shield size={17} /><p><strong>Virtual tokens remain game currency.</strong><span>Real money is never represented as fictional currency or treated as something the player “spent” on an imaginary object.</span></p></div>
+            <div className="entry-truth-boundary"><Coins size={17} /><p><strong>Real support earns game rewards.</strong><span>After Stripe verifies a gift to Gardens of St. Gertrude, this garden receives tokens for persistent upgrades. Tokens have no cash value.</span></p></div>
           </>}
         </div>
       </section>
@@ -645,7 +645,7 @@ function GardenDesigner({ onClose, onDonate }: { onClose: () => void; onDonate: 
           <div className="supporter-upgrade">
             <p className="eyebrow">REALITY BOUNDARY · OPTIONAL GIFT</p>
             <h3>Care for the real cats. Keep the game economy separate.</h3>
-            <p>Virtual tokens remain game currency. A real gift can add a verified supporter badge and a transparent sanctuary record—but never tokens or an imaginary object.</p>
+            <p>A verified real gift adds a supporter badge, a transparent sanctuary record, and a Garden Token thank-you grant that can be spent on these persistent virtual upgrades.</p>
             <button onClick={() => onDonate(splotchNeeds.find((need) => need.id === 'food')!)}>Support real daily care</button>
           </div>
         </section>
@@ -660,7 +660,7 @@ function GardenDesigner({ onClose, onDonate }: { onClose: () => void; onDonate: 
                 <button className="close-button" onClick={() => setShortfallUpgrade(null)} aria-label="Close token options"><X size={18} /></button>
                 <p className="eyebrow">VIRTUAL UPGRADE · FREE GAME CURRENCY</p>
                 <h2 id="upgrade-shortfall-title">{missing > 0 ? `${missing} more tokens unlock the ${item.title.toLowerCase()}.` : `You have enough for the ${item.title.toLowerCase()}.`}</h2>
-                <p>Garden tokens are earned through play. A charitable gift never purchases tokens and is never treated as money spent on this virtual object.</p>
+                <p>Keep playing for free tokens, invite a friend, or make a verified nonprofit donation to receive a larger Garden Token grant immediately after Stripe confirmation.</p>
                 <div className="shortfall-meter"><span><Coins size={18} /> Your balance</span><strong>{tokens} / {item.cost}</strong><i><b style={{ width: `${Math.min(100, Math.round(tokens / item.cost * 100))}%` }} /></i></div>
                 <div className="shortfall-actions">
                   {missing === 0 && <button onClick={() => {
@@ -675,7 +675,7 @@ function GardenDesigner({ onClose, onDonate }: { onClose: () => void; onDonate: 
                   {missing > 0 && <button onClick={account.signedIn ? share : account.openSignIn}><Users size={16} /> {account.signedIn ? shareRewardClaimed ? `Invite a verified friend · +${referral?.rewardPerFriend || 100}` : 'Share your garden · +25' : 'Sign in to earn invitation rewards'}</button>}
                   {missing > 0 && lastDailyClaim === localDay() && shareRewardClaimed && <small>Tomorrow’s free crate adds 40 tokens. A verified friend adds {referral?.rewardPerFriend || 100}.</small>}
                 </div>
-                {shortfallUpgrade === 'automatic-bowl' && <aside className="real-water-choice"><Droplets size={25} /><div><span>SEPARATE REAL-WORLD ACTION</span><h3>Help buy real hydration equipment.</h3><p>This optional donation supports an actual Cat Gardens water-station need. It creates a verified donation record and supporter badge—but does not unlock the virtual station or increase this token balance.</p><button onClick={() => onDonate(realWaterStation)}>Open the real donation portal <ArrowRight size={15} /></button></div></aside>}
+                {shortfallUpgrade === 'automatic-bowl' && <aside className="real-water-choice"><Droplets size={25} /><div><span>REAL SUPPORT · GAME REWARD</span><h3>Help buy real hydration equipment.</h3><p>This donation supports the Cat Gardens water-station need. After Stripe verifies it, your garden receives a token grant that can unlock this virtual automatic bowl.</p><button onClick={() => onDonate(realWaterStation)}>Donate and receive Garden Tokens <ArrowRight size={15} /></button></div></aside>}
               </section>
             </div>
           )
@@ -1308,7 +1308,7 @@ function PlayerImpact({ account }: { account: GardenAccount }) {
         <div className="impact-summary">
           <article><span>VERIFIED GIVING</span><strong>{currencyTotals(impact.totals.donatedByCurrency)}</strong><small>{impact.totals.gifts} Stripe-verified {impact.totals.gifts === 1 ? 'gift' : 'gifts'}</small></article>
           <article><span>PAID INTO REAL CARE</span><strong>{currencyTotals(impact.totals.paidByCurrency)}</strong><small>only expenses linked by a sanctuary reviewer</small></article>
-          <article className="token-balance"><span>GAME BALANCE</span><strong><Coins size={22} /> {impact.gameWallet.balance.toLocaleString()}</strong><small>virtual tokens earned through play—not purchased</small></article>
+          <article className="token-balance"><span>GAME BALANCE</span><strong><Coins size={22} /> {impact.gameWallet.balance.toLocaleString()}</strong><small>free-play rewards + verified supporter grants</small></article>
         </div>
         <div className="impact-policy"><Shield size={17} /><p><strong>Two ledgers. One honest record.</strong>{impact.policy}</p></div>
 
@@ -1398,7 +1398,7 @@ function DonationDrawer({ need, onClose }: { need: SplotchNeed; onClose: () => v
             <div className="frequency-switch"><button className={frequency === 'once' ? 'active' : ''} onClick={() => setFrequency('once')}>Give once</button><button className={frequency === 'monthly' ? 'active' : ''} onClick={() => setFrequency('monthly')}>Monthly keeper</button></div>
             <label><span>Donation amount · USD</span><div><b>$</b><input value={amount} min="5" max="500000" type="number" onChange={(event) => setAmount(Math.max(5, Number(event.target.value)))} /></div></label>
             <div className="amount-options">{[10, 25, 50, 100].map((value) => <button className={amount === value ? 'active' : ''} key={value} onClick={() => setAmount(value)}>${value}</button>)}</div>
-            <div className="donation-reward"><BadgeCheck size={24} /><div><span>SUPPORTER RECORD AFTER VERIFICATION</span><strong>{badgeLabels[frequency === 'monthly' ? 'garden-keeper' : need.badge]} · permanent care-record badge</strong><small>Real gifts are recorded in dollars and allocated by the sanctuary. They are never converted into garden tokens.</small></div></div>
+            <div className="donation-reward"><BadgeCheck size={24} /><div><span>REWARD AFTER STRIPE VERIFICATION</span><strong>{badgeLabels[frequency === 'monthly' ? 'garden-keeper' : need.badge]} · badge + {Math.round(amount * 100 * (amount >= 100 ? 1.3 : amount >= 50 ? 1.2 : amount >= 25 ? 1.1 : 1)).toLocaleString()} Garden Tokens</strong><small>The gift is recorded in dollars for the nonprofit. The tokens are a game reward with no cash value.</small></div></div>
             <div className="donation-allocation"><strong>Before you give</strong><p>If this need is already covered, the sanctuary will route the gift to the next published care need for this cat or to daily sanctuary care. The final allocation will appear in your care record.</p></div>
             <button className="launch-checkout" disabled={!stripePromise || Boolean(error)} onClick={() => setCheckoutReady(true)}><WalletCards size={18} /> Continue to secure donation</button>
             {error && <p className="checkout-error">{error}</p>}
@@ -1412,7 +1412,7 @@ function DonationDrawer({ need, onClose }: { need: SplotchNeed; onClose: () => v
             </EmbeddedCheckoutProvider>
           </section>
         )}
-        <footer><Shield size={14} /> Virtual tokens remain game currency. Real money is never represented as fictional currency or treated as something the player “spent” on an imaginary object. Donations support Gardens of St. Gertrude, the legal nonprofit.</footer>
+        <footer><Coins size={14} /> Verified donations support Gardens of St. Gertrude and grant Garden Tokens for Cat Gardens upgrades. Tokens are game currency, have no cash value, and do not designate the sanctuary’s final allocation.</footer>
       </aside>
     </div>
   )
