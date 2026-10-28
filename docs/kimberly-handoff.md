@@ -15,7 +15,8 @@ production D1 records, R2 documents, secrets, and hosting ownership were not cop
 The new private GitHub repository does not automatically deploy to Sites.
 
 The original live source matched `185b49a`. With Karen’s explicit approval,
-release `8edd7ca` was promoted to catgardens.org on 28 October 2026. This includes
+release `8edd7ca` was promoted to catgardens.org on 28 October 2026. Payment
+configuration follow-up `bb386e5` is now deployed there as well. This includes
 the newer game-branch work and PR #3. PRs #2 and #3 remain open; review them before
 changing the default branch or merging.
 
@@ -113,15 +114,16 @@ capability and required webhook events, without exposing payment keys.
 
 The deployed readiness check identified the game’s actual merchant as **Tinies.app**
 (account `acct_1U4Lv2I8Q37gKriO`), using matching live-mode keys with charges and
-payouts enabled. No enabled webhook was found at
-`https://catgardens.org/api/stripe-webhook`; all three required event subscriptions
-were absent for that endpoint. Payments are **not launch-verified**.
+payouts enabled. The CatGardens webhook is now active at
+`https://catgardens.org/api/stripe-webhook` with all three required events.
+Live configuration readiness reports `ready: true`. Signed delivery probes pass;
+a Stripe-hosted sandbox checkout cycle remains unverified.
 
 Karen confirmed Tinies and CatGardens are both part of Gardens of St Gertrude;
 the existing Tinies.app payment recipient is retained. The separately connected
 Stripe account is Paleo Certified Inc. / Institute of Contaminant Standards.
-Connect the Gardens/Tinies account to finish its signed webhook and sandbox
-verification.
+The Gardens account was connected. Its live webhook was completed through the
+signed-in Stripe Dashboard after the connector repeatedly requested reauthorization.
 No real donation was charged during this work.
 
 ## Release status
@@ -130,7 +132,7 @@ Care version 6 is published at the existing private Site, with the operations
 migration applied by Sites. The game changes are in
 [PR #3](https://github.com/paleofoundation/Cats/pull/3), targeting the existing game
 branch. Karen approved publishing, and deployment
-`dpl_7vfeE46Uj3XmkhPYhfDVTDWAVNwg` (commit `8edd7ca`) is now live at
+`dpl_Hs1EQ9gyz7WW2dYU1Sb32ZQKWFUH` (commit `bb386e5`) is now live at
 https://catgardens.org. The receiving endpoint is active: unauthenticated delivery
 returns 401 and authenticated invalid input reaches validation (400). No fake
 production care records were created. Retry any previously queued approved updates
@@ -159,29 +161,34 @@ and account setup.
 Apply these at the authoritative DNS provider, then refresh verification in Sites.
 DNS has not been changed. Care version 6 and the approved game release are live.
 
-## Payment setup follow-up — 28 October 2026
+## Payment setup completed — 28 October 2026
 
-The Gardens of St. Gertrude account (`acct_1U4Lv2I8Q37gKriO`) is now visible to
-the Stripe connector in live mode. Its existing enabled webhook targets
-`https://gardensofstgertrude.org/api/stripe-webhook`; it was not changed.
+- Stripe account: Gardens of St. Gertrude, `acct_1U4Lv2I8Q37gKriO`; runtime
+  business-profile name remains Tinies.app.
+- Endpoint: `we_1UVSBOI8Q37gKriOD9VVD45b`, active,
+  `https://catgardens.org/api/stripe-webhook`.
+- Subscriptions: `checkout.session.completed`,
+  `checkout.session.async_payment_succeeded`, `invoice.paid`.
+- Payload: snapshot, `2026-07-29.dahlia`; game API requests use the same version.
+- Existing gardensofstgertrude.org endpoint was not modified.
+- The new signing secret is stored as the sensitive production environment
+  variable `STRIPE_WEBHOOK_SECRET`. Temporary transfer files were deleted; it
+  is not in source control or this guide.
 
-Creating the separate CatGardens webhook returned an authentication-success/retry
-response twice, rather than an endpoint ID. The browser independently showed
-“Authorization successful.” Retrying was stopped to avoid another reconnection
-loop. No new webhook or signing secret was confirmed, and no real charge was made.
-The user reported connecting a test environment, but the connector still listed
-only the live account. Do not repeat connection requests without resolving that
-discrepancy.
-
-A payment-routing fix is prepared on PR #3 but has not been deployed. Both
-checkout paths now tag sessions, payment intents and subscriptions with
+Both checkout paths tag sessions, payment intents and subscriptions with
 `application=catgardens`. Fulfillment and return-page verification require that
 tag and matching Stripe live/test mode. Other sites sharing the account cannot
 credit the game through this handler. Older untagged sessions/subscriptions are
 not automatically credited; review their origin before migrating metadata.
 
-The production build and six local tests passed. The expanded payment test uses
-the real Stripe SDK to sign and verify local fixtures, with simulated database
-and subscription lookups. It covers invalid signatures, mode mismatches,
-other-site payments, delayed success, event retries, first-invoice deduplication,
-and renewals. This is not a Stripe-hosted sandbox payment or delivery test.
+The production build and six local tests passed. Payment tests use the real
+Stripe SDK to sign and verify fixtures, with simulated database and subscription
+lookups. They cover invalid signatures, mode mismatches, other-site payments,
+delayed success, event retries, first-invoice deduplication and renewals.
+
+The final staged build and catgardens.org both accepted a correctly signed
+diagnostic request (200), rejected an invalid signature (400), and rejected a
+test-mode event (400). The diagnostic event is explicitly ignored before database
+access, so no fake donations or game records were created. This proves signature
+and endpoint configuration, not a Stripe-originated payment-delivery cycle.
+No real charge was made; a full Stripe sandbox checkout test is still pending.
