@@ -27,7 +27,7 @@ export const catStories = {
     id: 'winona-p-gray', path: '/Winona', name: 'Winona', fullName: 'Winona P. Gray',
     portrait: '/assets/winona-p-gray-youtube.jpg', eyebrow: 'A SMALL CAT. A GROWING STORY.',
     intro: 'A real Cat Gardens resident, and the sister of Gray Power.',
-    story: 'Winona P. Gray lives at Cat Gardens in Cyprus. Her first published introduction opens a window into her life and her relationship with her brother, Gray Power. Her fuller history and personality notes will join this page as the sanctuary reviews them.',
+    story: 'Winona P. Gray lives at Cat Gardens in Cyprus. Her first published introduction opens a window into her life and her relationship with her sibling, Gray Power. Her fuller history and personality notes will join this page as the sanctuary reviews them.',
     care: 'Winona’s care history is being prepared for publication. Her daily routine includes food, fresh water, observation, and social time. New details will come from her sanctuary care team.',
     routines: ['Daily food and fresh water', 'Observation', 'Social time', 'Preserve her family story'],
     films: [{ title: 'Meet Winona P. Gray.', detail: 'Her first published introduction, and the beginning of her sibling story.', youtubeId: 'avpx0oLfPmU', poster: '/assets/winona-p-gray-youtube.jpg' }],
