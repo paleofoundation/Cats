@@ -22,7 +22,7 @@ self.addEventListener('fetch', event => {
       const cache = await caches.open(CACHE)
       return await cache.match(page) || new Response('Connect to the internet and reopen Cat Gardens to prepare this page for offline play.',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}})
     }))
-  } else if(PUBLIC_FILES.has(url.pathname) && !url.pathname.endsWith('.html')) {
+  } else if(!url.search && PUBLIC_FILES.has(url.pathname) && !url.pathname.endsWith('.html')) {
     event.respondWith(caches.open(CACHE).then(async cache=>await cache.match(url.pathname) || fetch(event.request)))
   }
 })

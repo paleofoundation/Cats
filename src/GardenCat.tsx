@@ -131,9 +131,11 @@ function Ear({ side, color }: { side: number; color: string }) {
 export function GardenCat({
   phenotype: p,
   motion,
+  collar,
 }: {
   phenotype: CompanionPhenotype;
   motion?: RefObject<CatMotion>;
+  collar?: { color: string; accent: string };
 }) {
   const head = useRef<THREE.Group>(null),
     tail = useRef<THREE.Group>(null),
@@ -193,6 +195,10 @@ export function GardenCat({
       scale={[p.scale * p.width, p.scale, p.scale * p.length]}
     >
       <group ref={body}>
+        {collar && <group name="collection-collar" position={[0,.38,.15]} rotation={[-.3,0,0]}>
+          <mesh rotation={[Math.PI/2,0,0]} scale={[1,1.05,1]}><torusGeometry args={[.143,.017,8,32]}/><meshStandardMaterial color={collar.color}/></mesh>
+          <mesh position={[0,-.048,.15]}><sphereGeometry args={[.029,16,12]}/><meshStandardMaterial color={collar.accent} metalness={.3} roughness={.35}/></mesh>
+        </group>}
         <Form
           position={[0, 0.285, -0.065]}
           scale={[0.16, 0.19, 0.295]}

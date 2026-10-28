@@ -96,6 +96,7 @@ const mathikoloniTransformationZones = [
 const CatGardenWorld = lazy(() => import('./World').then((module) => ({ default: module.CatGardenWorld })))
 const AvatarPreview = lazy(() => import('./AvatarPreview'))
 const CatStory = lazy(() => import('./CatStory'))
+const AdventureBook = lazy(() => import('./AdventureBook'))
 
 const bondMoments = [
   { title: 'Do less. Stay longer.', detail: 'Your caretaker has stopped nearby and given Splotch room to decide what happens next. Press and hold. Trust is time—not tapping.', action: 'Hold to stay nearby', result: 'You stayed after the urgent work was over.' },
@@ -508,10 +509,10 @@ function MorningBasketModal({ onClose }: { onClose: () => void }) {
         <span className="morning-sun"><Gift /></span>
         <p className="eyebrow">{firstCrate ? 'STARTER SUPPLY CRATE' : 'MORNING SUPPLY CRATE'} · DAY {Math.max(1, loginDays + (claimed ? 0 : 1))}</p>
         <h2 id="morning-title">Something useful,<br />waiting for you.</h2>
-        <p>{firstCrate ? `This one-time starter crate is enough to build a basic shelter, buy ${companion.name}’s first meal, add a bowl and blanket, and still make one caring choice yourself.` : 'Every new local day brings water, a happiness treat, and forty garden tokens. Food is purchased at the physical supply shelf so spending remains part of the game.'}</p>
+        <p>{firstCrate ? `Three free meals, water, and enough tokens to build ${companion.name}’s shelter, add a bowl and blanket, and start making the garden yours.` : 'Every new local day refills your bag to at least three meals and three waters, and brings a treat and forty garden tokens. Your cat’s basic care is covered before you decorate.'}</p>
         <div className="basket-items">
-          <span><Box /> <b>{firstCrate ? 'Starter materials' : 'Daily supplies'}</b></span>
-          <span><Droplets /> <b>1 water</b></span>
+          <span><Utensils /> <b>3 meals</b></span>
+          <span><Droplets /> <b>3 waters</b></span>
           <span><Heart /> <b>1 treat</b></span>
           <span><Coins /> <b>{tokens} tokens</b></span>
         </div>
@@ -1478,15 +1479,16 @@ export default function App() {
   const [rosterOpen, setRosterOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [designerOpen, setDesignerOpen] = useState(false)
+  const [adventuresOpen, setAdventuresOpen] = useState(() => started && new URLSearchParams(window.location.search).get('view') === 'adventures')
   const [morningOpen, setMorningOpen] = useState(false)
   const [personOpen, setPersonOpen] = useState<PersonId | null>(null)
   const [donationNeed, setDonationNeed] = useState<SplotchNeed | null>(null)
   const [comfortMap, setComfortMap] = useState(false)
   const [requestedCompanion] = useState(() => new URLSearchParams(window.location.search).get('companion'))
-  const paused = Boolean(!started || bondResult || helpOpen || installOpen || realityOpen || threadOpen || tvOpen || dreamOpen || profileOpen || memoryOpen || rosterOpen || avatarOpen || designerOpen || morningOpen || personOpen || donationNeed)
+  const paused = Boolean(!started || bondResult || helpOpen || installOpen || realityOpen || threadOpen || tvOpen || dreamOpen || profileOpen || memoryOpen || rosterOpen || avatarOpen || designerOpen || adventuresOpen || morningOpen || personOpen || donationNeed)
   const inputBlocked = useRef(true)
   inputBlocked.current = paused || bondingMode
-  const activeDialog = [helpOpen, installOpen, realityOpen, threadOpen, tvOpen, dreamOpen, profileOpen, memoryOpen, rosterOpen, avatarOpen, designerOpen, morningOpen, personOpen, donationNeed, bondResult].findIndex(Boolean)
+  const activeDialog = [helpOpen, installOpen, realityOpen, threadOpen, tvOpen, dreamOpen, profileOpen, memoryOpen, rosterOpen, avatarOpen, designerOpen, adventuresOpen, morningOpen, personOpen, donationNeed, bondResult].findIndex(Boolean)
   useEffect(() => {
     if (activeDialog < 0) return
     const previous = document.activeElement as HTMLElement | null
@@ -1698,6 +1700,7 @@ export default function App() {
       {started && <header className="game-header game-panel" inert={paused} aria-hidden={paused}>
         <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>{gardenName.toUpperCase()} · {completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${episodeFor(completedDays).day}/7`} · MEMORY {Math.min(7, bondVisits + 1)}/7</small></a>
         <nav>
+          <button aria-label="Adventures, collection and gift boxes" className="adventure-nav" onClick={() => setAdventuresOpen(true)}><Gift size={17}/><span>Adventures</span></button>
           <button aria-label="Customize my avatar" className="avatar-nav" onClick={() => setAvatarOpen(true)}><UserRound size={17}/><span>My avatar</span></button>
           <button aria-label={`See the real ${companion.name}`} className="reality-nav" onClick={() => setRealityOpen(true)}><Video size={17} /><span>Real {companion.name}</span></button>
           <button aria-label="My cat" className="memory-nav" onClick={() => setMemoryOpen(true)}><Camera size={17} /><span>My Cat</span></button>
@@ -1708,6 +1711,7 @@ export default function App() {
           <details className="game-more-menu">
             <summary aria-label="Open game menu"><CircleHelp size={17} /><span>More</span></summary>
             <div>
+              <button onClick={() => setAdventuresOpen(true)}><Gift size={16}/> Adventures & collection</button>
               {completedDays > 0 && <button onClick={() => setTvOpen(true)}><Radio size={16} /> Cat Gardens TV</button>}
               <button onClick={() => setRosterOpen(true)}><PawPrint size={16} /> Meet other cats</button>
               <button onClick={() => setAvatarOpen(true)}><UserRound size={16} /> My avatar</button>
@@ -1757,6 +1761,7 @@ export default function App() {
       {rosterOpen && <CareRoster onClose={() => setRosterOpen(false)} onSelect={(id) => { if (useGame.getState().selectCompanion(id)) setRosterOpen(false) }} />}
       {avatarOpen && <AvatarCreator onClose={() => setAvatarOpen(false)} />}
       {designerOpen && <GardenDesigner onClose={() => setDesignerOpen(false)} onDonate={openDonation} />}
+      {adventuresOpen && <Suspense fallback={<div className="story-backdrop" role="dialog" aria-modal="true" aria-label="Opening your adventure book"><p>Opening your adventure book…</p><button onClick={() => setAdventuresOpen(false)}>Back to garden</button></div>}><AdventureBook onClose={() => setAdventuresOpen(false)} onReality={() => { setAdventuresOpen(false); setRealityOpen(true) }} onDream={() => { setAdventuresOpen(false); if(useGame.getState().enterDream()) setDreamOpen(true) }}/></Suspense>}
       {profileOpen && <GardenProfile onClose={() => setProfileOpen(false)} onDonate={openDonation} />}
       {memoryOpen && <MemoryModal onClose={() => setMemoryOpen(false)} account={account} />}
       {donationNeed && (isNativeGarden() ? <NativeDonation need={donationNeed} onClose={() => setDonationNeed(null)}/> : <DonationDrawer need={donationNeed} onClose={() => setDonationNeed(null)} />)}

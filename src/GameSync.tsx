@@ -1,10 +1,12 @@
 import { useEffect } from 'react'
 import { useGardenAccount } from './account'
 import { useGame, type DonationBadge, type GameState } from './game/store'
+import { mergeAdventure } from './game/adventures'
 
 const allowedBadges: DonationBadge[] = ['bowl-bringer', 'gentle-hands', 'storykeeper', 'bright-bite', 'safe-passage', 'dream-builder', 'garden-keeper', 'broadcast-builder', 'trust-keeper', 'fluff-crew']
 
 type SavedGame = Partial<Pick<GameState,
+  'adventure' |
   'storyVersion' | 'started' | 'selectedCompanionId' | 'companionProgress' | 'avatarStyle' | 'splotchDiscovered' | 'foodFound' | 'partsFound' | 'food' | 'parts' | 'hunger' | 'trust' | 'safety' | 'carePoints' |
   'waterUnits' | 'treats' | 'gardenTokens' | 'hasFed' | 'hasBonded' | 'shelterStage' | 'bondVisits' | 'lastBondAt' |
   'lastDailyClaim' | 'lastChandaVisitDate' | 'lastDayCompleted' | 'completedDays' | 'loginDays' | 'lastFedDate' | 'lastWateredDate' | 'plantStage' | 'plantHydration' |
@@ -15,6 +17,7 @@ type SavedGame = Partial<Pick<GameState,
 
 function snapshot(state: GameState): SavedGame {
   return {
+    adventure: state.adventure,
     storyVersion: state.storyVersion,
     started: state.started,
     selectedCompanionId: state.selectedCompanionId,
@@ -72,6 +75,7 @@ function mergeProgress(local: GameState, remote: SavedGame | null): SavedGame {
   if (!remote || remote.storyVersion !== local.storyVersion) return snapshot(local)
   const sameCompanion = !remote.selectedCompanionId || remote.selectedCompanionId === local.selectedCompanionId
   return {
+    adventure: mergeAdventure(local.adventure, remote.adventure),
     storyVersion: local.storyVersion,
     started: local.started || Boolean(remote.started),
     selectedCompanionId: remote.selectedCompanionId || local.selectedCompanionId,

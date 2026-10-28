@@ -12,6 +12,8 @@ import { advanceTraffic, trafficLane, ROAD_HALF_LENGTH } from './game/traffic'
 import { GardenCat, type CatMotion } from './GardenCat'
 import { careObstacles, quietApproachDirection, CAT_NOSE_DISTANCE } from './game/characterStaging'
 import { FoodBowl } from './CareProps'
+import { CollectionObjects } from './CollectionObjects'
+import { itemById } from './game/adventures'
 import { GardenGround, GardenDetails, DistantLandscape, OliveGrove } from './GardenScenery'
 
 const START_POSITION: [number, number, number] = [0, 1, -9]
@@ -278,6 +280,7 @@ function PersonActor({ id }: { id: PersonId }) {
 }
 
 function SplotchActor() {
+  const collectionCollar = itemById(useGame(state => state.adventure.equipped.collar))
   const group = useRef<THREE.Group>(null)
   const catMotion = useRef<CatMotion>({action:'idle'})
   const approachDirection = useRef<THREE.Vector3|null>(null)
@@ -354,7 +357,7 @@ function SplotchActor() {
   const fedToday = lastFedDate === localDay()
   return (
     <group ref={group} position={[SPLOTCH_HOME.x, 0, SPLOTCH_HOME.z]} rotation={[0, Math.PI, 0]}>
-      <GardenCat phenotype={companion.phenotype} motion={catMotion} />
+      <GardenCat phenotype={companion.phenotype} motion={catMotion} collar={collectionCollar} />
       {!bondingMode && <WorldTag title={discovered ? `${companion.name} · ${sexLabel(companion.sex)}` : `${companion.name} is watching`} subtitle={fedToday ? `fed today · choosing to follow` : shelterStage >= 3 ? `${companion.pronouns.possessive} shelter is ready` : 'keep a little distance'} warm={!fedToday} />}
       {collarName && <Text font="/fonts/garden-labels.woff" position={[0, .34, .27]} fontSize={.065} color="#fff4ca" anchorX="center">{collarName}</Text>}
       {hasBonded && <Sparkles count={10} scale={[2.1, 1.7, 2.1]} size={3} speed={.25} color="#f8f2bd" position={[0, .4, 0]} />}
@@ -635,6 +638,7 @@ function Scene({ comfortMap, active }: { comfortMap: boolean; active: boolean })
       <PlantPlot />
       <CatHouse />
       <FoodBowl />
+      <CollectionObjects />
       <SplotchActor />
       <VisitingCatActor />
       {unlockedPeople.map((id) => <PersonActor key={id} id={id} />)}

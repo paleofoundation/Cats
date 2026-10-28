@@ -35,6 +35,8 @@ test('public game assets are available offline without intercepting unknown reso
  const {request}=worker()
  assert.deepEqual(await request('/assets/world.js',{mode:'cors'}),{cached:'/assets/world.js'})
  assert.equal(request('/account-private.json',{mode:'cors'}),undefined)
+ assert.equal(request('/assets/world.js?import',{mode:'cors'}),undefined)
+ assert.equal(request('/assets/world.js?v=new-build',{mode:'cors'}),undefined)
 })
 test('native save backup receives real progress changes and resets, not movement frames',()=>{
  const backups=[];let saved=''

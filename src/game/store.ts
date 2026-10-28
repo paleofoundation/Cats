@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware'
 import { getCompanionProfile } from './companions'
 import { progressStorage } from './presentation'
 import { defaultAvatarStyle, normalizeAvatarStyle, type AvatarStyle } from './avatars'
+import { initialAdventure, normalizeAdventure, itemById, openCollectionBox, purchaseCollectionItem, claimAdventureChapter, newPuzzle, puzzleMove, type AdventureProgress, type ItemKind, type PuzzleKind, type PuzzleRound } from './adventures'
 export { defaultAvatarStyle } from './avatars'
 export type { AvatarStyle, AvatarBodyFrame, AvatarHairStyle } from './avatars'
 
@@ -43,6 +44,16 @@ export const shelterBuildCatalog = [
 ] as const
 
 export type GameState = {
+  adventure: AdventureProgress
+  puzzle: PuzzleRound | null
+  openGiftBox: () => boolean
+  buyCollectionItem: (id: string) => boolean
+  equipCollectionItem: (id: string) => void
+  removeCollectionItem: (kind: ItemKind) => void
+  claimChapter: (id: string) => boolean
+  startPuzzle: (kind: PuzzleKind, level: number) => void
+  movePuzzle: (index: number) => void
+  clearPuzzleCards: () => void
   storyVersion: number
   started: boolean
   choosingComplete: boolean
@@ -185,6 +196,7 @@ const captureCompanionProgress = (state: GameState): CompanionProgress => ({
 })
 
 const initialPersistentState = {
+  adventure: initialAdventure(),
   storyVersion: 3,
   started: false,
   choosingComplete: false,
@@ -250,6 +262,52 @@ export const useGame = create<GameState>()(
   persist(
     (set, get) => ({
       ...initialPersistentState,
+      puzzle: null,
+      openGiftBox: () => {
+        const state = get()
+        const result = openCollectionBox(state.adventure, state.gardenTokens)
+        if (!result) return false
+        set({ adventure: result.progress, gardenTokens: result.balance })
+        return true
+      },
+      buyCollectionItem: (id) => {
+        const state = get()
+        const result = purchaseCollectionItem(state.adventure, state.gardenTokens, id)
+        if (!result) return false
+        set({ adventure: result.progress, gardenTokens: result.balance })
+        return true
+      },
+      equipCollectionItem: (id) => {
+        const state = get(), item = itemById(id)
+        if (!item || !state.adventure.owned.includes(id)) return
+        set({ adventure: { ...state.adventure, equipped: { ...state.adventure.equipped, [item.kind]: id }, equippedAt: Date.now() } })
+      },
+      removeCollectionItem: (kind) => {
+        const state = get(), equipped = { ...state.adventure.equipped }
+        delete equipped[kind]
+        set({ adventure: { ...state.adventure, equipped, equippedAt: Date.now() } })
+      },
+      claimChapter: (id) => {
+        const state = get(), result = claimAdventureChapter(state, id)
+        if (!result) return false
+        set({ adventure: result.progress, gardenTokens: state.gardenTokens + result.reward })
+        return true
+      },
+      startPuzzle: (kind, level) => set({ puzzle: newPuzzle(kind, level) }),
+      movePuzzle: (index) => {
+        const state = get()
+        if (!state.puzzle) return
+        const next = puzzleMove(state.puzzle, index)
+        if (next === state.puzzle) return
+        if (next.complete) {
+          const field = next.kind === 'memory' ? 'memoryWins' : 'trailWins'
+          set({ puzzle: next, gardenTokens: state.gardenTokens + next.reward, adventure: { ...state.adventure, [field]: state.adventure[field] + 1 } })
+        } else set({ puzzle: next })
+      },
+      clearPuzzleCards: () => {
+        const puzzle = get().puzzle
+        if (puzzle?.kind === 'memory' && puzzle.flipped.length === 2) set({ puzzle: { ...puzzle, flipped: [] } })
+      },
       nearby: null,
       catAnimation: 'idle',
       catPosition: [0, 0, 4.4],
@@ -333,15 +391,16 @@ export const useGame = create<GameState>()(
         set({
           lastDailyClaim: localDay(),
           loginDays: state.loginDays + 1,
-          waterUnits: state.waterUnits + 1,
+          food: Math.max(3, state.food),
+          waterUnits: Math.max(3, state.waterUnits),
           treats: state.treats + 1,
           gardenTokens: state.gardenTokens + tokenGrant,
           carePoints: state.carePoints + 15,
           playerActionUntil: Date.now() + 1200,
           playerAction: 'work',
           notification: firstCrate
-            ? 'Starter crate opened · building supplies, water, a treat, and 120 garden tokens'
-            : `Morning crate opened · water, a treat, and ${tokenGrant} garden tokens`,
+            ? 'Starter crate opened · three meals, water, a treat, and 120 garden tokens'
+            : `Morning crate opened · meals and water refilled, a treat, and ${tokenGrant} garden tokens`,
         })
         return true
       },
@@ -637,6 +696,8 @@ export const useGame = create<GameState>()(
       resetRover: () => set((state) => ({ resetToken: state.resetToken + 1, notification: 'Caretaker returned to the garden gate.' })),
       resetGame: () => set((state) => ({
         ...initialPersistentState,
+        adventure: initialAdventure(),
+        puzzle: null,
         selectedCompanionId: state.selectedCompanionId,
         avatarStyle: state.avatarStyle,
         donationBadges: state.donationBadges,
@@ -657,10 +718,10 @@ export const useGame = create<GameState>()(
     {
       name: 'cat-gardens-splotch-relationship-v4',
       storage: progressStorage(() => localStorage),
-      version: 8,
+      version: 9,
       merge: (persisted, current) => {
         const saved = persisted as Partial<GameState> | undefined
-        return { ...current, ...saved, avatarStyle: normalizeAvatarStyle(saved?.avatarStyle) }
+        return { ...current, ...saved, adventure: normalizeAdventure(saved?.adventure), avatarStyle: normalizeAvatarStyle(saved?.avatarStyle) }
       },
       migrate: (persistedState, version) => {
         const state = persistedState as Partial<GameState>
@@ -700,6 +761,7 @@ export const useGame = create<GameState>()(
         } as GameState
       },
       partialize: (state) => ({
+        adventure: state.adventure,
         storyVersion: state.storyVersion,
         started: state.started,
         choosingComplete: state.choosingComplete,
