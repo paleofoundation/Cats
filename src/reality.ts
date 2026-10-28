@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { GardenAccount } from './account'
 
 export type RealityNeed = {
@@ -128,26 +128,35 @@ export function useRealityFeed(catId = 'splotch') {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const activeRequest = useRef<AbortController | null>(null)
   const refresh = useCallback(async () => {
+    activeRequest.current?.abort()
+    const controller = new AbortController()
+    activeRequest.current = controller
+    setLoading(true)
     try {
-      const response = await fetch(`/api/reality-thread?cat=${encodeURIComponent(catId)}`, { headers: { Accept: 'application/json' } })
+      const response = await fetch(`/api/reality-thread?cat=${encodeURIComponent(catId)}`, { signal:controller.signal, headers: { Accept: 'application/json' } })
       const payload = await response.json()
       if (!response.ok) throw new Error(payload.error || 'Unable to load the sanctuary record.')
+      if (controller.signal.aborted) return
       setFeed(payload)
       setError(null)
     } catch (reason) {
+      if (controller.signal.aborted) return
       setError(reason instanceof Error ? reason.message : 'Unable to load the sanctuary record.')
     } finally {
-      setLoading(false)
+      if (!controller.signal.aborted) setLoading(false)
     }
   }, [catId])
 
   useEffect(() => {
+    setFeed(null)
+    setError(null)
     refresh()
     const timer = window.setInterval(() => {
       if (document.visibilityState === 'visible') refresh()
     }, 60_000)
-    return () => window.clearInterval(timer)
+    return () => { window.clearInterval(timer); activeRequest.current?.abort() }
   }, [refresh])
 
   return { feed, error, loading, refresh }

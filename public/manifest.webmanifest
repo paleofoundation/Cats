@@ -1,14 +1,14 @@
 {
   "id": "/",
-  "name": "Cat Gardens \u2014 Sanctuary Game",
+  "name": "Cat Gardens",
   "short_name": "Cat Gardens",
-  "description": "A living garden connected to real sanctuary cats.",
+  "description": "Make a garden, care for a cat, and meet the real sanctuary cats in Cyprus.",
   "start_url": "/?source=home-screen",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#746b82",
-  "theme_color": "#746b82",
+  "background_color": "#f6f3e9",
+  "theme_color": "#2c493a",
   "icons": [
     {
       "src": "/assets/apple-touch-icon.png",
@@ -25,9 +25,18 @@
   ],
   "shortcuts": [
     {
-      "name": "Staff care",
-      "url": "/staff",
-      "description": "Open the private sanctuary care interface"
+      "name": "Meet Mabel",
+      "url": "/Mabel",
+      "description": "Mabel\u2019s story, films and care updates"
+    },
+    {
+      "name": "Meet Splotch",
+      "url": "/Splotch",
+      "description": "Splotch\u2019s real-life story"
     }
+  ],
+  "categories": [
+    "games",
+    "lifestyle"
   ]
 }

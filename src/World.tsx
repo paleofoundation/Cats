@@ -63,8 +63,8 @@ function Landscape() {
         <mesh castShadow position={[0, 1.45, 0]}><boxGeometry args={[5.8, 2.3, .28]} /><meshStandardMaterial color="#31423b" roughness={.75} /></mesh>
         <mesh castShadow position={[-2.4, .3, 0]}><boxGeometry args={[.22, 2.8, .22]} /><meshStandardMaterial color="#efe1bf" /></mesh>
         <mesh castShadow position={[2.4, .3, 0]}><boxGeometry args={[.22, 2.8, .22]} /><meshStandardMaterial color="#efe1bf" /></mesh>
-        <Text position={[0, 1.68, .16]} fontSize={.53} color="#efffbb" anchorX="center">CAT GARDENS</Text>
-        <Text position={[0, 1.03, .16]} fontSize={.18} color="#fff9e9" anchorX="center" letterSpacing={.13}>A LIVING GARDEN · CYPRUS</Text>
+        <Text font="/fonts/garden-labels.woff" position={[0, 1.68, .16]} fontSize={.53} color="#efffbb" anchorX="center">CAT GARDENS</Text>
+        <Text font="/fonts/garden-labels.woff" position={[0, 1.03, .16]} fontSize={.18} color="#fff9e9" anchorX="center" letterSpacing={.13}>A LIVING GARDEN · CYPRUS</Text>
       </group>
     </group>
   )
@@ -383,7 +383,7 @@ function SplotchActor() {
       <primitive object={clone} scale={[companion.phenotype.scale * companion.phenotype.width, companion.phenotype.scale, companion.phenotype.scale * companion.phenotype.length]} />
       <CatIdentityDetails />
       {!bondingMode && <WorldTag title={discovered ? `${companion.name} · ${sexLabel(companion.sex)}` : `${companion.name} is watching`} subtitle={fedToday ? `fed today · choosing to follow` : shelterStage >= 3 ? `${companion.pronouns.possessive} shelter is ready` : 'keep a little distance'} warm={!fedToday} />}
-      {collarName && <Text position={[0, .77, .28]} fontSize={.12} color="#fff4ca" anchorX="center">{collarName}</Text>}
+      {collarName && <Text font="/fonts/garden-labels.woff" position={[0, .77, .28]} fontSize={.12} color="#fff4ca" anchorX="center">{collarName}</Text>}
       {hasBonded && <Sparkles count={10} scale={[2.1, 1.7, 2.1]} size={3} speed={.25} color="#f8f2bd" position={[0, .8, 0]} />}
       {bondingMode && <BondingResponse />}
     </group>
@@ -456,8 +456,8 @@ function CatIdentityDetails() {
         {[0, 1, 2].map((index) => <mesh key={index} position={[0, .75, -.05 - index * .18]} rotation={[Math.PI / 2, 0, 0]} scale={[.58, .08, .35]}><torusGeometry args={[.46, .055, 7, 24]} /><meshStandardMaterial color={phenotype.secondaryColor} roughness={.94} /></mesh>)}
       </group>}
       <mesh position={[0, .78, .37]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[.22, .025, 8, 32]} /><meshStandardMaterial color={companion.sex === 'female' ? '#efe4b8' : companion.sex === 'male' ? '#86a69c' : '#bbb7ae'} metalness={.3} roughness={.4} /></mesh>
-      <Text position={[0, .69, .57]} fontSize={.15} color="#fffdf0" anchorX="center" outlineWidth={.008} outlineColor="#302f2b">{companion.sex === 'female' ? '♀' : companion.sex === 'male' ? '♂' : '•'}</Text>
-      {phenotype.blind && <Text position={[0, 1.62, 0]} fontSize={.1} color="#f4f0d6" anchorX="center" outlineWidth={.006} outlineColor="#31302d">BLIND · REAL TRAIT</Text>}
+      <Text font="/fonts/garden-labels.woff" position={[0, .69, .57]} fontSize={.15} color="#fffdf0" anchorX="center" outlineWidth={.008} outlineColor="#302f2b">{companion.sex === 'female' ? 'F' : companion.sex === 'male' ? 'M' : '·'}</Text>
+      {phenotype.blind && <Text font="/fonts/garden-labels.woff" position={[0, 1.62, 0]} fontSize={.1} color="#f4f0d6" anchorX="center" outlineWidth={.006} outlineColor="#31302d">BLIND · REAL TRAIT</Text>}
     </group>
   )
 }
@@ -597,7 +597,7 @@ function CatHouse() {
 
 function GardenPortals() {
   const realityVisits = useGame((state) => state.realityVisits)
-  const realityReady = useGame((state) => state.shelterStage >= 3)
+  const realityReady = true
   const dreamReady = useGame((state) => state.shelterStage >= 3 && state.hasFed && state.blanketLevel > 0 && state.waterBowlLevel > 0)
   const companion = getCompanionProfile(useGame((state) => state.selectedCompanionId))
   return (
@@ -605,9 +605,9 @@ function GardenPortals() {
       <group position={[REALITY_PORTAL_POSITION.x, 0, REALITY_PORTAL_POSITION.z]} rotation={[0, -.5, 0]}>
         <RoundedBox args={[3.1, 2.55, .32]} position={[0, 1.4, 0]} radius={.18} smoothness={4} castShadow><meshStandardMaterial color="#f3ecd9" roughness={.65} /></RoundedBox>
         <mesh position={[0, 1.45, -.19]}><planeGeometry args={[2.55, 1.95]} /><meshStandardMaterial color={realityReady ? '#263c36' : '#535856'} emissive={realityReady ? '#71b7a5' : '#252928'} emissiveIntensity={realityReady ? .25 : .05} /></mesh>
-        <Text position={[0, 1.65, -.22]} rotation={[0, Math.PI, 0]} fontSize={.25} color={realityReady ? '#f5ffdc' : '#c8ccc4'} anchorX="center">THE REAL {companion.name.toUpperCase()}</Text>
-        <Text position={[0, 1.2, -.22]} rotation={[0, Math.PI, 0]} fontSize={.14} color={realityReady ? '#b5d9ce' : '#9b9f9a'} anchorX="center">{realityReady ? 'PHOTOS · UPDATES · NEEDS' : 'BUILD TRUST THROUGH ACTION'}</Text>
-        <WorldTag title={realityReady ? `See ${companion.name} in real life` : 'Real-life record'} subtitle={realityReady ? realityVisits ? 'open again' : 'unlocked by the shelter you built · +40' : 'build the first protected place'} warm={realityReady && !realityVisits} />
+        <Text font="/fonts/garden-labels.woff" position={[0, 1.65, -.22]} rotation={[0, Math.PI, 0]} fontSize={.25} color={realityReady ? '#f5ffdc' : '#c8ccc4'} anchorX="center">THE REAL {companion.name.toUpperCase()}</Text>
+        <Text font="/fonts/garden-labels.woff" position={[0, 1.2, -.22]} rotation={[0, Math.PI, 0]} fontSize={.14} color={realityReady ? '#b5d9ce' : '#9b9f9a'} anchorX="center">{realityReady ? 'PHOTOS · UPDATES · NEEDS' : 'BUILD TRUST THROUGH ACTION'}</Text>
+        <WorldTag title={realityReady ? `See ${companion.name} in real life` : 'Real-life record'} subtitle={realityReady ? realityVisits ? 'open again' : 'story, films and care updates · +40' : 'build the first protected place'} warm={realityReady && !realityVisits} />
       </group>
       <group position={[DREAM_PORTAL_POSITION.x, 0, DREAM_PORTAL_POSITION.z]} rotation={[0, .5, 0]}>
         <mesh position={[0, 1.5, 0]}><torusGeometry args={[1.2, .16, 18, 72]} /><meshStandardMaterial color={dreamReady ? '#d4c4ff' : '#7c7889'} emissive={dreamReady ? '#8068dc' : '#393643'} emissiveIntensity={dreamReady ? 2 : .2} roughness={.3} /></mesh>
@@ -665,10 +665,10 @@ function SupplyShelf() {
       {[-.65, 0, .65].map((x, index) => (
         <group key={x} position={[x, .72 + (index % 2) * .63, -.52]}>
           <mesh castShadow><cylinderGeometry args={[.25, .3, .55, 8]} /><meshStandardMaterial color={index % 2 ? '#b96a45' : '#d6a65f'} roughness={.95} /></mesh>
-          <Text position={[0, 0, -.27]} rotation={[0, Math.PI, 0]} fontSize={.09} color="#fff4cf" anchorX="center">FOOD</Text>
+          <Text font="/fonts/garden-labels.woff" position={[0, 0, -.27]} rotation={[0, Math.PI, 0]} fontSize={.09} color="#fff4cf" anchorX="center">FOOD</Text>
         </group>
       ))}
-      <Text position={[0, 1.98, 0]} rotation={[0, Math.PI, 0]} fontSize={.23} color="#f4ffbd" anchorX="center">CAT GARDENS SUPPLY</Text>
+      <Text font="/fonts/garden-labels.woff" position={[0, 1.98, 0]} rotation={[0, Math.PI, 0]} fontSize={.23} color="#f4ffbd" anchorX="center">CAT GARDENS SUPPLY</Text>
       <WorldTag title={`${companion.name}’s food shelf`} subtitle={food >= 3 ? 'food bag full' : tokens >= 15 ? 'one meal · 15 tokens' : 'earn tokens to pack a meal'} warm={food < 1 && tokens >= 15} />
     </group>
   )
@@ -749,8 +749,10 @@ export function CatGardenWorld({ comfortMap = false, paused = false }: { comfort
   const [contextLost, setContextLost] = useState(false)
   useEffect(() => {
     const update = () => setVisible(!document.hidden)
+    const nativeState = (event: Event) => setVisible(Boolean((event as CustomEvent<boolean>).detail) && !document.hidden)
     document.addEventListener('visibilitychange', update)
-    return () => document.removeEventListener('visibilitychange', update)
+    window.addEventListener('garden-app-active', nativeState)
+    return () => { document.removeEventListener('visibilitychange', update); window.removeEventListener('garden-app-active', nativeState) }
   }, [])
   const active = visible && !paused
   return (

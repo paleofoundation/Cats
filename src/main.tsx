@@ -4,15 +4,16 @@ import App from './App'
 import { GardenAccountProvider } from './account'
 import './styles.css'
 import './graphics.css'
+import { registerGardenWorker } from './pwa'
+import { initializeNative } from './native'
+import { useGame } from './game/store'
 
-createRoot(document.getElementById('root')!).render(
+initializeNative().then(() => useGame.persist.rehydrate()).finally(() => createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <GardenAccountProvider>
       <App />
     </GardenAccountProvider>
   </StrictMode>,
-)
+))
 
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => { navigator.serviceWorker.register('/service-worker.js').catch(() => undefined) })
-}
+registerGardenWorker()

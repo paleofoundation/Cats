@@ -49,7 +49,10 @@ import { badgeLabels, cats, dreamGardenConcept, dreamSpaces, splotchNeeds, type 
 import { tvChannels, tvFundingNeeds } from './catGardensTv'
 import { useGardenAccount, type GardenAccount } from './account'
 import { GameSync } from './GameSync'
-import { RealityThread } from './RealityThread'
+import { storyFor } from './catStories'
+import { InstallPanel } from './InstallPanel'
+import { gardenHaptic, isNativeGarden } from './native'
+import { NativeDonation } from './NativeDonation'
 import { playPurr } from './game/audio'
 import { acceptsGameInput } from './game/presentation'
 import { avatarPresets, normalizeAvatarStyle } from './game/avatars'
@@ -92,6 +95,7 @@ const mathikoloniTransformationZones = [
 
 const CatGardenWorld = lazy(() => import('./World').then((module) => ({ default: module.CatGardenWorld })))
 const AvatarPreview = lazy(() => import('./AvatarPreview'))
+const CatStory = lazy(() => import('./CatStory'))
 
 const bondMoments = [
   { title: 'Do less. Stay longer.', detail: 'Your caretaker has stopped nearby and given Splotch room to decide what happens next. Press and hold. Trust is time—not tapping.', action: 'Hold to stay nearby', result: 'You stayed after the urgent work was over.' },
@@ -851,74 +855,35 @@ function BondResultModal({ result, onClose }: { result: { advanced: boolean; vis
   )
 }
 
-function RealityPortal({ onClose, onDonate }: { onClose: () => void; onDonate: (need: SplotchNeed) => void }) {
-  const visitReality = useGame((state) => state.visitReality)
-  const companion = getCompanionProfile(useGame((state) => state.selectedCompanionId))
-  const cat = cats.find((candidate) => candidate.id === companion.id) || cats[0]
-  const isSplotch = companion.id === 'splotch'
-  const profilePath = companion.id === 'mabel' ? '/Mabel' : companion.id === 'winona-p-gray' ? '/Winona' : '/Splotch'
-  const portalNeeds = isSplotch ? splotchNeeds : [{ ...splotchNeeds.find((need) => need.id === 'food')!, catId: companion.id, title: `Food and daily care for ${companion.name}`, detail: `Support ${companion.name} and the shared sanctuary food program. Allocation appears in the verified fulfillment record rather than as a fictional game purchase.` }]
+function RealityPortal({ onClose, onDonate, updates = false, realityFeed, notifications, onMarkRead }: {
+  onClose: () => void; onDonate: (need: SplotchNeed) => void; updates?: boolean;
+  realityFeed: ReturnType<typeof useRealityFeed>; notifications: ReturnType<typeof useGardenNotifications>['notifications']; onMarkRead: (id: number) => void;
+}) {
+  const companionId = useGame(state => state.selectedCompanionId)
+  const cat = storyFor(companionId)
+  const visitReality = useGame(state => state.visitReality)
   useEffect(() => { visitReality() }, [visitReality])
-  return (
-    <div className="portal-backdrop reality-backdrop" role="presentation">
-      <article className="reality-portal" role="dialog" aria-modal="true" aria-labelledby="reality-title">
-        <button className="close-button" onClick={onClose} aria-label={`Close ${companion.name}’s Reality Portal`}><X size={19} /></button>
-        <header className="portal-header">
-          <div>
-            <p className="eyebrow">REALITY PORTAL · {companion.name.toUpperCase()} · CYPRUS</p>
-            <h2 id="reality-title">What is true today.</h2>
-            <p>This portal only publishes sanctuary-reviewed information. Missing information stays visibly missing—it is never replaced by game fiction.</p>
-          </div>
-          <div className="reality-signal"><i /><span>SANCTUARY RECORD</span><strong>{isSplotch ? 'Splotch’s first field video is live' : `${companion.name}’s real profile is connected`}</strong><small>Published from the real Cat Gardens record</small></div>
-        </header>
+  useEffect(() => {
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    window.addEventListener('keydown', close)
+    return () => window.removeEventListener('keydown', close)
+  }, [onClose])
+  return <div className="portal-backdrop reality-backdrop" role="presentation">
+    <article className="cat-story-dialog" role="dialog" aria-modal="true" aria-label={`${cat.name}’s story and reality portal`}>
+      <div className="cat-dialog-bar"><a href={cat.path}>Open {cat.name}’s full page <ArrowRight size={15}/></a><button onClick={onClose} aria-label={`Close ${cat.name}’s story`}><X size={18}/> Garden</button></div>
+      <Suspense fallback={<p style={{padding:30}}>Opening {cat.name}’s story…</p>}>
+        <CatStory catId={companionId} {...realityFeed} onRefresh={realityFeed.refresh} onPlay={onClose}
+          onDonate={(need) => onDonate(need || {...splotchNeeds.find(need=>need.id==='food')!, catId:companionId, title:`Food and daily care for ${cat.name}`, detail:`Support ${cat.name} and shared sanctuary care. Reviewed costs and completed care updates are published in the real-life record.`})}
+          notifications={notifications} onMarkRead={onMarkRead}/>
+        {updates && <ScrollToStoryUpdates/>}
+      </Suspense>
+    </article>
+  </div>
+}
 
-        <section className="reality-grid">
-          <div className="real-media-slot">
-            {isSplotch ? <video className="real-splotch-video" controls playsInline preload="metadata" poster="/videos/splotch-petting.jpg">
-              <source src="/videos/splotch-petting.mp4" type="video/mp4" />
-              Your browser does not support the Splotch video.
-            </video> : cat.image ? <img className="real-splotch-video" src={cat.image} alt={`The real ${companion.name} at Cat Gardens`} /> : <div className="reality-photo-pending"><PawPrint size={42} /><span>Verified visual reference pending</span></div>}
-            <div>
-              <b>REAL {companion.name.toUpperCase()} · {sexLabel(companion.sex).toUpperCase()} · CYPRUS</b>
-              <h3>This is the cat in your garden.</h3>
-              <p>{isSplotch ? 'Splotch is a big orange adult male who actively seeks affection. This real moment shows him approaching Karen for pets while his Cat Gardens friends gather nearby.' : cat.careSummary}</p>
-              <span className="truth-chip"><Shield size={13} /> Real-life updates remain separate from game state</span>
-              <a className="reality-watch-link" href={profilePath}>Open {companion.name}’s complete story <ArrowRight size={13} /></a>
-            </div>
-          </div>
-          <div className="known-today">
-            <p className="eyebrow">KNOWN TODAY</p>
-            <ul>
-              <li><Check size={15} /><span><b>{companion.visualNote}</b>The playable body uses recorded coat, size, sex, and eye traits.</span></li>
-              {cat.careTasks.slice(0, 3).map((task) => <li key={task}><Check size={15} /><span><b>{task}</b>Part of the sanctuary-reviewed care profile.</span></li>)}
-            </ul>
-          </div>
-        </section>
-
-        <section className="ledger-section">
-          <div className="section-title"><div><p className="eyebrow">{companion.name.toUpperCase()}’S CARE LEDGER</p><h3>Every need has an evidence trail.</h3></div><span><LockKeyhole size={14} /> QuickBooks connection pending</span></div>
-          <div className="need-grid">
-            {portalNeeds.map((need) => (
-              <article className={`need-card need-${need.category}`} key={need.id}>
-                <span>{need.eyebrow}</span>
-                <h4>{need.title}</h4>
-                <p>{need.detail}</p>
-                <div><small>{need.status}</small>{need.category !== 'completed' && <button onClick={() => onDonate(need)}>Support from ${need.suggestedAmount}</button>}</div>
-              </article>
-            ))}
-          </div>
-          <div className="fulfillment-register">
-            <div><p className="eyebrow">YOU FUNDED IT · WE DID IT</p><h3>Real-world fulfillment register</h3><span>A supporter sees the whole path: funded → assigned → purchased → delivered → completed → proof reviewed → supporter notified.</span></div>
-            <ol>
-              <li className="active"><b>01</b><span><strong>Safety tracker</strong>Device selection pending Markos and sanctuary review.</span><small>NOT YET FUNDED</small></li>
-              <li><b>02</b><span><strong>One need, one cap</strong>After the approved tracker is funded, the need closes.</span><small>NO DUPLICATE PROMISE</small></li>
-              <li><b>03</b><span><strong>Choice before rerouting</strong>Any alternate use requires clear supporter consent.</span><small>TRANSPARENT ROUTING</small></li>
-            </ol>
-          </div>
-        </section>
-      </article>
-    </div>
-  )
+function ScrollToStoryUpdates() {
+  useEffect(() => { document.getElementById('updates')?.scrollIntoView() }, [])
+  return null
 }
 
 type FundingSummary = Record<string, { total: number; gifts: number; lastFundedAt: string | null }>
@@ -1441,11 +1406,6 @@ function DonationDrawer({ need, onClose }: { need: SplotchNeed; onClose: () => v
   )
 }
 
-function InstallPanel({ onClose }: { onClose: () => void }) {
-  const closeRef = useRef<HTMLButtonElement>(null)
-  useEffect(() => { closeRef.current?.focus(); const onKey = (e: KeyboardEvent) => { if(e.key === 'Escape') onClose() }; window.addEventListener('keydown',onKey); return () => window.removeEventListener('keydown',onKey) }, [onClose])
-  return <div className="help-backdrop install-backdrop" role="presentation"><aside className="help-panel install-panel" role="dialog" aria-modal="true" aria-labelledby="install-title"><button ref={closeRef} className="close-button" onClick={onClose} aria-label="Close Home Screen instructions"><X size={19}/></button><p className="eyebrow">YOUR GARDEN · ON YOUR IPHONE</p><h2 id="install-title">Keep the garden close.</h2><ol><li>Open <strong>catgardens.org</strong> in Safari.</li><li>Tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</li><li>Keep <strong>Open as Web App</strong> on if shown, then tap <strong>Add</strong>.</li></ol><p>The game opens in its own app window. An internet connection is needed for the game, current updates and payments.</p><a href="/staff" className="secondary-button full">I work here · open staff care <ArrowRight size={16}/></a><p>Staff care has a separate private sign-in and its own Home Screen icon.</p></aside></div>
-}
 
 function HelpPanel({ onClose }: { onClose: () => void }) {
   const resetRover = useGame((state) => state.resetRover)
@@ -1566,9 +1526,9 @@ export default function App() {
     }
   }, [requestedCompanion, setNotification])
   useEffect(() => {
-    if (!realityFeed.feed) return
+    if (!realityFeed.feed || realityFeed.feed.catId !== selectedCompanionId) return
     useGame.getState().setVerifiedRealityArtifacts(realityFeed.feed.worldArtifacts)
-  }, [realityFeed.feed])
+  }, [realityFeed.feed, selectedCompanionId])
   useEffect(() => {
     if (!account.loaded || !account.signedIn) return
     const code = new URLSearchParams(window.location.search).get('invite')?.toUpperCase() || ''
@@ -1588,6 +1548,7 @@ export default function App() {
     }).catch(() => undefined)
   }, [account.getToken, account.loaded, account.signedIn])
   const handleAction = useCallback(() => {
+    void gardenHaptic()
     const game = useGame.getState()
     if (game.nearby === 'basket') {
       game.claimDailyBasket()
@@ -1627,8 +1588,7 @@ export default function App() {
       setPersonOpen(game.nearby)
     }
     if (game.nearby === 'reality') {
-      if (game.shelterStage < 3) game.setNotification(`Build ${getCompanionProfile(game.selectedCompanionId).name}’s first protected place before opening the real-life record.`)
-      else setRealityOpen(true)
+      setRealityOpen(true)
     }
     if (game.nearby === 'dream') {
       if (game.lastDayCompleted === localDay()) setDreamOpen(true)
@@ -1739,7 +1699,7 @@ export default function App() {
         <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>{gardenName.toUpperCase()} · {completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${episodeFor(completedDays).day}/7`} · MEMORY {Math.min(7, bondVisits + 1)}/7</small></a>
         <nav>
           <button aria-label="Customize my avatar" className="avatar-nav" onClick={() => setAvatarOpen(true)}><UserRound size={17}/><span>My avatar</span></button>
-          {shelterStage >= 3 && <button aria-label={`See the real ${companion.name}`} className="reality-nav" onClick={() => setRealityOpen(true)}><Video size={17} /><span>Real {companion.name}</span></button>}
+          <button aria-label={`See the real ${companion.name}`} className="reality-nav" onClick={() => setRealityOpen(true)}><Video size={17} /><span>Real {companion.name}</span></button>
           <button aria-label="My cat" className="memory-nav" onClick={() => setMemoryOpen(true)}><Camera size={17} /><span>My Cat</span></button>
           <button aria-label="Explore the garden" className={comfortMap ? 'comfort-nav active' : 'comfort-nav'} onClick={() => setComfortMap((current) => !current)}><Eye size={17} /><span>Explore</span></button>
           {shelterStage >= 3 && <button aria-label="Build and furnish your garden" className="design-nav" onClick={() => setDesignerOpen(true)}><Leaf size={17} /><span>Build</span></button>}
@@ -1792,15 +1752,14 @@ export default function App() {
       {installOpen && <InstallPanel onClose={() => setInstallOpen(false)} />}
       {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
       {tvOpen && <CatGardensTv onClose={() => setTvOpen(false)} onDonate={openDonation} />}
-      {realityOpen && <RealityPortal onClose={() => setRealityOpen(false)} onDonate={openDonation} />}
-      {threadOpen && <RealityThread feed={realityFeed.feed} loading={realityFeed.loading} error={realityFeed.error} notifications={gardenNotifications.notifications} onMarkRead={gardenNotifications.markRead} onClose={() => setThreadOpen(false)} onDonate={openDonation} donationNeeds={splotchNeeds} companionName={companion.name} />}
+      {(realityOpen || threadOpen) && <RealityPortal onClose={() => {setRealityOpen(false);setThreadOpen(false)}} onDonate={openDonation} updates={threadOpen} realityFeed={realityFeed} notifications={gardenNotifications.notifications} onMarkRead={gardenNotifications.markRead} />}
       {dreamOpen && <DreamGarden onClose={() => setDreamOpen(false)} onDonate={openDonation} />}
       {rosterOpen && <CareRoster onClose={() => setRosterOpen(false)} onSelect={(id) => { if (useGame.getState().selectCompanion(id)) setRosterOpen(false) }} />}
       {avatarOpen && <AvatarCreator onClose={() => setAvatarOpen(false)} />}
       {designerOpen && <GardenDesigner onClose={() => setDesignerOpen(false)} onDonate={openDonation} />}
       {profileOpen && <GardenProfile onClose={() => setProfileOpen(false)} onDonate={openDonation} />}
       {memoryOpen && <MemoryModal onClose={() => setMemoryOpen(false)} account={account} />}
-      {donationNeed && <DonationDrawer need={donationNeed} onClose={() => setDonationNeed(null)} />}
+      {donationNeed && (isNativeGarden() ? <NativeDonation need={donationNeed} onClose={() => setDonationNeed(null)}/> : <DonationDrawer need={donationNeed} onClose={() => setDonationNeed(null)} />)}
     </main>
   )
 }

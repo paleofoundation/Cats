@@ -1,5 +1,8 @@
 import type { PersistStorage } from 'zustand/middleware'
 
+let backupProgress: ((name: string, value: string | null) => void) | null = null
+export function setProgressBackup(backup: (name: string, value: string | null) => void) { backupProgress = backup }
+
 /** Transient movement must never cause synchronous disk writes on every frame. */
 export function progressStorage<S extends object>(getStorage: () => Storage): PersistStorage<S> {
   let previous: S | undefined
@@ -16,7 +19,9 @@ export function progressStorage<S extends object>(getStorage: () => Storage): Pe
       const keys = Object.keys(next) as Array<keyof S>
       if (previous && previousVersion === value.version && keys.length === Object.keys(previous).length && keys.every((key) => Object.is(next[key], previous![key]))) return
       try {
-        getStorage().setItem(name, JSON.stringify(value))
+        const serialized = JSON.stringify(value)
+        getStorage().setItem(name, serialized)
+        backupProgress?.(name, serialized)
         previous = next
         previousVersion = value.version
       } catch {
@@ -25,7 +30,7 @@ export function progressStorage<S extends object>(getStorage: () => Storage): Pe
     },
     removeItem(name) {
       previous = undefined
-      try { getStorage().removeItem(name) } catch { /* Storage can be disabled. */ }
+      try { getStorage().removeItem(name); backupProgress?.(name, null) } catch { /* Storage can be disabled. */ }
     },
   }
 }
