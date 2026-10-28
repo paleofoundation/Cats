@@ -1418,6 +1418,12 @@ function DonationDrawer({ need, onClose }: { need: SplotchNeed; onClose: () => v
   )
 }
 
+function InstallPanel({ onClose }: { onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => { closeRef.current?.focus(); const onKey = (e: KeyboardEvent) => { if(e.key === 'Escape') onClose() }; window.addEventListener('keydown',onKey); return () => window.removeEventListener('keydown',onKey) }, [onClose])
+  return <div className="help-backdrop" role="presentation"><aside className="help-panel install-panel" role="dialog" aria-modal="true" aria-labelledby="install-title"><button ref={closeRef} className="close-button" onClick={onClose} aria-label="Close Home Screen instructions"><X size={19}/></button><p className="eyebrow">YOUR GARDEN · ON YOUR IPHONE</p><h2 id="install-title">Keep the garden close.</h2><ol><li>Open <strong>catgardens.org</strong> in Safari.</li><li>Tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</li><li>Keep <strong>Open as Web App</strong> on if shown, then tap <strong>Add</strong>.</li></ol><p>The game opens in its own app window. An internet connection is needed for the game, current updates and payments.</p><a href="/staff" className="secondary-button full">I work here · open staff care <ArrowRight size={16}/></a><p>Staff care has a separate private sign-in and its own Home Screen icon.</p></aside></div>
+}
+
 function HelpPanel({ onClose }: { onClose: () => void }) {
   const resetRover = useGame((state) => state.resetRover)
   const resetGame = useGame((state) => state.resetGame)
@@ -1470,6 +1476,7 @@ export default function App() {
   const returnGiftClaimed = useGame((state) => state.returnGiftClaimed)
   const [bondResult, setBondResult] = useState<{ advanced: boolean; visit: number } | null>(null)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [installOpen, setInstallOpen] = useState(false)
   const [realityOpen, setRealityOpen] = useState(false)
   const [threadOpen, setThreadOpen] = useState(false)
   const [tvOpen, setTvOpen] = useState(false)
@@ -1654,7 +1661,7 @@ export default function App() {
     setDonationNeed(need)
   }, [])
 
-  const paused = !started || bondResult || helpOpen || realityOpen || threadOpen || tvOpen || dreamOpen || profileOpen || memoryOpen || rosterOpen || avatarOpen || designerOpen || morningOpen || personOpen || donationNeed
+  const paused = !started || bondResult || helpOpen || installOpen || realityOpen || threadOpen || tvOpen || dreamOpen || profileOpen || memoryOpen || rosterOpen || avatarOpen || designerOpen || morningOpen || personOpen || donationNeed
 
   return (
     <main className={`game-shell ${paused ? 'is-paused' : ''} ${bondingMode ? 'is-bonding' : ''}`}>
@@ -1683,6 +1690,8 @@ export default function App() {
               <button onClick={() => setProfileOpen(true)}><BadgeCheck size={16} /> My impact</button>
               <button onClick={() => setMorningOpen(true)}><Gift size={16} /> {lastDailyClaim === localDay() ? 'Today’s basket' : 'Free daily gift'}</button>
               <button onClick={() => setHelpOpen(true)}><CircleHelp size={16} /> Controls & safety</button>
+              <a className="game-staff-link" href="/staff"><Shield size={16} /> Staff care · sign in</a>
+              <button onClick={() => setInstallOpen(true)}>Add to Home Screen</button>
             </div>
           </details>
         </nav>
@@ -1713,6 +1722,7 @@ export default function App() {
       {morningOpen && <MorningBasketModal onClose={() => setMorningOpen(false)} />}
       {personOpen && <PersonDialogue person={personOpen} onClose={() => setPersonOpen(null)} />}
       {bondResult && <BondResultModal result={bondResult} onClose={() => setBondResult(null)} />}
+      {installOpen && <InstallPanel onClose={() => setInstallOpen(false)} />}
       {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
       {tvOpen && <CatGardensTv onClose={() => setTvOpen(false)} onDonate={openDonation} />}
       {realityOpen && <RealityPortal onClose={() => setRealityOpen(false)} onDonate={openDonation} />}

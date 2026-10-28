@@ -32,7 +32,7 @@ module.exports = async function handler(req, res) {
     const alreadyProcessed = await sql`SELECT event_id FROM garden_stripe_events WHERE event_id = ${event.id} LIMIT 1`;
     if (alreadyProcessed.length) return res.status(200).json({ received: true, duplicate: true });
 
-    if (event.type === 'checkout.session.completed') {
+    if (['checkout.session.completed', 'checkout.session.async_payment_succeeded'].includes(event.type)) {
       await recordDonation(event.data.object);
     }
     if (event.type === 'invoice.paid') {

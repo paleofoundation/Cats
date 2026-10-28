@@ -643,3 +643,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--lime); outline-
   .entry-truth-boundary { padding: 10px; }
   .reality-thread-backdrop { padding: 6px; }.reality-thread { min-height: calc(100svh - 12px); border-radius: 20px; }.thread-hero { padding: 64px 20px 28px; }.thread-hero h2 { font-size: 48px; }.truth-boundary { margin: 6px; padding: 14px; }.thread-columns { gap: 6px; padding: 0 6px 6px; }.thread-timeline, .thread-needs, .thread-notifications { padding: 17px; }.thread-notifications { margin: 0 6px 6px; }.thread-notifications > div:last-child { grid-template-columns: 1fr; }.need-money-states { grid-template-columns: 1fr 1fr; }.need-money-states > span:first-child { grid-column: 1 / -1; }
 }
+
+.game-staff-link{display:flex;align-items:center;gap:9px;padding:12px;color:inherit;text-decoration:none;font:inherit}.game-staff-link:hover{background:#ffffff15;border-radius:10px}@media(display-mode:standalone){.game-shell{height:100dvh}.game-header{padding-top:max(12px,env(safe-area-inset-top))}}@supports(padding:env(safe-area-inset-bottom)){.game-shell{padding-bottom:env(safe-area-inset-bottom)}}
+
+.install-panel ol{padding-left:22px;line-height:1.8;margin:24px 0}.install-panel p:not(.eyebrow){line-height:1.6;margin:18px 0;font-size:14px}.install-panel .secondary-button{display:flex;justify-content:center;gap:8px;text-decoration:none}

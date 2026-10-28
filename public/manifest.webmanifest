@@ -1,0 +1,33 @@
+{
+  "id": "/",
+  "name": "Cat Gardens \u2014 Sanctuary Game",
+  "short_name": "Cat Gardens",
+  "description": "A living garden connected to real sanctuary cats.",
+  "start_url": "/?source=home-screen",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#746b82",
+  "theme_color": "#746b82",
+  "icons": [
+    {
+      "src": "/assets/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/cat-gardens-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Staff care",
+      "url": "/staff",
+      "description": "Open the private sanctuary care interface"
+    }
+  ]
+}
