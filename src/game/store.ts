@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { getCompanionProfile } from './companions'
+import { progressStorage } from './presentation'
 
 export type InputState = {
   forward: number
@@ -629,9 +630,15 @@ export const useGame = create<GameState>()(
         const previous = get().catPosition
         if (Math.hypot(catPosition[0] - previous[0], catPosition[2] - previous[2]) > .025) set({ catPosition })
       },
-      setPlayerPosition: (playerPosition) => set({ playerPosition }),
+      setPlayerPosition: (playerPosition) => {
+        const previous = get().playerPosition
+        if (Math.hypot(playerPosition[0] - previous[0], playerPosition[1] - previous[1], playerPosition[2] - previous[2]) > .015) set({ playerPosition })
+      },
       setNotification: (notification) => set({ notification }),
-      setInput: (input) => set((state) => ({ input: { ...state.input, ...input } })),
+      setInput: (input) => {
+        const previous = get().input
+        if (Object.entries(input).some(([key, value]) => previous[key as keyof InputState] !== value)) set({ input: { ...previous, ...input } })
+      },
       resetRover: () => set((state) => ({ resetToken: state.resetToken + 1, notification: 'Caretaker returned to the garden gate.' })),
       resetGame: () => set((state) => ({
         ...initialPersistentState,
@@ -652,6 +659,7 @@ export const useGame = create<GameState>()(
     }),
     {
       name: 'cat-gardens-splotch-relationship-v4',
+      storage: progressStorage(() => localStorage),
       version: 8,
       migrate: (persistedState, version) => {
         const state = persistedState as Partial<GameState>

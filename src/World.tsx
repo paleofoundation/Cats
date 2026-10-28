@@ -1,11 +1,13 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Float, Html, RoundedBox, Sky, Sparkles, Text, useAnimations, useGLTF } from '@react-three/drei'
 import { CapsuleCollider, CuboidCollider, Physics, RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { Suspense, useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import * as THREE from 'three'
 import { SkeletonUtils } from 'three-stdlib'
 import { localDay, useGame, type NearbyAction, type PersonId } from './game/store'
 import { getCompanionProfile, sexLabel } from './game/companions'
+import { movementVector } from './game/presentation'
+import { GardenGround, GardenDetails, DistantLandscape, OliveGrove } from './GardenScenery'
 
 const START_POSITION: [number, number, number] = [0, 1, -9]
 const SPLOTCH_HOME = new THREE.Vector3(0, 0, 4.4)
@@ -17,7 +19,7 @@ const SUPPLY_POSITION = new THREE.Vector3(-4.6, 0, -7.3)
 const REALITY_PORTAL_POSITION = new THREE.Vector3(9.4, 0, -2.1)
 const DREAM_PORTAL_POSITION = new THREE.Vector3(-9.2, 0, 7.2)
 const SCREEN_FORWARD = new THREE.Vector3(0, 0, 1)
-const CAMERA_OFFSET = new THREE.Vector3(0, 3.35, -6.3)
+const CAMERA_OFFSET = new THREE.Vector3(0, 4.8, -8.6)
 const PEOPLE: Record<PersonId, { position: [number, number, number]; clothing: string; hair: string; eyes: string; scale: number; label: string; subtitle: string }> = {
   chanda: { position: [-4.8, 0, .6], clothing: '#c7763f', hair: '#171411', eyes: '#5a351f', scale: .79, label: 'Chanda', subtitle: 'unlocked · daily caretaker' },
   karen: { position: [6.8, 0, 4.6], clothing: '#718e3e', hair: '#5b3825', eyes: '#4f9fd2', scale: .88, label: 'Karen', subtitle: 'unlocked · co-founder' },
@@ -42,76 +44,17 @@ const seeded = (seed: number) => {
   return value - Math.floor(value)
 }
 
-function OakTree({ position, scale }: { position: [number, number, number]; scale: number }) {
-  const { scene } = useGLTF('/models/bruno/oak-tree.glb')
-  const clone = useMemo(() => scene.clone(true), [scene])
-  useEffect(() => {
-    clone.traverse((object) => {
-      if (object instanceof THREE.Mesh) {
-        object.castShadow = true
-        object.receiveShadow = true
-      }
-    })
-  }, [clone])
-  return <primitive object={clone} position={position} scale={scale} />
-}
-
-function GrassField() {
-  const mesh = useRef<THREE.InstancedMesh>(null)
-  const count = 1150
-  useEffect(() => {
-    if (!mesh.current) return
-    const dummy = new THREE.Object3D()
-    for (let index = 0; index < count; index += 1) {
-      const x = (seeded(index + 4) - .5) * 52
-      const z = (seeded(index + 77) - .5) * 46
-      const inClearing = x > -11 && x < 12 && z > -11 && z < 11
-      if (inClearing && seeded(index + 108) > .22) dummy.position.set(100, -10, 100)
-      else dummy.position.set(x, .13, z)
-      const height = .55 + seeded(index + 141) * .9
-      dummy.rotation.set(0, seeded(index + 181) * Math.PI, (seeded(index + 211) - .5) * .15)
-      dummy.scale.set(.7 + seeded(index + 224) * .45, height, .7 + seeded(index + 246) * .45)
-      dummy.updateMatrix()
-      mesh.current.setMatrixAt(index, dummy.matrix)
-      mesh.current.setColorAt(index, new THREE.Color(index % 3 === 0 ? '#6f8d4e' : index % 3 === 1 ? '#8aa45b' : '#5f7946'))
-    }
-    mesh.current.instanceMatrix.needsUpdate = true
-    if (mesh.current.instanceColor) mesh.current.instanceColor.needsUpdate = true
-  }, [])
-  return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, count]} receiveShadow frustumCulled={false}>
-      <coneGeometry args={[.055, .46, 3]} />
-      <meshStandardMaterial vertexColors roughness={1} />
-    </instancedMesh>
-  )
-}
-
 function Landscape() {
-  const trees = [
-    [-17, -13, .5], [-10, -17, .42], [-2, -18, .52], [8, -17, .44], [16, -12, .5], [18, -3, .42],
-    [18, 8, .48], [13, 16, .52], [3, 18, .43], [-7, 17, .47], [-16, 13, .5], [-18, 3, .43],
-  ] as const
   return (
     <group>
       <RigidBody type="fixed" colliders={false} friction={2.5}>
         <CuboidCollider args={[38, .18, 34]} position={[0, -.18, 0]} />
-        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[76, 68]} />
-          <meshStandardMaterial color="#91b56d" emissive="#38512b" emissiveIntensity={.32} roughness={1} side={THREE.DoubleSide} />
-        </mesh>
+        <GardenGround />
       </RigidBody>
-      <GrassField />
-      {trees.map(([x, z, scale]) => <OakTree key={`${x}-${z}`} position={[x, 0, z]} scale={scale} />)}
+      <GardenDetails /><DistantLandscape />
+      <OliveGrove />
       <mesh position={[-25, -2.8, 8]} scale={[1.4, .5, 1]} receiveShadow><sphereGeometry args={[12, 32, 14]} /><meshStandardMaterial color="#708755" roughness={1} /></mesh>
       <mesh position={[26, -3.2, 9]} scale={[1.6, .52, 1]} receiveShadow><sphereGeometry args={[13, 32, 14]} /><meshStandardMaterial color="#78915d" roughness={1} /></mesh>
-      <group position={[0, .01, -5.2]}>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[4.2, 11]} /><meshStandardMaterial color="#c9ad82" roughness={1} /></mesh>
-        {Array.from({ length: 17 }, (_, index) => (
-          <mesh key={index} position={[(index % 2 ? -.9 : .9) + (seeded(index) - .5) * .45, .035, -4.8 + index * .6]} rotation={[-Math.PI / 2, 0, seeded(index + 20) * .8]}>
-            <circleGeometry args={[.12 + seeded(index + 30) * .09, 7]} /><meshStandardMaterial color="#dfc59c" roughness={1} />
-          </mesh>
-        ))}
-      </group>
       <group position={[0, 0, -18.5]}>
         <mesh castShadow position={[0, 1.45, 0]}><boxGeometry args={[5.8, 2.3, .28]} /><meshStandardMaterial color="#31423b" roughness={.75} /></mesh>
         <mesh castShadow position={[-2.4, .3, 0]}><boxGeometry args={[.22, 2.8, .22]} /><meshStandardMaterial color="#efe1bf" /></mesh>
@@ -119,22 +62,6 @@ function Landscape() {
         <Text position={[0, 1.68, .16]} fontSize={.53} color="#efffbb" anchorX="center">CAT GARDENS</Text>
         <Text position={[0, 1.03, .16]} fontSize={.18} color="#fff9e9" anchorX="center" letterSpacing={.13}>A LIVING GARDEN · CYPRUS</Text>
       </group>
-    </group>
-  )
-}
-
-function StormClouds() {
-  const clouds = [[-20, 18, -28, 9], [-6, 20, -34, 11], [15, 19, -29, 9], [29, 21, -19, 12]] as const
-  return (
-    <group>
-      {clouds.map(([x, y, z, scale], index) => (
-        <Float key={index} speed={.12 + index * .02} rotationIntensity={.015} floatIntensity={.25}>
-          <mesh position={[x, y, z]} scale={[scale, scale * .2, scale * .52]}>
-            <dodecahedronGeometry args={[1, 2]} />
-            <meshStandardMaterial color={index % 2 ? '#7d7890' : '#69667c'} roughness={1} transparent opacity={.5} />
-          </mesh>
-        </Float>
-      ))}
     </group>
   )
 }
@@ -163,7 +90,7 @@ function RoadRisk() {
       <RoadCar offset={2} color="#d6a45d" />
       <RoadCar offset={19} color="#879cb0" direction={-1} />
       <group position={[0, 0, -3]}>{[-24, -18, -12, -6, 1, 7, 13, 19, 25].map((x, index) => <group key={x} position={[x, 0, 0]} rotation={[0, 0, index === 4 ? -.2 : 0]}><mesh position={[0, .65, 0]}><boxGeometry args={[.11, 1.3, .11]} /><meshStandardMaterial color="#8b795f" /></mesh>{index !== 4 && <mesh position={[1.45, .68, 0]}><boxGeometry args={[2.8, .08, .08]} /><meshStandardMaterial color="#9b896d" /></mesh>}</group>)}</group>
-      <Html center position={[17, 2.3, -2.7]} distanceFactor={13} zIndexRange={[4, 0]}><div className="risk-world-label"><b>ROAD RISK</b><span>The garden needs protected routes</span></div></Html>
+      <Html center position={[17, 2.3, -2.7]} zIndexRange={[4, 0]} style={{ pointerEvents: 'none' }}><div className="risk-world-label"><b>ROAD RISK</b><span>The garden needs protected routes</span></div></Html>
     </group>
   )
 }
@@ -190,6 +117,7 @@ function CaretakerPlayer() {
   const { actions } = useAnimations(animations, model)
   const facing = useRef(0)
   const currentAction = useRef('')
+  const hudTick = useRef(0)
   const smoothTarget = useRef(new THREE.Vector3(0, 1.2, -5))
   const resetToken = useGame((state) => state.resetToken)
   const started = useGame((state) => state.started)
@@ -199,6 +127,7 @@ function CaretakerPlayer() {
   const setPlayerPosition = useGame((state) => state.setPlayerPosition)
 
   useEffect(() => {
+    const owned: THREE.Material[] = []
     clone.traverse((object) => {
       if (object instanceof THREE.Mesh) {
         object.castShadow = true
@@ -210,9 +139,11 @@ function CaretakerPlayer() {
           else if (name.includes('leg')) material.color.set(avatarStyle.pants)
           else if (name.includes('feet')) material.color.set('#3a332e')
           object.material = material
+          owned.push(material)
         }
       }
     })
+    return () => owned.forEach((material) => material.dispose())
   }, [avatarStyle, clone])
 
   const reset = useCallback(() => {
@@ -223,7 +154,8 @@ function CaretakerPlayer() {
   }, [])
   useEffect(reset, [reset, resetToken])
 
-  useFrame((_, delta) => {
+  useFrame((_, frameDelta) => {
+    const delta = Math.min(frameDelta, .05)
     if (!body.current) return
     const game = useGame.getState()
     const position = body.current.translation()
@@ -239,9 +171,9 @@ function CaretakerPlayer() {
     const working = Date.now() < game.playerActionUntil
     const paused = !started || game.bondingMode || working
     if (!paused && magnitude > .02) {
-      const nx = x / magnitude
-      const nz = z / magnitude
-      body.current.setLinvel({ x: nx * speed * magnitude, y: velocity.y, z: nz * speed * magnitude }, true)
+      const movement = movementVector(x, z, speed)
+      const nx = movement.x, nz = movement.z
+      body.current.setLinvel({ x: nx, y: velocity.y, z: nz }, true)
       const targetFacing = Math.atan2(nx, nz)
       let difference = targetFacing - facing.current
       difference = Math.atan2(Math.sin(difference), Math.cos(difference))
@@ -305,7 +237,11 @@ function CaretakerPlayer() {
     const [nearest, distance] = distances[0]
     const dreamReady = game.shelterStage >= 3 && game.hasFed && game.blanketLevel > 0 && game.waterBowlLevel > 0
     setNearby(distance < 2.35 && (nearest !== 'dream' || dreamReady) ? nearest : null)
-    setPlayerPosition([position.x, position.y, position.z])
+    hudTick.current += delta
+    if (hudTick.current >= .08) {
+      setPlayerPosition([position.x, position.y, position.z])
+      hudTick.current = 0
+    }
     if (position.y < -2 || Math.abs(position.x) > 34 || Math.abs(position.z) > 30) reset()
   })
 
@@ -320,10 +256,23 @@ function CaretakerPlayer() {
 }
 
 function WorldTag({ title, subtitle, warm = false }: { title: string; subtitle: string; warm?: boolean }) {
+  const anchor = useRef<THREE.Group>(null)
+  const label = useRef<HTMLDivElement>(null)
+  const point = useMemo(() => new THREE.Vector3(), [])
+  const shown = useRef(true)
+  useFrame(() => {
+    if (!anchor.current || !label.current) return
+    anchor.current.getWorldPosition(point)
+    const player = useGame.getState().playerPosition
+    const near = Math.hypot(point.x - player[0], point.z - player[2]) < 13
+    if (near !== shown.current) { label.current.style.visibility = near ? 'visible' : 'hidden'; shown.current = near }
+  })
   return (
-    <Html center position={[0, 2.5, 0]} distanceFactor={10} zIndexRange={[7, 0]}>
-      <div className={`living-world-tag ${warm ? 'warm' : ''}`}><strong>{title}</strong><span>{subtitle}</span></div>
-    </Html>
+    <group ref={anchor}>
+      <Html center position={[0, 2.5, 0]} zIndexRange={[7, 0]} style={{ pointerEvents: 'none' }}>
+        <div ref={label} className={`living-world-tag ${warm ? 'warm' : ''}`}><strong>{title}</strong><span>{subtitle}</span></div>
+      </Html>
+    </group>
   )
 }
 
@@ -335,6 +284,7 @@ function PersonActor({ id }: { id: PersonId }) {
   const person = PEOPLE[id]
   const visits = useGame((state) => state.npcVisits[id])
   useEffect(() => {
+    const owned: THREE.Material[] = []
     clone.traverse((object) => {
       if (object instanceof THREE.Mesh) {
         object.castShadow = true
@@ -345,8 +295,10 @@ function PersonActor({ id }: { id: PersonId }) {
           material.emissive = new THREE.Color(person.clothing).multiplyScalar(.08)
         }
         object.material = material
+          owned.push(material)
       }
     })
+    return () => owned.forEach((material) => material.dispose())
   }, [clone, person.clothing])
   useEffect(() => {
     const action = visits === 0 ? actions.Wave ?? actions.Idle_Neutral : actions.Idle_Neutral ?? actions.Idle
@@ -367,6 +319,31 @@ function PersonActor({ id }: { id: PersonId }) {
   )
 }
 
+function catMaterial(source: THREE.MeshStandardMaterial, baseColor: string, striped: boolean) {
+  const material = source.clone()
+  material.color.set('#ffffff')
+  material.emissive.set('#000000')
+  material.roughness = .9
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uCoat = { value: new THREE.Color(baseColor) }
+    shader.uniforms.uTabby = { value: striped ? 1 : 0 }
+    shader.vertexShader = 'varying vec3 vCoatPosition;\n' + shader.vertexShader
+    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvCoatPosition = position;')
+    shader.fragmentShader = 'uniform vec3 uCoat; uniform float uTabby; varying vec3 vCoatPosition;\n' + shader.fragmentShader
+    shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `
+      #include <map_fragment>
+      #ifdef USE_MAP
+      if (vMapUv.x > .8 && vMapUv.x < .9) {
+        float bands = smoothstep(.65, .88, sin(vCoatPosition.z * 25.0 + sin(vCoatPosition.y * 12.0) * 1.2));
+        diffuseColor.rgb = uCoat * (1.0 - bands * .23 * uTabby);
+      }
+      #endif
+    `)
+  }
+  material.customProgramCacheKey = () => `cat-coat-${baseColor}-${striped}`
+  return material
+}
+
 function SplotchActor() {
   const group = useRef<THREE.Group>(null)
   const { scene, animations } = useGLTF('/models/kenney/animal-cat.glb')
@@ -381,22 +358,22 @@ function SplotchActor() {
   const collarName = useGame((state) => state.collarName)
   const bondingMode = useGame((state) => state.bondingMode)
   const currentAction = useRef('')
+  const hudTick = useRef(0)
   const target = useRef(SPLOTCH_HOME.clone())
   useEffect(() => {
+    const owned: THREE.Material[] = []
     clone.traverse((object) => {
       if (object instanceof THREE.Mesh) {
         object.castShadow = true
         object.receiveShadow = true
-        const material = (object.material as THREE.MeshStandardMaterial).clone()
-        material.color.set(companion.phenotype.baseColor)
-        material.emissive = new THREE.Color(companion.phenotype.secondaryColor)
-        material.emissiveIntensity = .08
-        material.roughness = .82
-        object.material = material
+        object.material = catMaterial(object.material as THREE.MeshStandardMaterial, companion.phenotype.baseColor, companion.phenotype.pattern === 'tabby')
+        owned.push(object.material as THREE.Material)
       }
     })
+    return () => owned.forEach((material) => material.dispose())
   }, [clone, companion.phenotype.baseColor, companion.phenotype.secondaryColor])
-  useFrame(({ clock }, delta) => {
+  useFrame(({ clock }, frameDelta) => {
+    const delta = Math.min(frameDelta, .05)
     if (!group.current) return
     const game = useGame.getState()
     const player = new THREE.Vector3(game.playerPosition[0], 0, game.playerPosition[2])
@@ -446,7 +423,11 @@ function SplotchActor() {
       ;(actions[desiredAction] ?? actions.idle)?.reset().fadeIn(.2).play()
       currentAction.current = desiredAction
     }
-    game.setCatPosition([position.x, position.y, position.z])
+    hudTick.current += delta
+    if (hudTick.current >= .08) {
+      game.setCatPosition([position.x, position.y, position.z])
+      hudTick.current = 0
+    }
   })
   const fedToday = lastFedDate === localDay()
   return (
@@ -470,16 +451,14 @@ function VisitingCatActor() {
   const realityVisits = useGame((state) => state.realityVisits)
   const visitor = getCompanionProfile(selected === 'splotch' ? 'mabel' : 'splotch')
   useEffect(() => {
+    const owned: THREE.Material[] = []
     clone.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return
       object.castShadow = true
-      const material = (object.material as THREE.MeshStandardMaterial).clone()
-      material.color.set(visitor.phenotype.baseColor)
-      material.emissive = new THREE.Color(visitor.phenotype.secondaryColor)
-      material.emissiveIntensity = .05
-      material.roughness = .88
-      object.material = material
+      object.material = catMaterial(object.material as THREE.MeshStandardMaterial, visitor.phenotype.baseColor, visitor.phenotype.pattern === 'tabby')
+        owned.push(object.material as THREE.Material)
     })
+    return () => owned.forEach((material) => material.dispose())
   }, [clone, visitor.phenotype.baseColor, visitor.phenotype.secondaryColor])
   useEffect(() => {
     const action = actions.idle ?? actions.Idle
@@ -740,7 +719,7 @@ function SupplyShelf() {
           <Text position={[0, 0, -.27]} rotation={[0, Math.PI, 0]} fontSize={.09} color="#fff4cf" anchorX="center">FOOD</Text>
         </group>
       ))}
-      <Text position={[0, 1.98, 0]} fontSize={.23} color="#f4ffbd" anchorX="center">CAT GARDENS SUPPLY</Text>
+      <Text position={[0, 1.98, 0]} rotation={[0, Math.PI, 0]} fontSize={.23} color="#f4ffbd" anchorX="center">CAT GARDENS SUPPLY</Text>
       <WorldTag title={`${companion.name}’s food shelf`} subtitle={food >= 3 ? 'food bag full' : tokens >= 15 ? 'one meal · 15 tokens' : 'earn tokens to pack a meal'} warm={food < 1 && tokens >= 15} />
     </group>
   )
@@ -763,13 +742,13 @@ function Scene({ comfortMap }: { comfortMap: boolean }) {
   const unlockedPeople = (Object.keys(PEOPLE) as PersonId[]).filter((id) => isPersonUnlocked(id, completedDays, realityVisits))
   return (
     <>
-      <color attach="background" args={['#b7c6dc']} />
-      <fog attach="fog" args={['#c8cee0', 30, 74]} />
-      <Sky distance={450000} sunPosition={[-45, 32, -70]} inclination={.54} azimuth={.21} turbidity={7.5} rayleigh={2.6} mieCoefficient={.009} mieDirectionalG={.82} />
-      <ambientLight intensity={1.5} color="#eeeaff" />
-      <hemisphereLight intensity={2.4} color="#fffdf0" groundColor="#5e7450" />
-      <directionalLight castShadow position={[-14, 28, -18]} intensity={4.4} color="#fffef1" shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={1} shadow-camera-far={70} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} shadow-bias={-.00018} />
-      <StormClouds />
+      <color attach="background" args={['#d4dfdf']} />
+      <fog attach="fog" args={['#d4dfcf', 26, 100]} />
+      <Sky distance={450000} sunPosition={[-40, 26, -35]} turbidity={3.2} rayleigh={1.4} mieCoefficient={.004} mieDirectionalG={.8} />
+      <ambientLight intensity={.38} color="#e5e9ec" />
+      <hemisphereLight intensity={1.25} color="#e7f0fa" groundColor="#7b7a4c" />
+      <directionalLight castShadow position={[-14, 28, -18]} intensity={2.5} color="#fff1ce" shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-near={1} shadow-camera-far={70} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} shadow-bias={-.00012} shadow-normalBias={.035} shadow-radius={3} />
+
       <Landscape />
       <RoadRisk />
       <MathikoloniHorizon />
@@ -789,19 +768,57 @@ function Scene({ comfortMap }: { comfortMap: boolean }) {
   )
 }
 
-export function CatGardenWorld({ comfortMap = false }: { comfortMap?: boolean }) {
+function RendererHealth({ onContextLost }: { onContextLost: (lost: boolean) => void }) {
+  const { gl, setDpr } = useThree()
+  const sample = useRef({ time: 0, frames: 0, adjusted: false })
+  useEffect(() => {
+    const lost = (event: Event) => { event.preventDefault(); onContextLost(true) }
+    const restored = () => onContextLost(false)
+    gl.domElement.addEventListener('webglcontextlost', lost)
+    gl.domElement.addEventListener('webglcontextrestored', restored)
+    return () => {
+      gl.domElement.removeEventListener('webglcontextlost', lost)
+      gl.domElement.removeEventListener('webglcontextrestored', restored)
+    }
+  }, [gl, onContextLost])
+  useFrame((_, delta) => {
+    if (sample.current.adjusted || delta > .25) return
+    sample.current.time += delta
+    sample.current.frames++
+    if (sample.current.time > 4) {
+      if (sample.current.frames / sample.current.time < 38 && gl.getPixelRatio() > 1) { setDpr(1); sample.current.adjusted = true }
+      sample.current.time = 0
+      sample.current.frames = 0
+    }
+  })
+  return null
+}
+
+export function CatGardenWorld({ comfortMap = false, paused = false }: { comfortMap?: boolean; paused?: boolean }) {
+  const [visible, setVisible] = useState(!document.hidden)
+  const [contextLost, setContextLost] = useState(false)
+  useEffect(() => {
+    const update = () => setVisible(!document.hidden)
+    document.addEventListener('visibilitychange', update)
+    return () => document.removeEventListener('visibilitychange', update)
+  }, [])
+  const active = visible && !paused
   return (
-    <Canvas shadows dpr={[1, 1.7]} camera={{ position: [0, 4.5, -15], fov: 46, near: .1, far: 170 }} gl={{ antialias: true, powerPreference: 'high-performance', alpha: false }} onCreated={({ gl }) => {
+    <>
+    {contextLost && <div className="world-loading graphics-recovery" role="alert"><strong>Let’s reopen the garden.</strong><span>Your browser paused the 3D view. Your progress is saved.</span><button className="primary-button" onClick={() => window.location.reload()}>Reload garden</button></div>}
+    <Canvas shadows="percentage" frameloop={active ? 'always' : 'demand'} dpr={[1, 1.5]} camera={{ position: [0, 4.5, -15], fov: 46, near: .1, far: 170 }} gl={{ antialias: true, powerPreference: 'high-performance', alpha: false }} onCreated={({ gl }) => {
       gl.toneMapping = THREE.ACESFilmicToneMapping
-      gl.toneMappingExposure = 1.3
+      gl.toneMappingExposure = 1.06
       gl.outputColorSpace = THREE.SRGBColorSpace
+      if (import.meta.env.DEV) (window as typeof window & { __CAT_GARDENS_RENDERER__?: THREE.WebGLRenderer }).__CAT_GARDENS_RENDERER__ = gl
     }}>
-      <Suspense fallback={null}><Physics gravity={[0, -18, 0]} timeStep="vary"><Scene comfortMap={comfortMap} /></Physics></Suspense>
+      <RendererHealth onContextLost={setContextLost} />
+      <Suspense fallback={<Html fullscreen><div className="world-loading"><i /><span>Opening the garden…</span></div></Html>}><Physics gravity={[0, -18, 0]} timeStep={1 / 60} paused={!active} interpolate><Scene comfortMap={comfortMap} /></Physics></Suspense>
     </Canvas>
+    </>
   )
 }
 
-useGLTF.preload('/models/bruno/oak-tree.glb')
 useGLTF.preload('/models/kenney/animal-cat.glb')
 useGLTF.preload('/models/quaternius/caretaker.glb')
 

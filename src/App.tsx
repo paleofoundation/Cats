@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, type ReactNode, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowRight,
   BadgeCheck,
@@ -51,6 +51,7 @@ import { useGardenAccount, type GardenAccount } from './account'
 import { GameSync } from './GameSync'
 import { RealityThread } from './RealityThread'
 import { playPurr } from './game/audio'
+import { acceptsGameInput } from './game/presentation'
 import { foodPrice, getDailyProgress, getObjective, getRelationshipText, localDay, shelterBuildCatalog, upgradeCatalog, useGame, type AvatarStyle, type DonationBadge, type GardenPromise, type GardenUpgrade, type KeeperStyle, type PersonId } from './game/store'
 import { companionCopy, getCompanionProfile, sexLabel } from './game/companions'
 import { episodeFor, useGardenNotifications, useRealityFeed } from './reality'
@@ -401,6 +402,8 @@ function DrivePad() {
   return (
     <div className="drive-control">
       <div
+        role="group"
+        aria-label="Walking pad: drag to move, or use arrow keys"
         ref={pad}
         className={`drive-pad ${knob.active ? 'active' : ''}`}
         onPointerDown={(event) => {
@@ -410,6 +413,7 @@ function DrivePad() {
         onPointerMove={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) update(event.clientX, event.clientY) }}
         onPointerUp={release}
         onPointerCancel={release}
+        onLostPointerCapture={release}
       >
         <span className="drive-cross">↑<i>←</i><b>→</b><em>↓</em></span>
         <span className="drive-knob" style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }}><i /></span>
@@ -1453,6 +1457,15 @@ function HelpPanel({ onClose }: { onClose: () => void }) {
   )
 }
 
+class WorldBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  render() {
+    if (this.state.failed) return <div className="world-loading" role="alert"><strong>The garden needs a moment.</strong><span>Reload to return to your saved garden.</span><button className="primary-button" onClick={() => window.location.reload()}>Reload the garden</button></div>
+    return this.props.children
+  }
+}
+
 export default function App() {
   const account = useGardenAccount()
   const selectedCompanionId = useGame((state) => state.selectedCompanionId)
@@ -1491,6 +1504,36 @@ export default function App() {
   const [donationNeed, setDonationNeed] = useState<SplotchNeed | null>(null)
   const [comfortMap, setComfortMap] = useState(false)
   const [requestedCompanion] = useState(() => new URLSearchParams(window.location.search).get('companion'))
+  const paused = Boolean(!started || bondResult || helpOpen || installOpen || realityOpen || threadOpen || tvOpen || dreamOpen || profileOpen || memoryOpen || rosterOpen || avatarOpen || designerOpen || morningOpen || personOpen || donationNeed)
+  const inputBlocked = useRef(true)
+  inputBlocked.current = paused || bondingMode
+  const activeDialog = [helpOpen, installOpen, realityOpen, threadOpen, tvOpen, dreamOpen, profileOpen, memoryOpen, rosterOpen, avatarOpen, designerOpen, morningOpen, personOpen, donationNeed, bondResult].findIndex(Boolean)
+  useEffect(() => {
+    if (activeDialog < 0) return
+    const previous = document.activeElement as HTMLElement | null
+    const selector = 'button:not(:disabled),a[href],input:not(:disabled),select,textarea,[tabindex="0"]'
+    const dialog = () => Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"]')).at(-1)
+    const frame = requestAnimationFrame(() => dialog()?.querySelector<HTMLElement>(selector)?.focus())
+    const trap = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || event.defaultPrevented) return
+      const root = dialog()
+      if (!root) return
+      const controls = Array.from(root.querySelectorAll<HTMLElement>(selector)).filter((element) => element.getClientRects().length > 0)
+      const first = controls[0], last = controls.at(-1)
+      if (!first || !last) return
+      if (event.shiftKey && (document.activeElement === first || !root.contains(document.activeElement))) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && (document.activeElement === last || !root.contains(document.activeElement))) { event.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', trap)
+    return () => {
+      cancelAnimationFrame(frame)
+      document.removeEventListener('keydown', trap)
+      if (previous?.isConnected && !previous.closest('[inert]')) previous.focus()
+    }
+  }, [activeDialog])
+  useEffect(() => {
+    if (paused || bondingMode) setInput({ forward: 0, backward: 0, left: 0, right: 0, boost: 0, brake: 0 })
+  }, [paused, bondingMode, setInput])
   useEffect(() => {
     if (!requestedCompanion) return
     const cat = cats.find((candidate) => candidate.id === requestedCompanion || candidate.name.toLowerCase() === requestedCompanion.toLowerCase())
@@ -1580,7 +1623,9 @@ export default function App() {
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
+      if (!acceptsGameInput(event.target, inputBlocked.current) || event.metaKey || event.ctrlKey || event.altKey) return
       const key = event.key.toLowerCase()
+      if (key === ' ' && event.target instanceof Element && event.target.closest('button,a,summary')) return
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) event.preventDefault()
       if (key === 'w' || key === 'arrowup') setInput({ forward: 1 })
       if (key === 's' || key === 'arrowdown') setInput({ backward: 1 })
@@ -1661,24 +1706,23 @@ export default function App() {
     setDonationNeed(need)
   }, [])
 
-  const paused = !started || bondResult || helpOpen || installOpen || realityOpen || threadOpen || tvOpen || dreamOpen || profileOpen || memoryOpen || rosterOpen || avatarOpen || designerOpen || morningOpen || personOpen || donationNeed
 
   return (
     <main className={`game-shell ${paused ? 'is-paused' : ''} ${bondingMode ? 'is-bonding' : ''}`}>
       <GameSync />
-      <div className="world-canvas">
-        <Suspense fallback={<div className="world-loading"><i /><span>Growing {companion.name}’s living garden…</span></div>}>
-          <CatGardenWorld comfortMap={comfortMap} />
-        </Suspense>
+      <div className="world-canvas" aria-hidden={paused} inert={paused}>
+        <WorldBoundary><Suspense fallback={<div className="world-loading"><i /><span>Growing {companion.name}’s living garden…</span></div>}>
+          {started && <CatGardenWorld comfortMap={comfortMap} paused={paused} />}
+        </Suspense></WorldBoundary>
       </div>
 
-      {started && <header className="game-header game-panel">
+      {started && <header className="game-header game-panel" inert={paused} aria-hidden={paused}>
         <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>{gardenName.toUpperCase()} · {completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${episodeFor(completedDays).day}/7`} · MEMORY {Math.min(7, bondVisits + 1)}/7</small></a>
         <nav>
-          {shelterStage >= 3 && <button className="reality-nav" onClick={() => setRealityOpen(true)}><Video size={17} /><span>Real {companion.name}</span></button>}
+          {shelterStage >= 3 && <button aria-label={`See the real ${companion.name}`} className="reality-nav" onClick={() => setRealityOpen(true)}><Video size={17} /><span>Real {companion.name}</span></button>}
           <button aria-label="My cat" className="memory-nav" onClick={() => setMemoryOpen(true)}><Camera size={17} /><span>My Cat</span></button>
           <button aria-label="Explore the garden" className={comfortMap ? 'comfort-nav active' : 'comfort-nav'} onClick={() => setComfortMap((current) => !current)}><Eye size={17} /><span>Explore</span></button>
-          {shelterStage >= 3 && <button className="design-nav" onClick={() => setDesignerOpen(true)}><Leaf size={17} /><span>Build</span></button>}
+          {shelterStage >= 3 && <button aria-label="Build and furnish your garden" className="design-nav" onClick={() => setDesignerOpen(true)}><Leaf size={17} /><span>Build</span></button>}
           <button aria-label="Grove and sanctuary updates" className="thread-nav" onClick={() => setThreadOpen(true)}><BadgeCheck size={17} /><span>Grove</span>{gardenNotifications.unread > 0 && <b>{gardenNotifications.unread}</b>}</button>
           {realityVisits > 0 && <button className="donate-nav" onClick={() => setDonationNeed(splotchNeeds.find((need) => need.id === 'food')!)}><CircleDollarSign size={17} /> Donate</button>}
           <details className="game-more-menu">
@@ -1699,6 +1743,7 @@ export default function App() {
 
       {started && !bondingMode && (
         <>
+          <div className="garden-hud" inert={paused} aria-hidden={paused}>
           <CatCard />
           <ObjectiveCard />
           <Inventory />
@@ -1707,7 +1752,8 @@ export default function App() {
           <DrivePad />
           <ActionButton onAction={handleAction} />
           <button className="reset-rover" onClick={resetRover}><RotateCcw size={15} /> Return to gate <kbd>R</kbd></button>
-          {notification && <div className="game-toast"><Sparkles size={16} />{notification}</div>}
+          {notification && <div className="game-toast" role="status"><Sparkles size={16} />{notification}</div>}
+          </div>
         </>
       )}
 

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import { GardenAccountProvider } from './account'
 import './styles.css'
+import './graphics.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
