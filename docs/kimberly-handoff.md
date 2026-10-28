@@ -14,9 +14,10 @@ with all five source revisions preserved in GitHub. This is a source transfer:
 production D1 records, R2 documents, secrets, and hosting ownership were not copied.
 The new private GitHub repository does not automatically deploy to Sites.
 
-The live game source matches commit `185b49a`; the newer game-branch commit
-`7f512cd` has not been verified as deployed. Review PR #2 and its deployment
-implications before changing the default branch or merging it.
+The original live source matched `185b49a`. With Karen’s explicit approval,
+release `8edd7ca` was promoted to catgardens.org on 28 October 2026. This includes
+the newer game-branch work and PR #3. PRs #2 and #3 remain open; review them before
+changing the default branch or merging.
 
 ## Access required to work
 
@@ -116,10 +117,11 @@ payouts enabled. No enabled webhook was found at
 `https://catgardens.org/api/stripe-webhook`; all three required event subscriptions
 were absent for that endpoint. Payments are **not launch-verified**.
 
-The separately connected Stripe account is Paleo Certified Inc. / Institute of
-Contaminant Standards; it is a different account. Karen must confirm whether
-Tinies.app remains the recipient or a separate sanctuary account should be used,
-then the correct account needs an enabled signed webhook and sandbox verification.
+Karen confirmed Tinies and CatGardens are both part of Gardens of St Gertrude;
+the existing Tinies.app payment recipient is retained. The separately connected
+Stripe account is Paleo Certified Inc. / Institute of Contaminant Standards.
+Connect the Gardens/Tinies account to finish its signed webhook and sandbox
+verification.
 No real donation was charged during this work.
 
 ## Release status
@@ -127,17 +129,19 @@ No real donation was charged during this work.
 Care version 6 is published at the existing private Site, with the operations
 migration applied by Sites. The game changes are in
 [PR #3](https://github.com/paleofoundation/Cats/pull/3), targeting the existing game
-branch. They are staged on Vercel. Live-domain promotion is awaiting Karen’s
-explicit approval because automatic approval review rejected that production
-change while payment setup is incomplete. Until promotion, approved Care updates
-remain queued because the old public game does not have the receiving endpoint.
+branch. Karen approved publishing, and deployment
+`dpl_7vfeE46Uj3XmkhPYhfDVTDWAVNwg` (commit `8edd7ca`) is now live at
+https://catgardens.org. The receiving endpoint is active: unauthenticated delivery
+returns 401 and authenticated invalid input reaches validation (400). No fake
+production care records were created. Retry any previously queued approved updates
+from Care; the first real approved delivery still needs end-to-end verification.
 
 Verification includes both production builds, the Care TypeScript check, six
 bridge/payment tests, four operations/privacy tests, local browser entry and
 mobile-install checks, private receipt upload/download, persistent expenses,
 stock arithmetic, duplicate retry handling, and rejected anonymous, cross-origin
-and demo-publication attempts. The staged manifest, worker, 512px icon and staff
-redirect were checked through Vercel authentication. Cross-app public delivery
+and demo-publication attempts. The live manifest, worker, 512px/Apple icons and staff redirect were checked
+after promotion; the public site and browser onboarding load successfully. Cross-app public delivery
 and a real signed Stripe sandbox webhook cycle remain to be verified after release
 and account setup.
 
@@ -153,4 +157,4 @@ and account setup.
 | TXT | `_cf-custom-hostname.care` | `a235ad84-c152-4282-8b3d-4ff17b23f157` |
 
 Apply these at the authoritative DNS provider, then refresh verification in Sites.
-This source handoff did not change DNS or production deployments.
+DNS has not been changed. Care version 6 and the approved game release are live.
