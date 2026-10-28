@@ -110,11 +110,36 @@ transactional, and session/invoice IDs prevent duplicate fulfillment.
 bridge. It reports the configured merchant, key-mode consistency, account charge
 capability and required webhook events, without exposing payment keys.
 
+The deployed readiness check identified the game’s actual merchant as **Tinies.app**
+(account `acct_1U4Lv2I8Q37gKriO`), using matching live-mode keys with charges and
+payouts enabled. No enabled webhook was found at
+`https://catgardens.org/api/stripe-webhook`; all three required event subscriptions
+were absent for that endpoint. Payments are **not launch-verified**.
+
 The separately connected Stripe account is Paleo Certified Inc. / Institute of
-Contaminant Standards. It is not evidence of which account the game key uses.
-Confirm the intended CatGardens recipient, the actual configured merchant and a
-signed sandbox payment/webhook cycle before claiming payments fully ready. No
-real donation was charged during this work.
+Contaminant Standards; it is a different account. Karen must confirm whether
+Tinies.app remains the recipient or a separate sanctuary account should be used,
+then the correct account needs an enabled signed webhook and sandbox verification.
+No real donation was charged during this work.
+
+## Release status
+
+Care version 6 is published at the existing private Site, with the operations
+migration applied by Sites. The game changes are in
+[PR #3](https://github.com/paleofoundation/Cats/pull/3), targeting the existing game
+branch. They are staged on Vercel. Live-domain promotion is awaiting Karen’s
+explicit approval because automatic approval review rejected that production
+change while payment setup is incomplete. Until promotion, approved Care updates
+remain queued because the old public game does not have the receiving endpoint.
+
+Verification includes both production builds, the Care TypeScript check, six
+bridge/payment tests, four operations/privacy tests, local browser entry and
+mobile-install checks, private receipt upload/download, persistent expenses,
+stock arithmetic, duplicate retry handling, and rejected anonymous, cross-origin
+and demo-publication attempts. The staged manifest, worker, 512px icon and staff
+redirect were checked through Vercel authentication. Cross-app public delivery
+and a real signed Stripe sandbox webhook cycle remain to be verified after release
+and account setup.
 
 ## Domain follow-up
 

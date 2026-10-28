@@ -21,7 +21,7 @@ module.exports = async function handler(req,res) {
     return res.status(200).json({configured:true,accountId:account.id,businessName:account.business_profile?.name||account.settings?.dashboard?.display_name||'Stripe account',
       chargesEnabled:account.charges_enabled,payoutsEnabled:account.payouts_enabled,testMode,keyModesMatch,
       webhookConfigured:!!endpoint&&!!process.env.STRIPE_WEBHOOK_SECRET,missingEvents,
-      ready:!!account.charges_enabled&&keyModesMatch&&!!endpoint&&!!process.env.STRIPE_WEBHOOK_SECRET&&!missingEvents.length,
+      ready:!!account.charges_enabled&&!!account.payouts_enabled&&keyModesMatch&&!!endpoint&&!!process.env.STRIPE_WEBHOOK_SECRET&&!missingEvents.length,
       note:'Readiness checks configuration only. Complete a sandbox payment and verify its signed webhook before declaring end-to-end payments tested.'})
   }catch(e){return res.status(503).json({configured:true,error:'Stripe account or webhook inspection failed. Check the configured key permissions.'})}
 }
