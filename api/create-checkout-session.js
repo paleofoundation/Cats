@@ -47,7 +47,7 @@ module.exports = async function handler(req, res) {
       .filter(Boolean)
       .join(' ');
     const siteUrl = requestOrigin(req);
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-06-24.dahlia' });
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-07-29.dahlia' });
     const sharedMetadata = {
       application: APPLICATION,
       campaign: safeCampaign || 'general',

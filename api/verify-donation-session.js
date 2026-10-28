@@ -13,7 +13,7 @@ module.exports = async function handler(req, res) {
   if (!/^cs_(test|live)_[a-zA-Z0-9]+$/.test(sessionId)) return res.status(400).json({ error: 'Invalid donation session.' })
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-06-24.dahlia' })
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-07-29.dahlia' })
     const session = await stripe.checkout.sessions.retrieve(sessionId)
     if (!isCatGardensDonation(session) || session.livemode !== stripeLiveMode()) return res.status(400).json({ error: 'This is not a Cat Gardens donation.' })
     const verified = session.status === 'complete' && session.payment_status === 'paid'

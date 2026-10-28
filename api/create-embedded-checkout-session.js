@@ -61,7 +61,7 @@ module.exports = async function handler(req, res) {
     const safeUserId = account?.userId || ''
     const awardedBadge = isMonthly ? 'garden-keeper' : badge
     const origin = checkoutReturnOrigin(returnOrigin, requestOrigin(req))
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-06-24.dahlia' })
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-07-29.dahlia' })
     const integrationIdentifier = `cat-gardens-${randomBytes(4).toString('hex')}`
     const sharedMetadata = {
       application: APPLICATION,

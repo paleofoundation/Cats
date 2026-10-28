@@ -9,7 +9,7 @@ module.exports = async function handler(req,res) {
   } catch(e){return res.status(e.statusCode||403).json({error:'Staff access required.'})}
   if(!process.env.STRIPE_SECRET_KEY)return res.status(503).json({configured:false,error:'Stripe secret key missing.'})
   try {
-    const stripe=new Stripe(process.env.STRIPE_SECRET_KEY,{apiVersion:'2026-06-24.dahlia'})
+    const stripe=new Stripe(process.env.STRIPE_SECRET_KEY,{apiVersion:'2026-07-29.dahlia'})
     const account=await stripe.accounts.retrieve()
     const endpoints=await stripe.webhookEndpoints.list({limit:100})
     const endpoint=endpoints.data.find(e=>e.url==='https://catgardens.org/api/stripe-webhook'&&e.status==='enabled')
