@@ -158,3 +158,30 @@ and account setup.
 
 Apply these at the authoritative DNS provider, then refresh verification in Sites.
 DNS has not been changed. Care version 6 and the approved game release are live.
+
+## Payment setup follow-up — 28 October 2026
+
+The Gardens of St. Gertrude account (`acct_1U4Lv2I8Q37gKriO`) is now visible to
+the Stripe connector in live mode. Its existing enabled webhook targets
+`https://gardensofstgertrude.org/api/stripe-webhook`; it was not changed.
+
+Creating the separate CatGardens webhook returned an authentication-success/retry
+response twice, rather than an endpoint ID. The browser independently showed
+“Authorization successful.” Retrying was stopped to avoid another reconnection
+loop. No new webhook or signing secret was confirmed, and no real charge was made.
+The user reported connecting a test environment, but the connector still listed
+only the live account. Do not repeat connection requests without resolving that
+discrepancy.
+
+A payment-routing fix is prepared on PR #3 but has not been deployed. Both
+checkout paths now tag sessions, payment intents and subscriptions with
+`application=catgardens`. Fulfillment and return-page verification require that
+tag and matching Stripe live/test mode. Other sites sharing the account cannot
+credit the game through this handler. Older untagged sessions/subscriptions are
+not automatically credited; review their origin before migrating metadata.
+
+The production build and six local tests passed. The expanded payment test uses
+the real Stripe SDK to sign and verify local fixtures, with simulated database
+and subscription lookups. It covers invalid signatures, mode mismatches,
+other-site payments, delayed success, event retries, first-invoice deduplication,
+and renewals. This is not a Stripe-hosted sandbox payment or delivery test.

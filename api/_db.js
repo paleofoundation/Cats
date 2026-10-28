@@ -1,4 +1,5 @@
 const { neon } = require('@neondatabase/serverless')
+const { isCatGardensDonation, stripeLiveMode } = require('./_payment-scope')
 
 let schemaPromise
 
@@ -483,6 +484,7 @@ async function ensureSchema() {
 
 async function recordDonation(session) {
   if (!session || session.status !== 'complete' || session.payment_status !== 'paid') return false
+  if (!isCatGardensDonation(session) || session.livemode !== stripeLiveMode()) return false
   await ensureSchema()
   const sql = database()
   const metadata = session.metadata || {}

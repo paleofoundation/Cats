@@ -1,4 +1,6 @@
 const Stripe = require('stripe');
+const { randomBytes } = require('crypto');
+const { APPLICATION } = require('./_payment-scope');
 
 const MINIMUM_AMOUNT_CENTS = 500;
 const MAXIMUM_AMOUNT_CENTS = 50000000;
@@ -45,10 +47,17 @@ module.exports = async function handler(req, res) {
       .filter(Boolean)
       .join(' ');
     const siteUrl = requestOrigin(req);
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-06-24.dahlia' });
+    const sharedMetadata = {
+      application: APPLICATION,
+      campaign: safeCampaign || 'general',
+      donor_name: donorName,
+      donation_frequency: frequency
+    };
 
     const session = await stripe.checkout.sessions.create({
       mode: isMonthly ? 'subscription' : 'payment',
+      integration_identifier: `cat-gardens-${Array.from(randomBytes(8), b => String.fromCharCode(97 + b % 26)).join('')}`,
       customer_email: email,
       billing_address_collection: 'auto',
       phone_number_collection: { enabled: true },
@@ -66,16 +75,12 @@ module.exports = async function handler(req, res) {
           ...(isMonthly ? { recurring: { interval: 'month' } } : {})
         }
       }],
-      metadata: {
-        campaign: safeCampaign || 'general',
-        donor_name: donorName,
-        donation_frequency: frequency
-      },
+      metadata: sharedMetadata,
       subscription_data: isMonthly ? {
-        metadata: { campaign: safeCampaign || 'general', donor_name: donorName }
+        metadata: sharedMetadata
       } : undefined,
       payment_intent_data: isMonthly ? undefined : {
-        metadata: { campaign: safeCampaign || 'general', donor_name: donorName }
+        metadata: sharedMetadata
       },
       success_url: `${siteUrl}/donation-success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/checkout.html?amount=${(amountCents / 100).toFixed(2)}&frequency=${frequency}${safeCampaign ? `&campaign=${encodeURIComponent(safeCampaign)}` : ''}`
