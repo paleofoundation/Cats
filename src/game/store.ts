@@ -1,3 +1,4 @@
+import { CAT_NOSE_DISTANCE } from './characterStaging'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { getCompanionProfile } from './companions'
@@ -415,7 +416,7 @@ export const useGame = create<GameState>()(
           trust: Math.min(100, state.trust + 8),
           carePoints: state.carePoints + 35,
           catAnimation: 'eat',
-          mealPosition: [state.catPosition[0], 0, state.catPosition[2] - companion.phenotype.scale * companion.phenotype.length * .95],
+          mealPosition: [state.catPosition[0], 0, state.catPosition[2] - companion.phenotype.scale * companion.phenotype.length * CAT_NOSE_DISTANCE],
           playerAction: 'feed',
           playerActionUntil: Date.now() + 1800,
           notification: `Virtual ${companion.name} is fed for today · +35 care`,

@@ -81,9 +81,9 @@ export function FlowerBorders() {
   }, [])
   return <group>
     <instancedMesh ref={stems} args={[undefined,undefined,count]}><cylinderGeometry args={[1,1,1,4]} /><meshStandardMaterial color="#546846" roughness={1} /></instancedMesh>
-    <instancedMesh ref={petals} args={[undefined,undefined,count]}><icosahedronGeometry args={[1,1]} /><meshStandardMaterial roughness={.95} /></instancedMesh>
+    <instancedMesh ref={petals} args={[undefined,undefined,count]}><icosahedronGeometry args={[1,2]} /><meshStandardMaterial roughness={.95} /></instancedMesh>
     <instancedMesh ref={centers} args={[undefined,undefined,count]}><sphereGeometry args={[1,6,4]} /><meshStandardMaterial color="#deb566" roughness={1} /></instancedMesh>
-    <instancedMesh ref={leaves} args={[undefined,undefined,count]}><sphereGeometry args={[1,5,4]} /><meshStandardMaterial color="#6d8157" roughness={1} /></instancedMesh>
+    <instancedMesh ref={leaves} args={[undefined,undefined,count]}><sphereGeometry args={[1,12,8]} /><meshStandardMaterial color="#6d8157" roughness={1} /></instancedMesh>
     <instancedMesh ref={rocks} args={[undefined,undefined,90]} receiveShadow><dodecahedronGeometry args={[1,0]} /><meshStandardMaterial roughness={1} /></instancedMesh>
   </group>
 }
@@ -91,12 +91,12 @@ export function FlowerBorders() {
 export function SoftMeadow() {
   const mesh = useRef<THREE.InstancedMesh>(null)
   const wind = useMemo(() => ({ value: 0 }), [])
-  const count = 4200
+  const count = 2800
   const geometry = useMemo(() => {
     const positions: number[] = []
     for (let i = 0; i < 3; i++) {
-      const a = i / 3 * Math.PI, x = Math.cos(a) * .07, z = Math.sin(a) * .07
-      positions.push(-x,0,-z,x,0,z,x*.3,.45,z*.3)
+      const a = i / 3 * Math.PI, x = Math.cos(a) * .055, z = Math.sin(a) * .055
+      positions.push(-x,0,-z,x,0,z,x*.3,.23,z*.3)
     }
     const g = new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3)); g.computeVertexNormals(); return g
   }, [])
@@ -183,6 +183,6 @@ export function OliveGrove() {
   },[trees])
   return <group>
     <instancedMesh ref={trunks} args={[undefined,undefined,trees.length*4]} castShadow receiveShadow><cylinderGeometry args={[.65,1,1,8]}/><meshStandardMaterial color="#80755d" roughness={1}/></instancedMesh>
-    <instancedMesh ref={leaves} args={[undefined,undefined,trees.length*58]} castShadow receiveShadow><icosahedronGeometry args={[1,1]}/><meshStandardMaterial roughness={1}/></instancedMesh>
+    <instancedMesh ref={leaves} args={[undefined,undefined,trees.length*58]} castShadow receiveShadow><icosahedronGeometry args={[1,2]}/><meshStandardMaterial roughness={1}/></instancedMesh>
   </group>
 }

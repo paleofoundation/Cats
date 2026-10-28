@@ -1,21 +1,22 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Float, Html, RoundedBox, Sky, Sparkles, Text, useAnimations, useGLTF } from '@react-three/drei'
+import { Float, Html, RoundedBox, Sky, Sparkles, Text } from '@react-three/drei'
 import { CapsuleCollider, CuboidCollider, Physics, RigidBody, type RapierRigidBody } from '@react-three/rapier'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import * as THREE from 'three'
-import { SkeletonUtils } from 'three-stdlib'
 import { localDay, useGame, type NearbyAction, type PersonId } from './game/store'
 import { getCompanionProfile, sexLabel } from './game/companions'
 import { movementVector } from './game/presentation'
 import { GardenAvatar, type AvatarMotion } from './GardenAvatar'
 import { chandaAvatar, karenAvatar, defaultAvatarStyle, type AvatarStyle } from './game/avatars'
 import { advanceTraffic, trafficLane, ROAD_HALF_LENGTH } from './game/traffic'
+import { GardenCat, type CatMotion } from './GardenCat'
+import { careObstacles, quietApproachDirection, CAT_NOSE_DISTANCE } from './game/characterStaging'
 import { FoodBowl } from './CareProps'
 import { GardenGround, GardenDetails, DistantLandscape, OliveGrove } from './GardenScenery'
 
 const START_POSITION: [number, number, number] = [0, 1, -9]
 const SPLOTCH_HOME = new THREE.Vector3(0, 0, 4.4)
-const SPLOTCH_SHELTER_SPOT = new THREE.Vector3(2.05, 0, 4.75)
+const SPLOTCH_SHELTER_SPOT = new THREE.Vector3(2.7, 0, 5.1)
 const PLANT_POSITION = new THREE.Vector3(-3.2, 0, 3.6)
 const BUILD_POSITION = new THREE.Vector3(3.25, 0, 6.1)
 const BASKET_POSITION = new THREE.Vector3(1.8, 0, -7.8)
@@ -117,6 +118,7 @@ function CaretakerPlayer() {
   const motion = useRef<AvatarMotion>({ speed: 0, action: 'idle' })
   const facing = useRef(0)
   const hudTick = useRef(0)
+  const bondCameraDirection = useRef<THREE.Vector3 | null>(null)
   const smoothTarget = useRef(new THREE.Vector3(0, 1.2, -5))
   const resetToken = useGame((state) => state.resetToken)
   const started = useGame((state) => state.started)
@@ -190,10 +192,21 @@ function CaretakerPlayer() {
       const cat = new THREE.Vector3(...game.catPosition)
       const midpoint = flat.clone().lerp(cat, .5)
       const bondAxis = cat.clone().sub(flat).setY(0).normalize()
-      const side = new THREE.Vector3(-bondAxis.z, 0, bondAxis.x)
-      camera.position.lerp(midpoint.clone().addScaledVector(side, 3.55).add(new THREE.Vector3(0, 1.85, 0)), 1 - Math.exp(-delta * 3.5))
+      if (!bondCameraDirection.current) {
+        const side = new THREE.Vector3(-bondAxis.z, 0, bondAxis.x)
+        const obstacles=careObstacles.map(o=>new THREE.Box3(new THREE.Vector3(o.x-o.halfX,0,o.z-o.halfZ),new THREE.Vector3(o.x+o.halfX,o.height,o.z+o.halfZ)))
+        const look = midpoint.clone().add(new THREE.Vector3(0,.72,0))
+        const candidates = [side,side.clone().negate(),midpoint.clone().sub(BUILD_POSITION).setY(0).normalize()]
+        bondCameraDirection.current = candidates.find(direction=>{
+          const origin=midpoint.clone().addScaledVector(direction,3.7).add(new THREE.Vector3(0,1.85,0))
+          const ray=new THREE.Ray(origin,look.clone().sub(origin).normalize())
+          return obstacles.every(bounds=>{const hit=ray.intersectBox(bounds,new THREE.Vector3());return !hit||origin.distanceTo(hit)>origin.distanceTo(look)})
+        }) || candidates[2]
+      }
+      camera.position.lerp(midpoint.clone().addScaledVector(bondCameraDirection.current, 3.7).add(new THREE.Vector3(0, 1.85, 0)), 1 - Math.exp(-delta * 3.5))
       smoothTarget.current.lerp(midpoint.add(new THREE.Vector3(0, .72, 0)), 1 - Math.exp(-delta * 5))
     } else {
+      bondCameraDirection.current = null
       const desiredCamera = flat.clone().add(CAMERA_OFFSET)
       camera.position.lerp(desiredCamera, 1 - Math.exp(-delta * 4.4))
       smoothTarget.current.lerp(flat.clone().addScaledVector(SCREEN_FORWARD, 2.1).add(new THREE.Vector3(0, 1.15, 0)), 1 - Math.exp(-delta * 6.5))
@@ -264,36 +277,10 @@ function PersonActor({ id }: { id: PersonId }) {
   </group>
 }
 
-function catMaterial(source: THREE.MeshStandardMaterial, baseColor: string, striped: boolean) {
-  const material = source.clone()
-  material.color.set('#ffffff')
-  material.emissive.set('#000000')
-  material.roughness = .9
-  material.onBeforeCompile = (shader) => {
-    shader.uniforms.uCoat = { value: new THREE.Color(baseColor) }
-    shader.uniforms.uTabby = { value: striped ? 1 : 0 }
-    shader.vertexShader = 'varying vec3 vCoatPosition;\n' + shader.vertexShader
-    shader.vertexShader = shader.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvCoatPosition = position;')
-    shader.fragmentShader = 'uniform vec3 uCoat; uniform float uTabby; varying vec3 vCoatPosition;\n' + shader.fragmentShader
-    shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', `
-      #include <map_fragment>
-      #ifdef USE_MAP
-      if (vMapUv.x > .8 && vMapUv.x < .9) {
-        float bands = smoothstep(.65, .88, sin(vCoatPosition.z * 25.0 + sin(vCoatPosition.y * 12.0) * 1.2));
-        diffuseColor.rgb = uCoat * (1.0 - bands * .23 * uTabby);
-      }
-      #endif
-    `)
-  }
-  material.customProgramCacheKey = () => `cat-coat-${baseColor}-${striped}`
-  return material
-}
-
 function SplotchActor() {
   const group = useRef<THREE.Group>(null)
-  const { scene, animations } = useGLTF('/models/kenney/animal-cat.glb')
-  const clone = useMemo(() => SkeletonUtils.clone(scene), [scene])
-  const { actions } = useAnimations(animations, group)
+  const catMotion = useRef<CatMotion>({action:'idle'})
+  const approachDirection = useRef<THREE.Vector3|null>(null)
   const selectedCompanionId = useGame((state) => state.selectedCompanionId)
   const companion = getCompanionProfile(selectedCompanionId)
   const discovered = useGame((state) => state.splotchDiscovered)
@@ -302,21 +289,8 @@ function SplotchActor() {
   const shelterStage = useGame((state) => state.shelterStage)
   const collarName = useGame((state) => state.collarName)
   const bondingMode = useGame((state) => state.bondingMode)
-  const currentAction = useRef('')
   const hudTick = useRef(0)
   const target = useRef(SPLOTCH_HOME.clone())
-  useEffect(() => {
-    const owned: THREE.Material[] = []
-    clone.traverse((object) => {
-      if (object instanceof THREE.Mesh) {
-        object.castShadow = true
-        object.receiveShadow = true
-        object.material = catMaterial(object.material as THREE.MeshStandardMaterial, companion.phenotype.baseColor, companion.phenotype.pattern === 'tabby')
-        owned.push(object.material as THREE.Material)
-      }
-    })
-    return () => owned.forEach((material) => material.dispose())
-  }, [clone, companion.phenotype.baseColor, companion.phenotype.secondaryColor])
   useFrame(({ clock }, frameDelta) => {
     const delta = Math.min(frameDelta, .05)
     if (!group.current) return
@@ -328,11 +302,12 @@ function SplotchActor() {
     target.current.copy(home)
 
     if (game.catAnimation === 'eat') {
-      target.current.set(...(game.mealPosition || [2.65, 0, 4.1])).add(new THREE.Vector3(0, 0, companion.phenotype.scale * companion.phenotype.length * .85))
+      target.current.set(...(game.mealPosition || [2.65, 0, 4.1])).add(new THREE.Vector3(0, 0, companion.phenotype.scale * companion.phenotype.length * CAT_NOSE_DISTANCE))
     } else if (game.bondingMode) {
       const approach = THREE.MathUtils.smoothstep(game.bondingProgress, 18, 78)
       const nuzzle = game.bondingProgress > 78 ? (Math.sin(clock.elapsedTime * 2.6) + 1) * .035 : 0
-      const contactOffset = new THREE.Vector3(.85, 0, .55).normalize().multiplyScalar(1.55 - approach * .32 - nuzzle)
+      if(!approachDirection.current){const [x,z]=quietApproachDirection(player.x,player.z);approachDirection.current=new THREE.Vector3(x,0,z)}
+      const contactOffset = approachDirection.current.clone().multiplyScalar(1.55 - approach * .32 - nuzzle)
       target.current.copy(player).add(contactOffset)
     } else if (game.lastFedDate === localDay() && playerDistance > 3.1 && playerDistance < 13 && (companion.id !== 'mabel' || game.hasBonded)) {
       // Fixed world-space following offset: it never feeds Splotch's own yaw
@@ -344,6 +319,7 @@ function SplotchActor() {
       if (away.lengthSq() > .001) target.current.copy(position).add(away.normalize().multiplyScalar(.75))
     }
 
+    if(!game.bondingMode)approachDirection.current=null
     const motion = target.current.clone().sub(position).setY(0)
     const moving = motion.lengthSq() > .0025
     if (moving) {
@@ -362,15 +338,13 @@ function SplotchActor() {
       group.current.rotation.y += turn * (1 - Math.exp(-delta * 7))
     }
 
-    const groundedY = game.bondingMode && game.bondingProgress > 76 ? Math.sin(clock.elapsedTime * 3.1) * .018 : 0
+    const onDeck = game.shelterStage >= 1 && Math.abs(position.x-BUILD_POSITION.x)<1.55 && Math.abs(position.z-BUILD_POSITION.z)<1.3
+    const groundedY = (onDeck ? .35 : 0) + (game.bondingMode && game.bondingProgress > 76 ? Math.sin(clock.elapsedTime * 3.1) * .018 : 0)
     group.current.position.y = THREE.MathUtils.damp(group.current.position.y, groundedY, 7, delta)
 
     const desiredAction = game.catAnimation === 'eat' ? (moving ? 'walk' : 'eat') : game.catAnimation === 'dance' ? 'dance' : moving ? 'walk' : 'idle'
-    if (currentAction.current !== desiredAction) {
-      actions[currentAction.current]?.fadeOut(.2)
-      ;(actions[desiredAction] ?? actions.idle)?.reset().fadeIn(.2).play()
-      currentAction.current = desiredAction
-    }
+    catMotion.current.action = desiredAction
+    catMotion.current.bond = game.bondingProgress
     hudTick.current += delta
     if (hudTick.current >= .08) {
       game.setCatPosition([position.x, position.y, position.z])
@@ -380,46 +354,21 @@ function SplotchActor() {
   const fedToday = lastFedDate === localDay()
   return (
     <group ref={group} position={[SPLOTCH_HOME.x, 0, SPLOTCH_HOME.z]} rotation={[0, Math.PI, 0]}>
-      <primitive object={clone} scale={[companion.phenotype.scale * companion.phenotype.width, companion.phenotype.scale, companion.phenotype.scale * companion.phenotype.length]} />
-      <CatIdentityDetails />
+      <GardenCat phenotype={companion.phenotype} motion={catMotion} />
       {!bondingMode && <WorldTag title={discovered ? `${companion.name} · ${sexLabel(companion.sex)}` : `${companion.name} is watching`} subtitle={fedToday ? `fed today · choosing to follow` : shelterStage >= 3 ? `${companion.pronouns.possessive} shelter is ready` : 'keep a little distance'} warm={!fedToday} />}
-      {collarName && <Text font="/fonts/garden-labels.woff" position={[0, .77, .28]} fontSize={.12} color="#fff4ca" anchorX="center">{collarName}</Text>}
-      {hasBonded && <Sparkles count={10} scale={[2.1, 1.7, 2.1]} size={3} speed={.25} color="#f8f2bd" position={[0, .8, 0]} />}
+      {collarName && <Text font="/fonts/garden-labels.woff" position={[0, .34, .27]} fontSize={.065} color="#fff4ca" anchorX="center">{collarName}</Text>}
+      {hasBonded && <Sparkles count={10} scale={[2.1, 1.7, 2.1]} size={3} speed={.25} color="#f8f2bd" position={[0, .4, 0]} />}
       {bondingMode && <BondingResponse />}
     </group>
   )
 }
 
 function VisitingCatActor() {
-  const group = useRef<THREE.Group>(null)
-  const { scene, animations } = useGLTF('/models/kenney/animal-cat.glb')
-  const clone = useMemo(() => SkeletonUtils.clone(scene), [scene])
-  const { actions } = useAnimations(animations, group)
-  const selected = useGame((state) => state.selectedCompanionId)
-  const realityVisits = useGame((state) => state.realityVisits)
+  const selected = useGame(state => state.selectedCompanionId)
+  const realityVisits = useGame(state => state.realityVisits)
   const visitor = getCompanionProfile(selected === 'splotch' ? 'mabel' : 'splotch')
-  useEffect(() => {
-    const owned: THREE.Material[] = []
-    clone.traverse((object) => {
-      if (!(object instanceof THREE.Mesh)) return
-      object.castShadow = true
-      object.material = catMaterial(object.material as THREE.MeshStandardMaterial, visitor.phenotype.baseColor, visitor.phenotype.pattern === 'tabby')
-        owned.push(object.material as THREE.Material)
-    })
-    return () => owned.forEach((material) => material.dispose())
-  }, [clone, visitor.phenotype.baseColor, visitor.phenotype.secondaryColor])
-  useEffect(() => {
-    const action = actions.idle ?? actions.Idle
-    action?.reset().fadeIn(.2).play()
-    return () => { action?.fadeOut(.2) }
-  }, [actions])
-  if (realityVisits < 1) return null
-  return (
-    <group ref={group} position={[-1.9, 0, 7.8]} rotation={[0, -1.7, 0]}>
-      <primitive object={clone} scale={[visitor.phenotype.scale * visitor.phenotype.width, visitor.phenotype.scale, visitor.phenotype.scale * visitor.phenotype.length]} />
-      <WorldTag title={`${visitor.name} is visiting`} subtitle="a new relationship appeared" warm />
-    </group>
-  )
+  if(realityVisits < 1) return null
+  return <group position={[-1.9,0,7.8]} rotation={[0,-1.7,0]}><GardenCat phenotype={visitor.phenotype}/><WorldTag title={`${visitor.name} is visiting`} subtitle="a new relationship appeared" warm/></group>
 }
 
 function ComfortMapOverlay({ visible }: { visible: boolean }) {
@@ -437,27 +386,6 @@ function ComfortMapOverlay({ visible }: { visible: boolean }) {
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .02, 0]} renderOrder={5}><ringGeometry args={[zone.radius - .08, zone.radius, 64]} /><meshBasicMaterial color={zone.color} transparent opacity={.88} depthWrite={false} /></mesh>
         <Html center position={[0, .7, 0]} distanceFactor={11} zIndexRange={[8, 0]}><div className="comfort-world-label" style={{ borderColor: zone.color }}><b style={{ color: zone.color }}>{zone.title}</b><span>{zone.detail}</span></div></Html>
       </group>)}
-    </group>
-  )
-}
-
-function CatIdentityDetails() {
-  const selectedCompanionId = useGame((state) => state.selectedCompanionId)
-  const companion = getCompanionProfile(selectedCompanionId)
-  const phenotype = companion.phenotype
-  const scale = phenotype.scale
-  const visibleEyes = phenotype.eyeCount === 1 ? [-.13] : phenotype.eyeCount === 2 ? [-.13, .13] : []
-  return (
-    <group scale={scale}>
-      {visibleEyes.map((x) => <mesh key={x} position={[x, 1.17, .58]} scale={[1, .9, .55]}><sphereGeometry args={[.058, 12, 9]} /><meshStandardMaterial color={phenotype.blind ? '#d8dedb' : phenotype.eyeColor} emissive={phenotype.eyeColor} emissiveIntensity={phenotype.blind ? .04 : .2} roughness={phenotype.blind ? .9 : .3} /></mesh>)}
-      {phenotype.eyeCount < 2 && [phenotype.eyeCount === 0 ? -.13 : .13, .13].filter((value, index, values) => phenotype.eyeCount === 0 || values.indexOf(value) === index).map((x) => <mesh key={`closed-${x}`} position={[x, 1.17, .593]} scale={[1.6, .32, .3]}><sphereGeometry args={[.052, 12, 8]} /><meshStandardMaterial color={phenotype.secondaryColor} roughness={.96} /></mesh>)}
-      {phenotype.pattern === 'tabby' && <group>
-        {[-.18, 0, .18].map((x, index) => <mesh key={x} position={[x, 1.3 - Math.abs(x) * .25, .47]} rotation={[0, 0, x * 1.3]} scale={[.34, .055, .025]}><sphereGeometry args={[1, 12, 6]} /><meshStandardMaterial color={phenotype.secondaryColor} roughness={.92} /></mesh>)}
-        {[0, 1, 2].map((index) => <mesh key={index} position={[0, .75, -.05 - index * .18]} rotation={[Math.PI / 2, 0, 0]} scale={[.58, .08, .35]}><torusGeometry args={[.46, .055, 7, 24]} /><meshStandardMaterial color={phenotype.secondaryColor} roughness={.94} /></mesh>)}
-      </group>}
-      <mesh position={[0, .78, .37]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[.22, .025, 8, 32]} /><meshStandardMaterial color={companion.sex === 'female' ? '#efe4b8' : companion.sex === 'male' ? '#86a69c' : '#bbb7ae'} metalness={.3} roughness={.4} /></mesh>
-      <Text font="/fonts/garden-labels.woff" position={[0, .69, .57]} fontSize={.15} color="#fffdf0" anchorX="center" outlineWidth={.008} outlineColor="#302f2b">{companion.sex === 'female' ? 'F' : companion.sex === 'male' ? 'M' : '·'}</Text>
-      {phenotype.blind && <Text font="/fonts/garden-labels.woff" position={[0, 1.62, 0]} fontSize={.1} color="#f4f0d6" anchorX="center" outlineWidth={.006} outlineColor="#31302d">BLIND · REAL TRAIT</Text>}
     </group>
   )
 }
@@ -571,7 +499,7 @@ function CatHouse() {
       )}
       {stage >= 3 && blanket > 0 && <BuildReveal><RoundedBox args={[1.23, .12, 1.08]} position={[-.55, .74, .04]} radius={.16} smoothness={6}><meshStandardMaterial color="#e9c8a8" roughness={1} /></RoundedBox></BuildReveal>}
       {waterBowl > 0 && (
-        <BuildReveal><group position={[1.05, 0, -1.68]}>
+        <BuildReveal><group position={[1.05, 0, -1.68]} scale={.55}>
           <mesh position={[0, .15, 0]}><cylinderGeometry args={[.42, .3, .24, 24]} /><meshStandardMaterial color={waterBowl > 1 ? '#7aa9a2' : '#d7b45f'} metalness={.4} roughness={.3} /></mesh>
           <mesh position={[0, .29, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[.28, 24]} /><meshStandardMaterial color="#7ec8d5" transparent opacity={.8} /></mesh>
           {waterBowl > 1 && <group position={[.28, .62, .08]}><mesh><cylinderGeometry args={[.24, .26, .85, 18]} /><meshStandardMaterial color="#b7d8d0" transparent opacity={.75} /></mesh><mesh position={[-.18, -.28, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.05, .05, .38, 10]} /><meshStandardMaterial color="#6b8f8a" /></mesh></group>}
@@ -772,6 +700,6 @@ export function CatGardenWorld({ comfortMap = false, paused = false }: { comfort
   )
 }
 
-useGLTF.preload('/models/kenney/animal-cat.glb')
+
 
 export default CatGardenWorld
