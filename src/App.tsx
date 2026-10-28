@@ -52,6 +52,7 @@ import { GameSync } from './GameSync'
 import { RealityThread } from './RealityThread'
 import { playPurr } from './game/audio'
 import { acceptsGameInput } from './game/presentation'
+import { avatarPresets, normalizeAvatarStyle } from './game/avatars'
 import { foodPrice, getDailyProgress, getObjective, getRelationshipText, localDay, shelterBuildCatalog, upgradeCatalog, useGame, type AvatarStyle, type DonationBadge, type GardenPromise, type GardenUpgrade, type KeeperStyle, type PersonId } from './game/store'
 import { companionCopy, getCompanionProfile, sexLabel } from './game/companions'
 import { episodeFor, useGardenNotifications, useRealityFeed } from './reality'
@@ -90,6 +91,7 @@ const mathikoloniTransformationZones = [
 ] as const
 
 const CatGardenWorld = lazy(() => import('./World').then((module) => ({ default: module.CatGardenWorld })))
+const AvatarPreview = lazy(() => import('./AvatarPreview'))
 
 const bondMoments = [
   { title: 'Do less. Stay longer.', detail: 'Your caretaker has stopped nearby and given Splotch room to decide what happens next. Press and hold. Trust is time—not tapping.', action: 'Hold to stay nearby', result: 'You stayed after the urgent work was over.' },
@@ -141,7 +143,7 @@ const choosingQuestions: Array<{ eyebrow: string; title: string; detail: string;
   },
 ]
 
-function ChoosingCeremony({ onComplete }: { onComplete: (id: string, gardenName: string, style: KeeperStyle, promise: GardenPromise) => void }) {
+function ChoosingCeremony({ onComplete, onCustomize }: { onComplete: (id: string, gardenName: string, style: KeeperStyle, promise: GardenPromise) => void; onCustomize: () => void }) {
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<ChoosingAnswer[]>([])
   const [chosenId, setChosenId] = useState('splotch')
@@ -210,6 +212,7 @@ function ChoosingCeremony({ onComplete }: { onComplete: (id: string, gardenName:
             <p className="choosing-lede">{chosenCat.story} Your first task is not to browse. It is to build somewhere safe together.</p>
             <label className="garden-name-field"><span>NAME YOUR SHARED GARDEN</span><input value={gardenName} onChange={(event) => setGardenName(event.target.value)} maxLength={32} aria-label="Name your garden" /></label>
             <div className="choosing-final-actions">
+              <button className="secondary-button" onClick={onCustomize}><UserRound size={18} /> Choose my avatar</button>
               <button className="primary-button" onClick={finish}>Enter {gardenName || 'the garden'} <ArrowRight size={18} /></button>
             </div>
             <div className="entry-truth-boundary"><Coins size={17} /><p><strong>Real support earns game rewards.</strong><span>After Stripe verifies a gift to Gardens of St. Gertrude, this garden receives tokens for persistent upgrades. Tokens have no cash value.</span></p></div>
@@ -1144,29 +1147,45 @@ function CareRoster({ onClose, onSelect }: { onClose: () => void; onSelect: (id:
 
 function AvatarCreator({ onClose }: { onClose: () => void }) {
   const setAvatarStyle = useGame((state) => state.setAvatarStyle)
-  const [draft, setDraft] = useState<AvatarStyle>(() => ({ ...useGame.getState().avatarStyle }))
+  const [draft, setDraft] = useState<AvatarStyle>(() => normalizeAvatarStyle(useGame.getState().avatarStyle))
+  const [angle, setAngle] = useState(.2)
   const update = <K extends keyof AvatarStyle>(key: K, value: AvatarStyle[K]) => setDraft((current) => ({ ...current, [key]: value }))
-  const colors: Array<{ key: 'clothing' | 'pants'; label: string }> = [
-    { key: 'clothing', label: 'Shirt' }, { key: 'pants', label: 'Trousers' },
+  const colors: Array<{ key: 'skin' | 'hair' | 'eyes' | 'clothing' | 'pants' | 'shoes'; label: string }> = [
+    { key: 'skin', label: 'Skin tone' }, { key: 'hair', label: 'Hair color' }, { key: 'eyes', label: 'Eye color' },
+    { key: 'clothing', label: 'Top color' }, { key: 'pants', label: 'Bottom color' }, { key: 'shoes', label: 'Footwear color' },
   ]
-  return (
-    <div className="profile-backdrop avatar-backdrop" role="presentation">
-      <article className="avatar-creator" role="dialog" aria-modal="true" aria-labelledby="avatar-title">
-        <button className="close-button" onClick={onClose} aria-label="Close caretaker creator"><X size={19} /></button>
-        <div className="avatar-creator-preview" style={{ '--avatar-shirt': draft.clothing, '--avatar-pants': draft.pants } as React.CSSProperties}>
-          <div className={`avatar-figure frame-${draft.bodyFrame}`}><i className="avatar-body" /><i className="avatar-legs" /></div>
-          <span>STABLE CARETAKER MODEL</span><strong>{draft.displayName || 'Garden caretaker'}</strong><small>Choose the body frame and clothing palette. The unstable custom head, eyes, hair, and seated replacement have been removed.</small>
+  return <div className="profile-backdrop avatar-backdrop" role="presentation">
+    <article className="avatar-creator" role="dialog" aria-modal="true" aria-labelledby="avatar-title">
+      <button className="close-button" onClick={onClose} aria-label="Close avatar creator"><X size={19} /></button>
+      <div className="avatar-creator-preview">
+        <span>YOUR PLACE IN THE GARDEN</span>
+        <div className="avatar-live-preview" role="img" aria-label={`3D preview of ${draft.displayName}, ${draft.hairStyle} hair, ${draft.topStyle}, ${draft.bottomStyle}, ${draft.footwear}`}>
+          <Suspense fallback={<p className="avatar-preview-loading">Opening your preview…</p>}><AvatarPreview appearance={draft} angle={angle}/></Suspense>
         </div>
-        <div className="avatar-creator-controls">
-          <p className="eyebrow">CREATE YOUR CARETAKER</p><h2 id="avatar-title">Who walks into the garden?</h2>
-          <label className="avatar-name-field">Display name<input value={draft.displayName} maxLength={30} onChange={(event) => update('displayName', event.target.value)} /></label>
-          <fieldset><legend>Body frame</legend><div className="avatar-choice-row">{(['feminine', 'masculine', 'androgynous'] as const).map((value) => <button type="button" className={draft.bodyFrame === value ? 'selected' : ''} key={value} onClick={() => update('bodyFrame', value)}>{value}</button>)}</div></fieldset>
-          <fieldset><legend>Clothing colors</legend><div className="avatar-color-row">{colors.map(({ key, label }) => <label key={key}><input type="color" value={draft[key]} onChange={(event) => update(key, event.target.value)} /><span>{label}</span></label>)}</div></fieldset>
-          <div className="avatar-save-row"><button className="primary-button" onClick={() => { setAvatarStyle({ ...draft, displayName: draft.displayName.trim() || 'Garden caretaker' }); onClose() }}>Save caretaker <ArrowRight size={17} /></button><small>You can change this at any time.</small></div>
+        <div className="avatar-turn-controls"><button aria-label="Turn avatar left" onClick={()=>setAngle(value=>value+Math.PI/4)}>↶</button><button onClick={()=>setAngle(0)}>Front</button><button onClick={()=>setAngle(Math.PI)}>Back</button><button aria-label="Turn avatar right" onClick={()=>setAngle(value=>value-Math.PI/4)}>↷</button></div>
+        <strong>{draft.displayName || 'Your avatar'}</strong><small>Drag to look around. This is the character you will see walking in your garden.</small>
+      </div>
+      <div className="avatar-creator-controls">
+        <p className="eyebrow">MAKE YOURSELF AT HOME</p><h2 id="avatar-title">Come as you are.</h2>
+        <p className="avatar-intro">Choose a starting look, then make it yours. Every option is free.</p>
+        <fieldset><legend>Starting looks</legend><div className="avatar-presets">{avatarPresets.map(preset=><button key={preset.name} onClick={()=>setDraft({...preset.style,displayName:draft.displayName==='Garden caretaker'?preset.style.displayName:draft.displayName})}>{preset.name}</button>)}</div></fieldset>
+        <label className="avatar-name-field">Display name<input value={draft.displayName} maxLength={30} onChange={(event) => update('displayName', event.target.value)} /></label>
+        <fieldset><legend>Body frame</legend><div className="avatar-choice-row">{(['feminine', 'masculine', 'androgynous'] as const).map((value) => <button type="button" aria-pressed={draft.bodyFrame===value} className={draft.bodyFrame === value ? 'selected' : ''} key={value} onClick={() => update('bodyFrame', value)}>{value}</button>)}</div></fieldset>
+        <div className="avatar-sliders">
+          <label>Height <b>{Math.round(draft.height*100)} cm</b><input aria-label="Avatar height" type="range" min="1.4" max="1.95" step=".01" value={draft.height} onChange={event=>update('height',Number(event.target.value))}/></label>
+          <label>Body build <b>{draft.build<.95?'Slender':draft.build>1.1?'Fuller':'Medium'}</b><input aria-label="Avatar body build" type="range" min=".8" max="1.3" step=".01" value={draft.build} onChange={event=>update('build',Number(event.target.value))}/></label>
         </div>
-      </article>
-    </div>
-  )
+        <div className="avatar-selects">
+          <label>Hairstyle<select value={draft.hairStyle} onChange={event=>update('hairStyle',event.target.value as AvatarStyle['hairStyle'])}><option value="short">Short</option><option value="long">Long, loose</option><option value="ponytail">Ponytail</option><option value="bun">Bun</option><option value="close-cropped">Close-cropped</option><option value="bald">No hair</option></select></label>
+          <label>Top<select value={draft.topStyle} onChange={event=>update('topStyle',event.target.value as AvatarStyle['topStyle'])}><option value="tee">T-shirt</option><option value="tank">Tank top</option><option value="long-sleeve">Long sleeves</option></select></label>
+          <label>Bottom<select value={draft.bottomStyle} onChange={event=>update('bottomStyle',event.target.value as AvatarStyle['bottomStyle'])}><option value="trousers">Trousers</option><option value="shorts">Shorts</option><option value="skirt">Skirt</option></select></label>
+          <label>Footwear<select value={draft.footwear} onChange={event=>update('footwear',event.target.value as AvatarStyle['footwear'])}><option value="trainers">Trainers</option><option value="flip-flops">Flip-flops</option><option value="boots">Boots</option><option value="barefoot">Barefoot</option></select></label>
+        </div>
+        <fieldset><legend>Your colors</legend><div className="avatar-color-row">{colors.map(({ key, label }) => <label key={key}><input aria-label={label} type="color" value={draft[key]} onChange={(event) => update(key, event.target.value)} /><span>{label}</span></label>)}</div></fieldset>
+        <div className="avatar-save-row"><button className="primary-button" onClick={() => { setAvatarStyle(normalizeAvatarStyle(draft)); onClose() }}>Save my avatar <ArrowRight size={17} /></button><small>Change your look any time with My avatar.</small></div>
+      </div>
+    </article>
+  </div>
 }
 
 function GardenProfile({ onClose, onDonate }: { onClose: () => void; onDonate: (need: SplotchNeed) => void }) {
@@ -1719,6 +1738,7 @@ export default function App() {
       {started && <header className="game-header game-panel" inert={paused} aria-hidden={paused}>
         <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>{gardenName.toUpperCase()} · {completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${episodeFor(completedDays).day}/7`} · MEMORY {Math.min(7, bondVisits + 1)}/7</small></a>
         <nav>
+          <button aria-label="Customize my avatar" className="avatar-nav" onClick={() => setAvatarOpen(true)}><UserRound size={17}/><span>My avatar</span></button>
           {shelterStage >= 3 && <button aria-label={`See the real ${companion.name}`} className="reality-nav" onClick={() => setRealityOpen(true)}><Video size={17} /><span>Real {companion.name}</span></button>}
           <button aria-label="My cat" className="memory-nav" onClick={() => setMemoryOpen(true)}><Camera size={17} /><span>My Cat</span></button>
           <button aria-label="Explore the garden" className={comfortMap ? 'comfort-nav active' : 'comfort-nav'} onClick={() => setComfortMap((current) => !current)}><Eye size={17} /><span>Explore</span></button>
@@ -1730,7 +1750,8 @@ export default function App() {
             <div>
               {completedDays > 0 && <button onClick={() => setTvOpen(true)}><Radio size={16} /> Cat Gardens TV</button>}
               <button onClick={() => setRosterOpen(true)}><PawPrint size={16} /> Meet other cats</button>
-              <button onClick={() => setAvatarOpen(true)}><UserRound size={16} /> My caretaker</button>
+              <button onClick={() => setAvatarOpen(true)}><UserRound size={16} /> My avatar</button>
+              <button className="mobile-explore" onClick={() => setComfortMap(value=>!value)}><Eye size={16}/> {comfortMap ? 'Hide garden guide' : 'Explore the garden'}</button>
               <button onClick={() => setProfileOpen(true)}><BadgeCheck size={16} /> My impact</button>
               <button onClick={() => setMorningOpen(true)}><Gift size={16} /> {lastDailyClaim === localDay() ? 'Today’s basket' : 'Free daily gift'}</button>
               <button onClick={() => setHelpOpen(true)}><CircleHelp size={16} /> Controls & safety</button>
@@ -1764,7 +1785,7 @@ export default function App() {
         />
       )}
 
-      {!started && <ChoosingCeremony onComplete={(id, name, style, promise) => completeChoosing(id, name, style, promise)} />}
+      {!started && <div inert={avatarOpen}><ChoosingCeremony onComplete={(id, name, style, promise) => completeChoosing(id, name, style, promise)} onCustomize={() => setAvatarOpen(true)} /></div>}
       {morningOpen && <MorningBasketModal onClose={() => setMorningOpen(false)} />}
       {personOpen && <PersonDialogue person={personOpen} onClose={() => setPersonOpen(null)} />}
       {bondResult && <BondResultModal result={bondResult} onClose={() => setBondResult(null)} />}

@@ -51,8 +51,13 @@ function sanitizeState(input) {
     const clean = {}
     if (typeof avatar.displayName === 'string') clean.displayName = avatar.displayName.replace(/[<>]/g, '').trim().slice(0, 30)
     if (['feminine', 'masculine', 'androgynous'].includes(avatar.bodyFrame)) clean.bodyFrame = avatar.bodyFrame
-    if (['short', 'long', 'bun', 'close-cropped'].includes(avatar.hairStyle)) clean.hairStyle = avatar.hairStyle
-    for (const color of ['skin', 'hair', 'eyes', 'clothing', 'pants']) {
+    if (['short', 'long', 'bun', 'close-cropped', 'ponytail', 'bald'].includes(avatar.hairStyle)) clean.hairStyle = avatar.hairStyle
+    if (['tee', 'tank', 'long-sleeve'].includes(avatar.topStyle)) clean.topStyle = avatar.topStyle
+    if (['trousers', 'shorts', 'skirt'].includes(avatar.bottomStyle)) clean.bottomStyle = avatar.bottomStyle
+    if (['trainers', 'flip-flops', 'boots', 'barefoot'].includes(avatar.footwear)) clean.footwear = avatar.footwear
+    if (Number.isFinite(avatar.height)) clean.height = Math.max(1.4, Math.min(1.95, avatar.height))
+    if (Number.isFinite(avatar.build)) clean.build = Math.max(.8, Math.min(1.3, avatar.build))
+    for (const color of ['skin', 'hair', 'eyes', 'clothing', 'pants', 'shoes']) {
       if (typeof avatar[color] === 'string' && /^#[0-9a-f]{6}$/i.test(avatar[color])) clean[color] = avatar[color].toLowerCase()
     }
     state.avatarStyle = clean
