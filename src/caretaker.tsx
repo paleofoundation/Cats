@@ -111,7 +111,7 @@ function CaretakerRoom() {
   return (
     <main className="caretaker-shell">
       <header className="care-header">
-        <a href="/"><ArrowLeft size={16} /> Garden</a>
+        <div><a href="/"><ArrowLeft size={16} /> Garden</a><a className="care-app-link" href="https://catgardens-care.kmfp.chatgpt.site" target="_blank" rel="noopener noreferrer">Open CatGardens Care ↗</a></div>
         <div><p className="care-eyebrow">CAT GARDENS · PRIVATE OPERATIONS</p><h1>Reality publishing room.</h1><span>{data ? `${data.caretaker.role} · ${account.name}` : account.name}</span></div>
         <button onClick={() => refresh()} disabled={loading}><RefreshCw className={loading ? 'care-spin' : ''} size={16} /> Refresh</button>
       </header>

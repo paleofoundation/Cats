@@ -1,4 +1,5 @@
 const { neon } = require('@neondatabase/serverless')
+const { isCatGardensDonation, stripeLiveMode } = require('./_payment-scope')
 
 let schemaPromise
 
@@ -483,6 +484,7 @@ async function ensureSchema() {
 
 async function recordDonation(session) {
   if (!session || session.status !== 'complete' || session.payment_status !== 'paid') return false
+  if (!isCatGardensDonation(session) || session.livemode !== stripeLiveMode()) return false
   await ensureSchema()
   const sql = database()
   const metadata = session.metadata || {}
@@ -499,54 +501,43 @@ async function recordDonation(session) {
     ? await sql`SELECT cat_id FROM garden_cats WHERE cat_id = ${requestedCatId} LIMIT 1`
     : []
   const eventCatId = knownCat[0]?.cat_id || null
-  const inserted = await sql`
-    INSERT INTO garden_donations (
-      session_id, user_id, stripe_customer_id, amount_cents, currency, badge, need_id, frequency,
-      payment_status, cat_id, program, donor_name, allocation_status
-    ) VALUES (
-      ${recordId}, ${metadata.app_user_id || null}, ${typeof session.customer === 'string' ? session.customer : null},
-      ${amountCents}, ${session.currency || 'usd'}, ${metadata.badge || 'garden-keeper'}, ${needId},
-      ${metadata.donation_frequency || 'once'}, ${session.payment_status}, ${metadata.cat_id || null},
-      ${metadata.program || 'sanctuary'}, ${metadata.donor_name || null}, 'pending_sanctuary_review'
-    )
-    ON CONFLICT (session_id) DO NOTHING
-    RETURNING session_id
-  `
-  if (!inserted.length) return false
-
-  await sql`
-    INSERT INTO garden_donation_allocations (session_id, need_id, amount_cents, status, note)
-    VALUES (
-      ${recordId}, ${needId}, ${amountCents}, 'pending_sanctuary_review',
-      'Payment verified. Final sanctuary allocation and any overflow routing await caretaker review.'
-    )
-    ON CONFLICT (session_id, need_id) DO NOTHING
-  `
-  const eventRows = await sql`
-    INSERT INTO garden_care_events (
-      event_key, event_type, cat_id, need_id, user_id, title, detail, metadata, public, created_by
-    ) VALUES (
-      ${`donation:${recordId}`}, 'donation.verified', ${eventCatId}, ${needId},
-      ${metadata.app_user_id || null}, 'A real contribution was verified',
-      'Stripe confirmed the payment. Sanctuary allocation is now awaiting review; virtual tokens remain separate game currency.',
-      ${JSON.stringify({ amount_cents: amountCents, currency: session.currency || 'usd', allocation_status: 'pending_sanctuary_review' })}::jsonb,
-      FALSE, 'stripe'
-    )
-    ON CONFLICT (event_key) DO NOTHING
-    RETURNING event_id
-  `
-  if (metadata.app_user_id && eventRows[0]) {
-    await sql`
-      INSERT INTO garden_notifications (event_id, user_id, cat_id, title, body, action_url)
-      VALUES (
-        ${eventRows[0].event_id}, ${metadata.app_user_id}, ${eventCatId},
-        'Your real gift was verified',
-        'The payment is recorded. The sanctuary will publish its final allocation separately from your virtual garden tokens.',
-        '/?profile=open'
+  // Commit the gift, allocation, event and notification atomically. A failed later
+  // write must not leave a donation row that makes retries skip fulfillment.
+  const results = await sql.transaction([
+    sql`
+      INSERT INTO garden_donations (
+        session_id,user_id,stripe_customer_id,amount_cents,currency,badge,need_id,frequency,
+        payment_status,cat_id,program,donor_name,allocation_status
+      ) VALUES (
+        ${recordId},${metadata.app_user_id||null},${typeof session.customer==='string'?session.customer:null},
+        ${amountCents},${session.currency||'usd'},${metadata.badge||'garden-keeper'},${needId},
+        ${metadata.donation_frequency||'once'},${session.payment_status},${metadata.cat_id||null},
+        ${metadata.program||'sanctuary'},${metadata.donor_name||null},'pending_sanctuary_review'
+      ) ON CONFLICT(session_id) DO NOTHING RETURNING session_id
+    `,
+    sql`
+      INSERT INTO garden_donation_allocations(session_id,need_id,amount_cents,status,note)
+      VALUES(${recordId},${needId},${amountCents},'pending_sanctuary_review',
+        'Payment verified. Final sanctuary allocation and any overflow routing await caretaker review.')
+      ON CONFLICT(session_id,need_id) DO NOTHING
+    `,
+    sql`
+      WITH recorded_event AS (
+        INSERT INTO garden_care_events(event_key,event_type,cat_id,need_id,user_id,title,detail,metadata,public,created_by)
+        VALUES(${`donation:${recordId}`},'donation.verified',${eventCatId},${needId},${metadata.app_user_id||null},
+          'A real contribution was verified',
+          'Stripe confirmed the payment. Sanctuary allocation awaits review; virtual tokens remain separate game currency.',
+          ${JSON.stringify({amount_cents:amountCents,currency:session.currency||'usd',allocation_status:'pending_sanctuary_review'})}::jsonb,
+          FALSE,'stripe')
+        ON CONFLICT(event_key) DO NOTHING RETURNING event_id
       )
-    `
-  }
-  return true
+      INSERT INTO garden_notifications(event_id,user_id,cat_id,title,body,action_url)
+      SELECT event_id,${metadata.app_user_id||null},${eventCatId},'Your real gift was verified',
+        'The payment is recorded. The sanctuary will publish its final allocation separately from your virtual garden tokens.','/?profile=open'
+      FROM recorded_event WHERE ${Boolean(metadata.app_user_id)}
+    `,
+  ])
+  return results[0].length > 0
 }
 
 module.exports = { database, ensureSchema, normalizeNeedId, recordDonation }
