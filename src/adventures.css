@@ -1,0 +1,1235 @@
+.adventure-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(24, 42, 35, 0.58);
+  backdrop-filter: blur(12px);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #263e35;
+}
+.adventure-book {
+  width: min(1120px, 100%);
+  height: min(850px, calc(100dvh - 48px));
+  background: #fcfaf4;
+  border: 1px solid #fff9;
+  border-radius: 26px;
+  box-shadow: 0 30px 100px #10251e50;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  isolation: isolate;
+}
+.adventure-book button,
+.adventure-book select {
+  font: inherit;
+  cursor: pointer;
+}
+.adventure-book button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+.adventure-book button:focus-visible,
+.adventure-book select:focus-visible,
+.adventure-book summary:focus-visible {
+  outline: 3px solid #b0803c;
+  outline-offset: 3px;
+}
+.adventure-header {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  padding: 24px 30px 21px;
+  flex-shrink: 0;
+}
+.adventure-book .eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: #69816e;
+  margin: 0 0 9px;
+}
+.adventure-header h2 {
+  font-size: 28px;
+  letter-spacing: -1.1px;
+  margin: 0;
+  font-weight: 750;
+}
+.adventure-wallet {
+  margin-left: auto;
+  display: grid;
+  grid-template-columns: 25px auto;
+  column-gap: 8px;
+  align-items: center;
+  background: #f1ead6;
+  padding: 12px 18px;
+  border-radius: 16px;
+}
+.adventure-wallet svg {
+  grid-row: span 2;
+  color: #ad7a24;
+}
+.adventure-wallet b {
+  font-size: 21px;
+  line-height: 1.1;
+}
+.adventure-wallet span {
+  font-size: 10px;
+  white-space: nowrap;
+}
+.adventure-close {
+  border: 0;
+  background: #eaece3;
+  color: #3f5449;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+.adventure-tabs {
+  display: flex;
+  gap: 5px;
+  padding: 0 30px;
+  border-bottom: 1px solid #dfe5d8;
+  flex-shrink: 0;
+}
+.adventure-tabs button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #758077;
+  padding: 15px 22px;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.adventure-tabs button.active {
+  border-color: #426d54;
+  color: #2f553e;
+}
+.adventure-tabs button b {
+  font-size: 10px;
+  background: #e2b763;
+  color: #3d3b1d;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+}
+.adventure-content {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 28px 30px 32px;
+  scroll-behavior: smooth;
+}
+.adventure-content h3 {
+  font-size: 29px;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  margin: 0 0 13px;
+}
+.adventure-content p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #6d796f;
+}
+.adventure-story-hero {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  align-items: center;
+  background: #e5eddf;
+  border-radius: 20px;
+  overflow: hidden;
+  padding: 28px 32px;
+  min-height: 240px;
+  position: relative;
+}
+.adventure-story-hero h3 {
+  font-size: 36px;
+  letter-spacing: -1.5px;
+}
+.adventure-story-hero p {
+  max-width: 410px;
+}
+.adventure-story-hero span {
+  font-size: 11px;
+  color: #54725e;
+}
+.story-objects {
+  position: relative;
+  height: 200px;
+}
+.story-objects svg:first-child {
+  position: absolute;
+  width: 220px;
+  right: 30px;
+  top: -14px;
+  transform: rotate(-8deg);
+}
+.story-objects svg:last-child {
+  position: absolute;
+  width: 200px;
+  bottom: -28px;
+  right: -10px;
+  transform: rotate(8deg);
+}
+.chapter-layout {
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  gap: 28px;
+  margin-top: 26px;
+}
+.chapter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chapter-list button {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  color: #758176;
+  padding: 11px;
+  border-radius: 12px;
+}
+.chapter-list button.selected {
+  background: #f1eee2;
+  border-color: #e3dfcc;
+  color: #304c3d;
+}
+.chapter-list button > span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #cfd7c8;
+  border-radius: 50%;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.chapter-list b {
+  font-size: 12px;
+  display: block;
+}
+.chapter-list small {
+  font-size: 10px;
+  display: block;
+  margin-top: 3px;
+}
+.chapter-page {
+  border-left: 1px solid #e0e5d9;
+  padding: 12px 0 0 28px;
+}
+.chapter-page h3 {
+  font-size: 27px;
+}
+.chapter-goal {
+  padding: 16px 18px;
+  background: #f1f3e9;
+  border-radius: 12px;
+  margin: 20px 0;
+  font-size: 12px;
+}
+.chapter-goal b {
+  display: block;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.chapter-goal progress {
+  width: 100%;
+  height: 6px;
+  display: block;
+  margin: 14px 0 8px;
+  accent-color: #63866a;
+  border: 0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+.chapter-goal progress::-webkit-progress-bar {
+  background: #dce4d5;
+}
+.chapter-goal progress::-webkit-progress-value {
+  background: #63866a;
+}
+.chapter-goal small {
+  font-size: 10px;
+  color: #73826f;
+}
+.chapter-saved {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.adventure-button {
+  border: 1px solid #355b45;
+  background: #355b45;
+  border-radius: 10px;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 10px 17px;
+  color: #fff;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+}
+.adventure-button.quiet {
+  background: transparent;
+  color: #42634d;
+  border-color: #d2dccd;
+}
+.adventure-button + .adventure-button {
+  margin-left: 8px;
+}
+.adventure-section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 25px;
+  align-items: center;
+  margin-bottom: 22px;
+}
+.adventure-section-heading p {
+  max-width: 650px;
+  margin-bottom: 0;
+}
+.adventure-section-heading h3 {
+  font-size: 28px;
+}
+.collection-count {
+  white-space: nowrap;
+  color: #7b8978;
+  font-size: 12px;
+}
+.collection-count b {
+  font-size: 25px;
+  color: #3d5d47;
+}
+.collection-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.collection-filters button {
+  border: 1px solid #dce2d6;
+  border-radius: 30px;
+  background: transparent;
+  color: #6d7d6c;
+  padding: 8px 14px;
+  font-size: 11px;
+}
+.collection-filters button.active {
+  background: #365b43;
+  border-color: #365b43;
+  color: white;
+}
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.collection-grid article {
+  border: 1px solid #e0e4d9;
+  border-radius: 15px;
+  overflow: hidden;
+  background: #fffefa;
+}
+.collection-grid article.placed {
+  border-color: #8ea68b;
+}
+.collection-visual {
+  height: 160px;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.collection-art {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.collection-visual > span {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  background: #fffdf5e6;
+  border-radius: 20px;
+  padding: 5px 7px;
+  font-size: 9px;
+  color: #49634c;
+}
+.collection-description {
+  padding: 15px;
+}
+.collection-description p {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 6px;
+  color: #8b987f;
+}
+.collection-description h4 {
+  font-size: 14px;
+  margin: 0 0 7px;
+  line-height: 1.4;
+}
+.collection-description small {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #7b847b;
+  display: block;
+  min-height: 53px;
+}
+.collection-description button {
+  border: 0;
+  border-top: 1px solid #e7e9df;
+  color: #42634d;
+  background: transparent;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  font-size: 10px;
+  font-weight: 650;
+  padding: 12px 0 0;
+  margin-top: 12px;
+  min-height: 32px;
+}
+.adventure-footnote {
+  font-size: 11px !important;
+  margin-top: 22px;
+}
+.collection-empty {
+  background: #e9edde;
+  padding: 25px;
+  border-radius: 12px;
+}
+.gift-feature {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 45px;
+  align-items: center;
+  margin: 5px 0 30px;
+}
+.gift-feature-art {
+  border-radius: 22px;
+  background: radial-gradient(ellipse at 50% 40%, #fff6d8, #e8eddc 70%);
+  height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.gift-feature-art > span {
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  color: #819175;
+}
+.gift-feature h3 {
+  font-size: 38px;
+  letter-spacing: -1.4px;
+}
+.gift-guarantees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0;
+}
+.gift-guarantees span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #607b5a;
+}
+.gift-payment-note {
+  display: block;
+  color: #7c8778;
+  font-size: 10px;
+  line-height: 1.6;
+  margin-top: 14px;
+}
+.wrapped-gift {
+  position: relative;
+  width: 240px;
+  height: 230px;
+  perspective: 800px;
+}
+.gift-glow {
+  position: absolute;
+  inset: 25px 5px;
+  background: #f9dc8a70;
+  filter: blur(22px);
+  border-radius: 50%;
+}
+.gift-base {
+  position: absolute;
+  left: 44px;
+  top: 95px;
+  width: 157px;
+  height: 105px;
+  background: linear-gradient(100deg, #779a7d, #537862);
+  border-radius: 3px 3px 12px 12px;
+  box-shadow: 4px 18px 17px #324b2520;
+  transform: rotate(-7deg);
+}
+.gift-base i {
+  display: block;
+  background: linear-gradient(90deg, #e0b568, #f4d490);
+  width: 28px;
+  height: 100%;
+  margin: auto;
+}
+.gift-lid {
+  position: absolute;
+  left: 36px;
+  top: 73px;
+  width: 171px;
+  height: 32px;
+  border-radius: 5px;
+  background: linear-gradient(100deg, #94b094, #6f9378);
+  transform: rotate(-7deg);
+  box-shadow: 0 6px 4px #29473330;
+  transition: transform 0.8s ease;
+}
+.gift-lid i {
+  display: block;
+  width: 30px;
+  height: 100%;
+  margin: auto;
+  background: #efd08c;
+}
+.gift-lid b:before,
+.gift-lid b:after {
+  content: "";
+  position: absolute;
+  width: 48px;
+  height: 30px;
+  border: 9px solid #efd08c;
+  border-radius: 50% 50% 5px 50%;
+  top: -37px;
+  left: 33px;
+  transform: rotate(10deg);
+}
+.gift-lid b:after {
+  left: 83px;
+  transform: rotate(70deg);
+}
+.unwrapped .gift-lid {
+  transform: translate(-15px, -50px) rotate(-17deg);
+}
+.gift-spark {
+  position: absolute;
+  color: #c49b44;
+  font-size: 25px;
+}
+.gift-spark.one {
+  right: 3px;
+  top: 60px;
+}
+.gift-spark.two {
+  left: 10px;
+  top: 103px;
+}
+.gift-spark.three {
+  right: 22px;
+  bottom: 18px;
+  font-size: 18px;
+}
+.gift-reveal {
+  padding-top: 20px;
+  border-top: 1px solid #e2e6da;
+}
+.gift-reveal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.gift-reveal-grid article {
+  border: 1px solid #e4e7db;
+  border-radius: 15px;
+  text-align: center;
+  padding: 10px 10px 18px;
+  background: #f4f3e9;
+}
+.gift-reveal-grid svg.collection-art {
+  height: 140px;
+}
+.gift-reveal-grid h4 {
+  font-size: 14px;
+  margin: 3px 0;
+}
+.gift-reveal-grid p {
+  font-size: 11px;
+  margin: 5px 0 12px;
+}
+.gift-odds {
+  margin-top: 25px;
+  border: 1px solid #dde3d5;
+  border-radius: 12px;
+  padding: 16px 20px;
+  color: #60745e;
+  font-size: 12px;
+}
+.gift-odds summary {
+  cursor: pointer;
+  font-weight: 650;
+  line-height: 1.6;
+}
+.gift-odds p {
+  font-size: 11px;
+}
+.gift-odds ul {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 30px;
+}
+.gift-odds li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+}
+.adventure-pill {
+  font-size: 10px;
+  white-space: nowrap;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  background: #eee9d4;
+  padding: 10px 12px;
+  border-radius: 30px;
+  color: #977c38;
+}
+.puzzle-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+.puzzle-options button {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 5px 12px;
+  text-align: left;
+  background: #f5f3e9;
+  border: 1px solid #e2e5d8;
+  padding: 19px;
+  border-radius: 15px;
+  color: #536b52;
+}
+.puzzle-options button.selected {
+  border-color: #789475;
+  background: #e7edde;
+}
+.puzzle-options svg {
+  grid-row: span 2;
+  align-self: center;
+}
+.puzzle-options b {
+  font-size: 15px;
+}
+.puzzle-options span {
+  font-size: 11px;
+  color: #788672;
+}
+.puzzle-settings {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+  margin: 20px 0;
+}
+.puzzle-settings label {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #71836a;
+}
+.puzzle-settings select {
+  border: 1px solid #d4ddcb;
+  border-radius: 8px;
+  background: #fffdf6;
+  padding: 10px;
+  color: #456040;
+  font-size: 12px;
+}
+.puzzle-table {
+  padding: 22px 28px;
+  background: #eef0e5;
+  border: 1px solid #dde4d4;
+  border-radius: 20px;
+}
+.puzzle-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+.puzzle-status h4 {
+  font-size: 17px;
+  margin: 0;
+}
+.puzzle-status span {
+  font-size: 11px;
+  color: #788770;
+}
+.puzzle-table > p {
+  font-size: 12px;
+  margin: 8px 0 18px;
+}
+.memory-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  max-width: 530px;
+  margin: 0 auto 18px;
+}
+.memory-board button {
+  border: 1px solid #577f61;
+  border-radius: 12px;
+  background: repeating-linear-gradient(
+    45deg,
+    #658970,
+    #658970 10px,
+    #6c9077 10px,
+    #6c9077 11px
+  );
+  aspect-ratio: 1.2;
+  display: grid;
+  place-items: center;
+  position: relative;
+  color: #e5e8d2;
+  min-width: 0;
+}
+.memory-board button > svg:not(.collection-art) {
+  width: 30px;
+  height: 30px;
+  opacity: 0.6;
+}
+.memory-board button.face-up {
+  background: #fffdf3;
+  border-color: #dce2cf;
+}
+.memory-board button:disabled {
+  opacity: 1;
+}
+.memory-board button.matched {
+  background: #e2e9d7;
+  border-color: #c9d7bf;
+}
+.memory-board button .pair-check {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  width: 15px !important;
+  height: 15px !important;
+  color: #40673d;
+}
+.trail-board {
+  display: grid;
+  grid-template-columns: repeat(var(--trail-size), 1fr);
+  gap: 5px;
+  max-width: 430px;
+  margin: auto;
+}
+.trail-board button {
+  border: 1px solid #dddcc6;
+  background: #f9f6e8;
+  border-radius: 10px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  color: #517548;
+  font-size: 30px;
+  padding: 2px;
+  min-width: 0;
+}
+.trail-board button.flower {
+  background: #e0e7d3;
+  border-color: transparent;
+  color: #8b9e6d;
+  opacity: 1;
+}
+.trail-board button.on-path {
+  background: #b5c8a3;
+  border-color: #92ab7a;
+}
+.trail-board button.current {
+  background: #5a8052;
+  color: #fff;
+}
+.trail-board button > span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #6c8c59;
+}
+.trail-board button > i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #dfddc9;
+}
+.trail-board button svg {
+  max-width: 60%;
+}
+.puzzle-complete {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 22px;
+  background: #dfe9d3;
+  padding: 20px;
+  border-radius: 12px;
+  color: #416238;
+}
+.puzzle-complete h4 {
+  margin: 0;
+  font-size: 16px;
+}
+.puzzle-complete p {
+  font-size: 11px;
+  margin: 5px 0 0;
+}
+.puzzle-complete > svg {
+  flex-shrink: 0;
+}
+.puzzle-complete button {
+  white-space: nowrap;
+  margin-left: auto;
+}
+.adventure-footer {
+  border-top: 1px solid #e0e5d8;
+  padding: 14px 30px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  min-height: 60px;
+  background: #f8f7ef;
+  flex-shrink: 0;
+}
+.adventure-footer span {
+  font-size: 11px;
+  color: #72816a;
+  line-height: 1.5;
+}
+.adventure-footer button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  color: #4e6c46;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.game-header .adventure-nav {
+  color: #496e42;
+  background: #e7edda;
+}
+@media (max-width: 900px) {
+  .collection-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .chapter-layout {
+    grid-template-columns: 250px 1fr;
+    gap: 16px;
+  }
+  .chapter-page {
+    padding-left: 20px;
+  }
+  .gift-feature {
+    gap: 25px;
+  }
+  .adventure-header {
+    gap: 15px;
+  }
+  .adventure-header h2 {
+    font-size: 24px;
+  }
+  .adventure-story-hero h3 {
+    font-size: 31px;
+  }
+  .story-objects svg:first-child {
+    right: 0;
+  }
+  .game-header .adventure-nav span {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .adventure-backdrop {
+    padding: 0;
+  }
+  .adventure-book {
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+    border: 0;
+    padding-top: env(safe-area-inset-top);
+  }
+  .adventure-header {
+    padding: 18px 16px 14px;
+    gap: 9px;
+  }
+  .adventure-header .eyebrow {
+    font-size: 7px;
+    letter-spacing: 0.09em;
+    margin-bottom: 5px;
+  }
+  .adventure-header h2 {
+    font-size: 18px;
+    letter-spacing: -0.65px;
+    max-width: 200px;
+  }
+  .adventure-wallet {
+    padding: 8px 10px;
+    gap: 4px;
+    grid-template-columns: 16px auto;
+    border-radius: 10px;
+  }
+  .adventure-wallet svg {
+    width: 15px;
+  }
+  .adventure-wallet b {
+    font-size: 17px;
+  }
+  .adventure-wallet span {
+    font-size: 7px;
+  }
+  .adventure-close {
+    width: 32px;
+    height: 32px;
+  }
+  .adventure-close svg {
+    width: 18px;
+  }
+  .adventure-tabs {
+    padding: 0 10px;
+    gap: 0;
+    justify-content: space-between;
+  }
+  .adventure-tabs button {
+    padding: 13px 7px;
+    font-size: 10px;
+    gap: 5px;
+  }
+  .adventure-tabs button svg {
+    width: 14px;
+  }
+  .adventure-content {
+    padding: 18px 16px 25px;
+  }
+  .adventure-story-hero {
+    padding: 24px 21px;
+    min-height: 210px;
+    grid-template-columns: 1fr;
+  }
+  .adventure-story-hero h3 {
+    font-size: 29px;
+    max-width: 260px;
+    position: relative;
+    z-index: 1;
+  }
+  .adventure-story-hero p {
+    max-width: 260px;
+    font-size: 11px;
+    position: relative;
+    z-index: 1;
+  }
+  .adventure-story-hero span {
+    font-size: 9px;
+    position: relative;
+    z-index: 1;
+  }
+  .story-objects {
+    position: absolute;
+    right: -38px;
+    bottom: -32px;
+    width: 160px;
+    height: 140px;
+    opacity: 0.27;
+    pointer-events: none;
+  }
+  .story-objects svg:first-child {
+    width: 150px;
+    top: -4px;
+  }
+  .story-objects svg:last-child {
+    width: 130px;
+  }
+  .chapter-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 20px;
+  }
+  .chapter-list {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 6px;
+  }
+  .chapter-list button {
+    padding: 9px;
+    flex-shrink: 0;
+    gap: 8px;
+  }
+  .chapter-list button > span {
+    width: 25px;
+    height: 25px;
+  }
+  .chapter-list b {
+    font-size: 11px;
+  }
+  .chapter-list small {
+    font-size: 9px;
+  }
+  .chapter-page {
+    border-left: 0;
+    border-top: 1px solid #e0e5d9;
+    padding: 18px 2px 0;
+  }
+  .chapter-page h3 {
+    font-size: 24px;
+  }
+  .chapter-goal {
+    margin: 15px 0;
+  }
+  .adventure-section-heading {
+    display: block;
+    margin-bottom: 18px;
+  }
+  .adventure-section-heading h3 {
+    font-size: 25px;
+  }
+  .adventure-section-heading p {
+    font-size: 12px;
+  }
+  .collection-count {
+    display: block;
+    margin-top: 10px;
+  }
+  .collection-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .collection-visual {
+    height: 130px;
+  }
+  .collection-description {
+    padding: 12px;
+  }
+  .collection-description h4 {
+    font-size: 13px;
+  }
+  .collection-description small {
+    font-size: 10px;
+    min-height: 49px;
+  }
+  .collection-description button {
+    font-size: 9px;
+    line-height: 1.6;
+    min-height: 43px;
+  }
+  .collection-description p {
+    font-size: 8px;
+  }
+  .collection-filters {
+    gap: 6px;
+  }
+  .collection-filters button {
+    padding: 8px 11px;
+    font-size: 10px;
+  }
+  .gift-feature {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    margin-top: 0;
+  }
+  .gift-feature-art {
+    height: 225px;
+  }
+  .wrapped-gift {
+    transform: scale(0.83);
+    height: 205px;
+    margin-top: -20px;
+  }
+  .gift-feature-art > span {
+    font-size: 8px;
+    margin-top: -9px;
+  }
+  .gift-feature h3 {
+    font-size: 32px;
+  }
+  .gift-feature p {
+    font-size: 12px;
+  }
+  .gift-feature .adventure-button {
+    width: 100%;
+    margin: 6px 0 0;
+  }
+  .gift-reveal-grid {
+    gap: 8px;
+  }
+  .gift-reveal-grid article {
+    padding: 6px 6px 12px;
+  }
+  .gift-reveal-grid svg.collection-art {
+    height: 85px;
+  }
+  .gift-reveal-grid h4 {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .gift-reveal-grid p {
+    font-size: 9px;
+  }
+  .gift-reveal-grid .adventure-button {
+    font-size: 9px !important;
+    padding: 7px 6px;
+    min-height: 40px;
+  }
+  .gift-reveal .adventure-section-heading .adventure-button {
+    margin-top: 12px;
+  }
+  .gift-odds {
+    padding: 14px;
+  }
+  .gift-odds ul {
+    grid-template-columns: 1fr;
+  }
+  .adventure-pill {
+    display: inline-flex;
+    margin-top: 12px;
+  }
+  .puzzle-options {
+    gap: 8px;
+  }
+  .puzzle-options button {
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    gap: 7px;
+  }
+  .puzzle-options b {
+    font-size: 13px;
+  }
+  .puzzle-options span {
+    font-size: 10px;
+    line-height: 1.5;
+  }
+  .puzzle-options svg {
+    align-self: flex-start;
+    width: 22px;
+  }
+  .puzzle-settings {
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .puzzle-settings label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 10px;
+  }
+  .puzzle-settings select {
+    font-size: 10px;
+    padding: 9px 7px;
+  }
+  .puzzle-settings .adventure-button {
+    font-size: 10px !important;
+    padding: 8px 10px;
+  }
+  .puzzle-table {
+    padding: 17px 12px;
+  }
+  .puzzle-status {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .puzzle-status h4 {
+    font-size: 15px;
+  }
+  .puzzle-status span {
+    font-size: 10px;
+  }
+  .memory-board {
+    gap: 7px;
+  }
+  .memory-board button {
+    border-radius: 8px;
+    aspect-ratio: 0.95;
+  }
+  .memory-board button > svg:not(.collection-art) {
+    width: 22px;
+    height: 22px;
+  }
+  .trail-board {
+    gap: 4px;
+  }
+  .trail-board button {
+    border-radius: 7px;
+  }
+  .puzzle-complete {
+    flex-wrap: wrap;
+    padding: 15px;
+    gap: 10px;
+  }
+  .puzzle-complete > div {
+    flex: 1;
+  }
+  .puzzle-complete button {
+    margin: 0;
+    width: 100%;
+  }
+  .puzzle-complete h4 {
+    font-size: 14px;
+  }
+  .adventure-footer {
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    gap: 10px;
+  }
+  .adventure-footer span {
+    font-size: 10px;
+  }
+  .adventure-footer button {
+    font-size: 10px;
+  }
+  .adventure-book .eyebrow {
+    line-height: 1.5;
+  }
+  .game-header .adventure-nav {
+    display: flex !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adventure-content {
+    scroll-behavior: auto;
+  }
+  .gift-lid {
+    transition: none;
+  }
+}

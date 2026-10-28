@@ -1,0 +1,8 @@
+{
+  "appId": "org.catgardens.app",
+  "appName": "Cat Gardens",
+  "webDir": "dist",
+  "backgroundColor": "#f6f3e9",
+  "ios": { "contentInset": "never", "preferredContentMode": "mobile", "backgroundColor": "#f6f3e9" },
+  "plugins": { "CapacitorHttp": { "enabled": true } }
+}

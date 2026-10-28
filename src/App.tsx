@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, type ReactNode, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowRight,
   BadgeCheck,
@@ -49,8 +49,13 @@ import { badgeLabels, cats, dreamGardenConcept, dreamSpaces, splotchNeeds, type 
 import { tvChannels, tvFundingNeeds } from './catGardensTv'
 import { useGardenAccount, type GardenAccount } from './account'
 import { GameSync } from './GameSync'
-import { RealityThread } from './RealityThread'
+import { storyFor } from './catStories'
+import { InstallPanel } from './InstallPanel'
+import { gardenHaptic, isNativeGarden } from './native'
+import { NativeDonation } from './NativeDonation'
 import { playPurr } from './game/audio'
+import { acceptsGameInput } from './game/presentation'
+import { avatarPresets, normalizeAvatarStyle } from './game/avatars'
 import { foodPrice, getDailyProgress, getObjective, getRelationshipText, localDay, shelterBuildCatalog, upgradeCatalog, useGame, type AvatarStyle, type DonationBadge, type GardenPromise, type GardenUpgrade, type KeeperStyle, type PersonId } from './game/store'
 import { companionCopy, getCompanionProfile, sexLabel } from './game/companions'
 import { episodeFor, useGardenNotifications, useRealityFeed } from './reality'
@@ -89,6 +94,9 @@ const mathikoloniTransformationZones = [
 ] as const
 
 const CatGardenWorld = lazy(() => import('./World').then((module) => ({ default: module.CatGardenWorld })))
+const AvatarPreview = lazy(() => import('./AvatarPreview'))
+const CatStory = lazy(() => import('./CatStory'))
+const AdventureBook = lazy(() => import('./AdventureBook'))
 
 const bondMoments = [
   { title: 'Do less. Stay longer.', detail: 'Your caretaker has stopped nearby and given Splotch room to decide what happens next. Press and hold. Trust is time—not tapping.', action: 'Hold to stay nearby', result: 'You stayed after the urgent work was over.' },
@@ -140,7 +148,7 @@ const choosingQuestions: Array<{ eyebrow: string; title: string; detail: string;
   },
 ]
 
-function ChoosingCeremony({ onComplete }: { onComplete: (id: string, gardenName: string, style: KeeperStyle, promise: GardenPromise) => void }) {
+function ChoosingCeremony({ onComplete, onCustomize }: { onComplete: (id: string, gardenName: string, style: KeeperStyle, promise: GardenPromise) => void; onCustomize: () => void }) {
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<ChoosingAnswer[]>([])
   const [chosenId, setChosenId] = useState('splotch')
@@ -209,6 +217,7 @@ function ChoosingCeremony({ onComplete }: { onComplete: (id: string, gardenName:
             <p className="choosing-lede">{chosenCat.story} Your first task is not to browse. It is to build somewhere safe together.</p>
             <label className="garden-name-field"><span>NAME YOUR SHARED GARDEN</span><input value={gardenName} onChange={(event) => setGardenName(event.target.value)} maxLength={32} aria-label="Name your garden" /></label>
             <div className="choosing-final-actions">
+              <button className="secondary-button" onClick={onCustomize}><UserRound size={18} /> Choose my avatar</button>
               <button className="primary-button" onClick={finish}>Enter {gardenName || 'the garden'} <ArrowRight size={18} /></button>
             </div>
             <div className="entry-truth-boundary"><Coins size={17} /><p><strong>Real support earns game rewards.</strong><span>After Stripe verifies a gift to Gardens of St. Gertrude, this garden receives tokens for persistent upgrades. Tokens have no cash value.</span></p></div>
@@ -401,6 +410,8 @@ function DrivePad() {
   return (
     <div className="drive-control">
       <div
+        role="group"
+        aria-label="Walking pad: drag to move, or use arrow keys"
         ref={pad}
         className={`drive-pad ${knob.active ? 'active' : ''}`}
         onPointerDown={(event) => {
@@ -410,6 +421,7 @@ function DrivePad() {
         onPointerMove={(event) => { if (event.currentTarget.hasPointerCapture(event.pointerId)) update(event.clientX, event.clientY) }}
         onPointerUp={release}
         onPointerCancel={release}
+        onLostPointerCapture={release}
       >
         <span className="drive-cross">↑<i>←</i><b>→</b><em>↓</em></span>
         <span className="drive-knob" style={{ transform: `translate(${knob.x}px, ${knob.y}px)` }}><i /></span>
@@ -497,10 +509,10 @@ function MorningBasketModal({ onClose }: { onClose: () => void }) {
         <span className="morning-sun"><Gift /></span>
         <p className="eyebrow">{firstCrate ? 'STARTER SUPPLY CRATE' : 'MORNING SUPPLY CRATE'} · DAY {Math.max(1, loginDays + (claimed ? 0 : 1))}</p>
         <h2 id="morning-title">Something useful,<br />waiting for you.</h2>
-        <p>{firstCrate ? `This one-time starter crate is enough to build a basic shelter, buy ${companion.name}’s first meal, add a bowl and blanket, and still make one caring choice yourself.` : 'Every new local day brings water, a happiness treat, and forty garden tokens. Food is purchased at the physical supply shelf so spending remains part of the game.'}</p>
+        <p>{firstCrate ? `Three free meals, water, and enough tokens to build ${companion.name}’s shelter, add a bowl and blanket, and start making the garden yours.` : 'Every new local day refills your bag to at least three meals and three waters, and brings a treat and forty garden tokens. Your cat’s basic care is covered before you decorate.'}</p>
         <div className="basket-items">
-          <span><Box /> <b>{firstCrate ? 'Starter materials' : 'Daily supplies'}</b></span>
-          <span><Droplets /> <b>1 water</b></span>
+          <span><Utensils /> <b>3 meals</b></span>
+          <span><Droplets /> <b>3 waters</b></span>
           <span><Heart /> <b>1 treat</b></span>
           <span><Coins /> <b>{tokens} tokens</b></span>
         </div>
@@ -844,74 +856,35 @@ function BondResultModal({ result, onClose }: { result: { advanced: boolean; vis
   )
 }
 
-function RealityPortal({ onClose, onDonate }: { onClose: () => void; onDonate: (need: SplotchNeed) => void }) {
-  const visitReality = useGame((state) => state.visitReality)
-  const companion = getCompanionProfile(useGame((state) => state.selectedCompanionId))
-  const cat = cats.find((candidate) => candidate.id === companion.id) || cats[0]
-  const isSplotch = companion.id === 'splotch'
-  const profilePath = companion.id === 'mabel' ? '/Mabel' : companion.id === 'winona-p-gray' ? '/Winona' : '/Splotch'
-  const portalNeeds = isSplotch ? splotchNeeds : [{ ...splotchNeeds.find((need) => need.id === 'food')!, catId: companion.id, title: `Food and daily care for ${companion.name}`, detail: `Support ${companion.name} and the shared sanctuary food program. Allocation appears in the verified fulfillment record rather than as a fictional game purchase.` }]
+function RealityPortal({ onClose, onDonate, updates = false, realityFeed, notifications, onMarkRead }: {
+  onClose: () => void; onDonate: (need: SplotchNeed) => void; updates?: boolean;
+  realityFeed: ReturnType<typeof useRealityFeed>; notifications: ReturnType<typeof useGardenNotifications>['notifications']; onMarkRead: (id: number) => void;
+}) {
+  const companionId = useGame(state => state.selectedCompanionId)
+  const cat = storyFor(companionId)
+  const visitReality = useGame(state => state.visitReality)
   useEffect(() => { visitReality() }, [visitReality])
-  return (
-    <div className="portal-backdrop reality-backdrop" role="presentation">
-      <article className="reality-portal" role="dialog" aria-modal="true" aria-labelledby="reality-title">
-        <button className="close-button" onClick={onClose} aria-label={`Close ${companion.name}’s Reality Portal`}><X size={19} /></button>
-        <header className="portal-header">
-          <div>
-            <p className="eyebrow">REALITY PORTAL · {companion.name.toUpperCase()} · CYPRUS</p>
-            <h2 id="reality-title">What is true today.</h2>
-            <p>This portal only publishes sanctuary-reviewed information. Missing information stays visibly missing—it is never replaced by game fiction.</p>
-          </div>
-          <div className="reality-signal"><i /><span>SANCTUARY RECORD</span><strong>{isSplotch ? 'Splotch’s first field video is live' : `${companion.name}’s real profile is connected`}</strong><small>Published from the real Cat Gardens record</small></div>
-        </header>
+  useEffect(() => {
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    window.addEventListener('keydown', close)
+    return () => window.removeEventListener('keydown', close)
+  }, [onClose])
+  return <div className="portal-backdrop reality-backdrop" role="presentation">
+    <article className="cat-story-dialog" role="dialog" aria-modal="true" aria-label={`${cat.name}’s story and reality portal`}>
+      <div className="cat-dialog-bar"><a href={cat.path}>Open {cat.name}’s full page <ArrowRight size={15}/></a><button onClick={onClose} aria-label={`Close ${cat.name}’s story`}><X size={18}/> Garden</button></div>
+      <Suspense fallback={<p style={{padding:30}}>Opening {cat.name}’s story…</p>}>
+        <CatStory catId={companionId} {...realityFeed} onRefresh={realityFeed.refresh} onPlay={onClose}
+          onDonate={(need) => onDonate(need || {...splotchNeeds.find(need=>need.id==='food')!, catId:companionId, title:`Food and daily care for ${cat.name}`, detail:`Support ${cat.name} and shared sanctuary care. Reviewed costs and completed care updates are published in the real-life record.`})}
+          notifications={notifications} onMarkRead={onMarkRead}/>
+        {updates && <ScrollToStoryUpdates/>}
+      </Suspense>
+    </article>
+  </div>
+}
 
-        <section className="reality-grid">
-          <div className="real-media-slot">
-            {isSplotch ? <video className="real-splotch-video" controls playsInline preload="metadata" poster="/videos/splotch-petting.jpg">
-              <source src="/videos/splotch-petting.mp4" type="video/mp4" />
-              Your browser does not support the Splotch video.
-            </video> : cat.image ? <img className="real-splotch-video" src={cat.image} alt={`The real ${companion.name} at Cat Gardens`} /> : <div className="reality-photo-pending"><PawPrint size={42} /><span>Verified visual reference pending</span></div>}
-            <div>
-              <b>REAL {companion.name.toUpperCase()} · {sexLabel(companion.sex).toUpperCase()} · CYPRUS</b>
-              <h3>This is the cat in your garden.</h3>
-              <p>{isSplotch ? 'Splotch is a big orange adult male who actively seeks affection. This real moment shows him approaching Karen for pets while his Cat Gardens friends gather nearby.' : cat.careSummary}</p>
-              <span className="truth-chip"><Shield size={13} /> Real-life updates remain separate from game state</span>
-              <a className="reality-watch-link" href={profilePath}>Open {companion.name}’s complete story <ArrowRight size={13} /></a>
-            </div>
-          </div>
-          <div className="known-today">
-            <p className="eyebrow">KNOWN TODAY</p>
-            <ul>
-              <li><Check size={15} /><span><b>{companion.visualNote}</b>The playable body uses recorded coat, size, sex, and eye traits.</span></li>
-              {cat.careTasks.slice(0, 3).map((task) => <li key={task}><Check size={15} /><span><b>{task}</b>Part of the sanctuary-reviewed care profile.</span></li>)}
-            </ul>
-          </div>
-        </section>
-
-        <section className="ledger-section">
-          <div className="section-title"><div><p className="eyebrow">{companion.name.toUpperCase()}’S CARE LEDGER</p><h3>Every need has an evidence trail.</h3></div><span><LockKeyhole size={14} /> QuickBooks connection pending</span></div>
-          <div className="need-grid">
-            {portalNeeds.map((need) => (
-              <article className={`need-card need-${need.category}`} key={need.id}>
-                <span>{need.eyebrow}</span>
-                <h4>{need.title}</h4>
-                <p>{need.detail}</p>
-                <div><small>{need.status}</small>{need.category !== 'completed' && <button onClick={() => onDonate(need)}>Support from ${need.suggestedAmount}</button>}</div>
-              </article>
-            ))}
-          </div>
-          <div className="fulfillment-register">
-            <div><p className="eyebrow">YOU FUNDED IT · WE DID IT</p><h3>Real-world fulfillment register</h3><span>A supporter sees the whole path: funded → assigned → purchased → delivered → completed → proof reviewed → supporter notified.</span></div>
-            <ol>
-              <li className="active"><b>01</b><span><strong>Safety tracker</strong>Device selection pending Markos and sanctuary review.</span><small>NOT YET FUNDED</small></li>
-              <li><b>02</b><span><strong>One need, one cap</strong>After the approved tracker is funded, the need closes.</span><small>NO DUPLICATE PROMISE</small></li>
-              <li><b>03</b><span><strong>Choice before rerouting</strong>Any alternate use requires clear supporter consent.</span><small>TRANSPARENT ROUTING</small></li>
-            </ol>
-          </div>
-        </section>
-      </article>
-    </div>
-  )
+function ScrollToStoryUpdates() {
+  useEffect(() => { document.getElementById('updates')?.scrollIntoView() }, [])
+  return null
 }
 
 type FundingSummary = Record<string, { total: number; gifts: number; lastFundedAt: string | null }>
@@ -1140,29 +1113,45 @@ function CareRoster({ onClose, onSelect }: { onClose: () => void; onSelect: (id:
 
 function AvatarCreator({ onClose }: { onClose: () => void }) {
   const setAvatarStyle = useGame((state) => state.setAvatarStyle)
-  const [draft, setDraft] = useState<AvatarStyle>(() => ({ ...useGame.getState().avatarStyle }))
+  const [draft, setDraft] = useState<AvatarStyle>(() => normalizeAvatarStyle(useGame.getState().avatarStyle))
+  const [angle, setAngle] = useState(.2)
   const update = <K extends keyof AvatarStyle>(key: K, value: AvatarStyle[K]) => setDraft((current) => ({ ...current, [key]: value }))
-  const colors: Array<{ key: 'clothing' | 'pants'; label: string }> = [
-    { key: 'clothing', label: 'Shirt' }, { key: 'pants', label: 'Trousers' },
+  const colors: Array<{ key: 'skin' | 'hair' | 'eyes' | 'clothing' | 'pants' | 'shoes'; label: string }> = [
+    { key: 'skin', label: 'Skin tone' }, { key: 'hair', label: 'Hair color' }, { key: 'eyes', label: 'Eye color' },
+    { key: 'clothing', label: 'Top color' }, { key: 'pants', label: 'Bottom color' }, { key: 'shoes', label: 'Footwear color' },
   ]
-  return (
-    <div className="profile-backdrop avatar-backdrop" role="presentation">
-      <article className="avatar-creator" role="dialog" aria-modal="true" aria-labelledby="avatar-title">
-        <button className="close-button" onClick={onClose} aria-label="Close caretaker creator"><X size={19} /></button>
-        <div className="avatar-creator-preview" style={{ '--avatar-shirt': draft.clothing, '--avatar-pants': draft.pants } as React.CSSProperties}>
-          <div className={`avatar-figure frame-${draft.bodyFrame}`}><i className="avatar-body" /><i className="avatar-legs" /></div>
-          <span>STABLE CARETAKER MODEL</span><strong>{draft.displayName || 'Garden caretaker'}</strong><small>Choose the body frame and clothing palette. The unstable custom head, eyes, hair, and seated replacement have been removed.</small>
+  return <div className="profile-backdrop avatar-backdrop" role="presentation">
+    <article className="avatar-creator" role="dialog" aria-modal="true" aria-labelledby="avatar-title">
+      <button className="close-button" onClick={onClose} aria-label="Close avatar creator"><X size={19} /></button>
+      <div className="avatar-creator-preview">
+        <span>YOUR PLACE IN THE GARDEN</span>
+        <div className="avatar-live-preview" role="img" aria-label={`3D preview of ${draft.displayName}, ${draft.hairStyle} hair, ${draft.topStyle}, ${draft.bottomStyle}, ${draft.footwear}`}>
+          <Suspense fallback={<p className="avatar-preview-loading">Opening your preview…</p>}><AvatarPreview appearance={draft} angle={angle}/></Suspense>
         </div>
-        <div className="avatar-creator-controls">
-          <p className="eyebrow">CREATE YOUR CARETAKER</p><h2 id="avatar-title">Who walks into the garden?</h2>
-          <label className="avatar-name-field">Display name<input value={draft.displayName} maxLength={30} onChange={(event) => update('displayName', event.target.value)} /></label>
-          <fieldset><legend>Body frame</legend><div className="avatar-choice-row">{(['feminine', 'masculine', 'androgynous'] as const).map((value) => <button type="button" className={draft.bodyFrame === value ? 'selected' : ''} key={value} onClick={() => update('bodyFrame', value)}>{value}</button>)}</div></fieldset>
-          <fieldset><legend>Clothing colors</legend><div className="avatar-color-row">{colors.map(({ key, label }) => <label key={key}><input type="color" value={draft[key]} onChange={(event) => update(key, event.target.value)} /><span>{label}</span></label>)}</div></fieldset>
-          <div className="avatar-save-row"><button className="primary-button" onClick={() => { setAvatarStyle({ ...draft, displayName: draft.displayName.trim() || 'Garden caretaker' }); onClose() }}>Save caretaker <ArrowRight size={17} /></button><small>You can change this at any time.</small></div>
+        <div className="avatar-turn-controls"><button aria-label="Turn avatar left" onClick={()=>setAngle(value=>value+Math.PI/4)}>↶</button><button onClick={()=>setAngle(0)}>Front</button><button onClick={()=>setAngle(Math.PI)}>Back</button><button aria-label="Turn avatar right" onClick={()=>setAngle(value=>value-Math.PI/4)}>↷</button></div>
+        <strong>{draft.displayName || 'Your avatar'}</strong><small>Drag to look around. This is the character you will see walking in your garden.</small>
+      </div>
+      <div className="avatar-creator-controls">
+        <p className="eyebrow">MAKE YOURSELF AT HOME</p><h2 id="avatar-title">Come as you are.</h2>
+        <p className="avatar-intro">Choose a starting look, then make it yours. Every option is free.</p>
+        <fieldset><legend>Starting looks</legend><div className="avatar-presets">{avatarPresets.map(preset=><button key={preset.name} onClick={()=>setDraft({...preset.style,displayName:draft.displayName==='Garden caretaker'?preset.style.displayName:draft.displayName})}>{preset.name}</button>)}</div></fieldset>
+        <label className="avatar-name-field">Display name<input value={draft.displayName} maxLength={30} onChange={(event) => update('displayName', event.target.value)} /></label>
+        <fieldset><legend>Body frame</legend><div className="avatar-choice-row">{(['feminine', 'masculine', 'androgynous'] as const).map((value) => <button type="button" aria-pressed={draft.bodyFrame===value} className={draft.bodyFrame === value ? 'selected' : ''} key={value} onClick={() => update('bodyFrame', value)}>{value}</button>)}</div></fieldset>
+        <div className="avatar-sliders">
+          <label>Height <b>{Math.round(draft.height*100)} cm</b><input aria-label="Avatar height" type="range" min="1.4" max="1.95" step=".01" value={draft.height} onChange={event=>update('height',Number(event.target.value))}/></label>
+          <label>Body build <b>{draft.build<.95?'Slender':draft.build>1.1?'Fuller':'Medium'}</b><input aria-label="Avatar body build" type="range" min=".8" max="1.3" step=".01" value={draft.build} onChange={event=>update('build',Number(event.target.value))}/></label>
         </div>
-      </article>
-    </div>
-  )
+        <div className="avatar-selects">
+          <label>Hairstyle<select value={draft.hairStyle} onChange={event=>update('hairStyle',event.target.value as AvatarStyle['hairStyle'])}><option value="short">Short</option><option value="long">Long, loose</option><option value="ponytail">Ponytail</option><option value="bun">Bun</option><option value="close-cropped">Close-cropped</option><option value="bald">No hair</option></select></label>
+          <label>Top<select value={draft.topStyle} onChange={event=>update('topStyle',event.target.value as AvatarStyle['topStyle'])}><option value="tee">T-shirt</option><option value="tank">Tank top</option><option value="long-sleeve">Long sleeves</option></select></label>
+          <label>Bottom<select value={draft.bottomStyle} onChange={event=>update('bottomStyle',event.target.value as AvatarStyle['bottomStyle'])}><option value="trousers">Trousers</option><option value="shorts">Shorts</option><option value="skirt">Skirt</option></select></label>
+          <label>Footwear<select value={draft.footwear} onChange={event=>update('footwear',event.target.value as AvatarStyle['footwear'])}><option value="trainers">Trainers</option><option value="flip-flops">Flip-flops</option><option value="boots">Boots</option><option value="barefoot">Barefoot</option></select></label>
+        </div>
+        <fieldset><legend>Your colors</legend><div className="avatar-color-row">{colors.map(({ key, label }) => <label key={key}><input aria-label={label} type="color" value={draft[key]} onChange={(event) => update(key, event.target.value)} /><span>{label}</span></label>)}</div></fieldset>
+        <div className="avatar-save-row"><button className="primary-button" onClick={() => { setAvatarStyle(normalizeAvatarStyle(draft)); onClose() }}>Save my avatar <ArrowRight size={17} /></button><small>Change your look any time with My avatar.</small></div>
+      </div>
+    </article>
+  </div>
 }
 
 function GardenProfile({ onClose, onDonate }: { onClose: () => void; onDonate: (need: SplotchNeed) => void }) {
@@ -1418,11 +1407,6 @@ function DonationDrawer({ need, onClose }: { need: SplotchNeed; onClose: () => v
   )
 }
 
-function InstallPanel({ onClose }: { onClose: () => void }) {
-  const closeRef = useRef<HTMLButtonElement>(null)
-  useEffect(() => { closeRef.current?.focus(); const onKey = (e: KeyboardEvent) => { if(e.key === 'Escape') onClose() }; window.addEventListener('keydown',onKey); return () => window.removeEventListener('keydown',onKey) }, [onClose])
-  return <div className="help-backdrop install-backdrop" role="presentation"><aside className="help-panel install-panel" role="dialog" aria-modal="true" aria-labelledby="install-title"><button ref={closeRef} className="close-button" onClick={onClose} aria-label="Close Home Screen instructions"><X size={19}/></button><p className="eyebrow">YOUR GARDEN · ON YOUR IPHONE</p><h2 id="install-title">Keep the garden close.</h2><ol><li>Open <strong>catgardens.org</strong> in Safari.</li><li>Tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</li><li>Keep <strong>Open as Web App</strong> on if shown, then tap <strong>Add</strong>.</li></ol><p>The game opens in its own app window. An internet connection is needed for the game, current updates and payments.</p><a href="/staff" className="secondary-button full">I work here · open staff care <ArrowRight size={16}/></a><p>Staff care has a separate private sign-in and its own Home Screen icon.</p></aside></div>
-}
 
 function HelpPanel({ onClose }: { onClose: () => void }) {
   const resetRover = useGame((state) => state.resetRover)
@@ -1451,6 +1435,15 @@ function HelpPanel({ onClose }: { onClose: () => void }) {
       </aside>
     </div>
   )
+}
+
+class WorldBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false }
+  static getDerivedStateFromError() { return { failed: true } }
+  render() {
+    if (this.state.failed) return <div className="world-loading" role="alert"><strong>The garden needs a moment.</strong><span>Reload to return to your saved garden.</span><button className="primary-button" onClick={() => window.location.reload()}>Reload the garden</button></div>
+    return this.props.children
+  }
 }
 
 export default function App() {
@@ -1486,11 +1479,42 @@ export default function App() {
   const [rosterOpen, setRosterOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [designerOpen, setDesignerOpen] = useState(false)
+  const [adventuresOpen, setAdventuresOpen] = useState(() => started && new URLSearchParams(window.location.search).get('view') === 'adventures')
   const [morningOpen, setMorningOpen] = useState(false)
   const [personOpen, setPersonOpen] = useState<PersonId | null>(null)
   const [donationNeed, setDonationNeed] = useState<SplotchNeed | null>(null)
   const [comfortMap, setComfortMap] = useState(false)
   const [requestedCompanion] = useState(() => new URLSearchParams(window.location.search).get('companion'))
+  const paused = Boolean(!started || bondResult || helpOpen || installOpen || realityOpen || threadOpen || tvOpen || dreamOpen || profileOpen || memoryOpen || rosterOpen || avatarOpen || designerOpen || adventuresOpen || morningOpen || personOpen || donationNeed)
+  const inputBlocked = useRef(true)
+  inputBlocked.current = paused || bondingMode
+  const activeDialog = [helpOpen, installOpen, realityOpen, threadOpen, tvOpen, dreamOpen, profileOpen, memoryOpen, rosterOpen, avatarOpen, designerOpen, adventuresOpen, morningOpen, personOpen, donationNeed, bondResult].findIndex(Boolean)
+  useEffect(() => {
+    if (activeDialog < 0) return
+    const previous = document.activeElement as HTMLElement | null
+    const selector = 'button:not(:disabled),a[href],input:not(:disabled),select,textarea,[tabindex="0"]'
+    const dialog = () => Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"]')).at(-1)
+    const frame = requestAnimationFrame(() => dialog()?.querySelector<HTMLElement>(selector)?.focus())
+    const trap = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab' || event.defaultPrevented) return
+      const root = dialog()
+      if (!root) return
+      const controls = Array.from(root.querySelectorAll<HTMLElement>(selector)).filter((element) => element.getClientRects().length > 0)
+      const first = controls[0], last = controls.at(-1)
+      if (!first || !last) return
+      if (event.shiftKey && (document.activeElement === first || !root.contains(document.activeElement))) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && (document.activeElement === last || !root.contains(document.activeElement))) { event.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', trap)
+    return () => {
+      cancelAnimationFrame(frame)
+      document.removeEventListener('keydown', trap)
+      if (previous?.isConnected && !previous.closest('[inert]')) previous.focus()
+    }
+  }, [activeDialog])
+  useEffect(() => {
+    if (paused || bondingMode) setInput({ forward: 0, backward: 0, left: 0, right: 0, boost: 0, brake: 0 })
+  }, [paused, bondingMode, setInput])
   useEffect(() => {
     if (!requestedCompanion) return
     const cat = cats.find((candidate) => candidate.id === requestedCompanion || candidate.name.toLowerCase() === requestedCompanion.toLowerCase())
@@ -1504,9 +1528,9 @@ export default function App() {
     }
   }, [requestedCompanion, setNotification])
   useEffect(() => {
-    if (!realityFeed.feed) return
+    if (!realityFeed.feed || realityFeed.feed.catId !== selectedCompanionId) return
     useGame.getState().setVerifiedRealityArtifacts(realityFeed.feed.worldArtifacts)
-  }, [realityFeed.feed])
+  }, [realityFeed.feed, selectedCompanionId])
   useEffect(() => {
     if (!account.loaded || !account.signedIn) return
     const code = new URLSearchParams(window.location.search).get('invite')?.toUpperCase() || ''
@@ -1526,6 +1550,7 @@ export default function App() {
     }).catch(() => undefined)
   }, [account.getToken, account.loaded, account.signedIn])
   const handleAction = useCallback(() => {
+    void gardenHaptic()
     const game = useGame.getState()
     if (game.nearby === 'basket') {
       game.claimDailyBasket()
@@ -1565,8 +1590,7 @@ export default function App() {
       setPersonOpen(game.nearby)
     }
     if (game.nearby === 'reality') {
-      if (game.shelterStage < 3) game.setNotification(`Build ${getCompanionProfile(game.selectedCompanionId).name}’s first protected place before opening the real-life record.`)
-      else setRealityOpen(true)
+      setRealityOpen(true)
     }
     if (game.nearby === 'dream') {
       if (game.lastDayCompleted === localDay()) setDreamOpen(true)
@@ -1580,7 +1604,9 @@ export default function App() {
 
   useEffect(() => {
     const down = (event: KeyboardEvent) => {
+      if (!acceptsGameInput(event.target, inputBlocked.current) || event.metaKey || event.ctrlKey || event.altKey) return
       const key = event.key.toLowerCase()
+      if (key === ' ' && event.target instanceof Element && event.target.closest('button,a,summary')) return
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) event.preventDefault()
       if (key === 'w' || key === 'arrowup') setInput({ forward: 1 })
       if (key === 's' || key === 'arrowdown') setInput({ backward: 1 })
@@ -1661,32 +1687,35 @@ export default function App() {
     setDonationNeed(need)
   }, [])
 
-  const paused = !started || bondResult || helpOpen || installOpen || realityOpen || threadOpen || tvOpen || dreamOpen || profileOpen || memoryOpen || rosterOpen || avatarOpen || designerOpen || morningOpen || personOpen || donationNeed
 
   return (
     <main className={`game-shell ${paused ? 'is-paused' : ''} ${bondingMode ? 'is-bonding' : ''}`}>
       <GameSync />
-      <div className="world-canvas">
-        <Suspense fallback={<div className="world-loading"><i /><span>Growing {companion.name}’s living garden…</span></div>}>
-          <CatGardenWorld comfortMap={comfortMap} />
-        </Suspense>
+      <div className="world-canvas" aria-hidden={paused} inert={paused}>
+        <WorldBoundary><Suspense fallback={<div className="world-loading"><i /><span>Growing {companion.name}’s living garden…</span></div>}>
+          {started && <CatGardenWorld comfortMap={comfortMap} paused={paused} />}
+        </Suspense></WorldBoundary>
       </div>
 
-      {started && <header className="game-header game-panel">
+      {started && <header className="game-header game-panel" inert={paused} aria-hidden={paused}>
         <a className="game-brand" href="/" aria-label="Cat Gardens home"><img src={catGardensMark} alt="" /><span>CAT GARDENS</span><small>{gardenName.toUpperCase()} · {completedDays >= 7 ? 'LIVING GARDEN' : `DAY ${episodeFor(completedDays).day}/7`} · MEMORY {Math.min(7, bondVisits + 1)}/7</small></a>
         <nav>
-          {shelterStage >= 3 && <button className="reality-nav" onClick={() => setRealityOpen(true)}><Video size={17} /><span>Real {companion.name}</span></button>}
+          <button aria-label="Adventures, collection and gift boxes" className="adventure-nav" onClick={() => setAdventuresOpen(true)}><Gift size={17}/><span>Adventures</span></button>
+          <button aria-label="Customize my avatar" className="avatar-nav" onClick={() => setAvatarOpen(true)}><UserRound size={17}/><span>My avatar</span></button>
+          <button aria-label={`See the real ${companion.name}`} className="reality-nav" onClick={() => setRealityOpen(true)}><Video size={17} /><span>Real {companion.name}</span></button>
           <button aria-label="My cat" className="memory-nav" onClick={() => setMemoryOpen(true)}><Camera size={17} /><span>My Cat</span></button>
           <button aria-label="Explore the garden" className={comfortMap ? 'comfort-nav active' : 'comfort-nav'} onClick={() => setComfortMap((current) => !current)}><Eye size={17} /><span>Explore</span></button>
-          {shelterStage >= 3 && <button className="design-nav" onClick={() => setDesignerOpen(true)}><Leaf size={17} /><span>Build</span></button>}
+          {shelterStage >= 3 && <button aria-label="Build and furnish your garden" className="design-nav" onClick={() => setDesignerOpen(true)}><Leaf size={17} /><span>Build</span></button>}
           <button aria-label="Grove and sanctuary updates" className="thread-nav" onClick={() => setThreadOpen(true)}><BadgeCheck size={17} /><span>Grove</span>{gardenNotifications.unread > 0 && <b>{gardenNotifications.unread}</b>}</button>
           {realityVisits > 0 && <button className="donate-nav" onClick={() => setDonationNeed(splotchNeeds.find((need) => need.id === 'food')!)}><CircleDollarSign size={17} /> Donate</button>}
           <details className="game-more-menu">
             <summary aria-label="Open game menu"><CircleHelp size={17} /><span>More</span></summary>
             <div>
+              <button onClick={() => setAdventuresOpen(true)}><Gift size={16}/> Adventures & collection</button>
               {completedDays > 0 && <button onClick={() => setTvOpen(true)}><Radio size={16} /> Cat Gardens TV</button>}
               <button onClick={() => setRosterOpen(true)}><PawPrint size={16} /> Meet other cats</button>
-              <button onClick={() => setAvatarOpen(true)}><UserRound size={16} /> My caretaker</button>
+              <button onClick={() => setAvatarOpen(true)}><UserRound size={16} /> My avatar</button>
+              <button className="mobile-explore" onClick={() => setComfortMap(value=>!value)}><Eye size={16}/> {comfortMap ? 'Hide garden guide' : 'Explore the garden'}</button>
               <button onClick={() => setProfileOpen(true)}><BadgeCheck size={16} /> My impact</button>
               <button onClick={() => setMorningOpen(true)}><Gift size={16} /> {lastDailyClaim === localDay() ? 'Today’s basket' : 'Free daily gift'}</button>
               <button onClick={() => setHelpOpen(true)}><CircleHelp size={16} /> Controls & safety</button>
@@ -1699,6 +1728,7 @@ export default function App() {
 
       {started && !bondingMode && (
         <>
+          <div className="garden-hud" inert={paused} aria-hidden={paused}>
           <CatCard />
           <ObjectiveCard />
           <Inventory />
@@ -1707,7 +1737,8 @@ export default function App() {
           <DrivePad />
           <ActionButton onAction={handleAction} />
           <button className="reset-rover" onClick={resetRover}><RotateCcw size={15} /> Return to gate <kbd>R</kbd></button>
-          {notification && <div className="game-toast"><Sparkles size={16} />{notification}</div>}
+          {notification && <div className="game-toast" role="status"><Sparkles size={16} />{notification}</div>}
+          </div>
         </>
       )}
 
@@ -1718,22 +1749,22 @@ export default function App() {
         />
       )}
 
-      {!started && <ChoosingCeremony onComplete={(id, name, style, promise) => completeChoosing(id, name, style, promise)} />}
+      {!started && <div inert={avatarOpen}><ChoosingCeremony onComplete={(id, name, style, promise) => completeChoosing(id, name, style, promise)} onCustomize={() => setAvatarOpen(true)} /></div>}
       {morningOpen && <MorningBasketModal onClose={() => setMorningOpen(false)} />}
       {personOpen && <PersonDialogue person={personOpen} onClose={() => setPersonOpen(null)} />}
       {bondResult && <BondResultModal result={bondResult} onClose={() => setBondResult(null)} />}
       {installOpen && <InstallPanel onClose={() => setInstallOpen(false)} />}
       {helpOpen && <HelpPanel onClose={() => setHelpOpen(false)} />}
       {tvOpen && <CatGardensTv onClose={() => setTvOpen(false)} onDonate={openDonation} />}
-      {realityOpen && <RealityPortal onClose={() => setRealityOpen(false)} onDonate={openDonation} />}
-      {threadOpen && <RealityThread feed={realityFeed.feed} loading={realityFeed.loading} error={realityFeed.error} notifications={gardenNotifications.notifications} onMarkRead={gardenNotifications.markRead} onClose={() => setThreadOpen(false)} onDonate={openDonation} donationNeeds={splotchNeeds} companionName={companion.name} />}
+      {(realityOpen || threadOpen) && <RealityPortal onClose={() => {setRealityOpen(false);setThreadOpen(false)}} onDonate={openDonation} updates={threadOpen} realityFeed={realityFeed} notifications={gardenNotifications.notifications} onMarkRead={gardenNotifications.markRead} />}
       {dreamOpen && <DreamGarden onClose={() => setDreamOpen(false)} onDonate={openDonation} />}
       {rosterOpen && <CareRoster onClose={() => setRosterOpen(false)} onSelect={(id) => { if (useGame.getState().selectCompanion(id)) setRosterOpen(false) }} />}
       {avatarOpen && <AvatarCreator onClose={() => setAvatarOpen(false)} />}
       {designerOpen && <GardenDesigner onClose={() => setDesignerOpen(false)} onDonate={openDonation} />}
+      {adventuresOpen && <Suspense fallback={<div className="story-backdrop" role="dialog" aria-modal="true" aria-label="Opening your adventure book"><p>Opening your adventure book…</p><button onClick={() => setAdventuresOpen(false)}>Back to garden</button></div>}><AdventureBook onClose={() => setAdventuresOpen(false)} onReality={() => { setAdventuresOpen(false); setRealityOpen(true) }} onDream={() => { setAdventuresOpen(false); if(useGame.getState().enterDream()) setDreamOpen(true) }}/></Suspense>}
       {profileOpen && <GardenProfile onClose={() => setProfileOpen(false)} onDonate={openDonation} />}
       {memoryOpen && <MemoryModal onClose={() => setMemoryOpen(false)} account={account} />}
-      {donationNeed && <DonationDrawer need={donationNeed} onClose={() => setDonationNeed(null)} />}
+      {donationNeed && (isNativeGarden() ? <NativeDonation need={donationNeed} onClose={() => setDonationNeed(null)}/> : <DonationDrawer need={donationNeed} onClose={() => setDonationNeed(null)} />)}
     </main>
   )
 }

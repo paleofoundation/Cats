@@ -1,6 +1,12 @@
+import { CAT_NOSE_DISTANCE } from './characterStaging'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { getCompanionProfile } from './companions'
+import { progressStorage } from './presentation'
+import { defaultAvatarStyle, normalizeAvatarStyle, type AvatarStyle } from './avatars'
+import { initialAdventure, normalizeAdventure, itemById, openCollectionBox, purchaseCollectionItem, claimAdventureChapter, newPuzzle, puzzleMove, type AdventureProgress, type ItemKind, type PuzzleKind, type PuzzleRound } from './adventures'
+export { defaultAvatarStyle } from './avatars'
+export type { AvatarStyle, AvatarBodyFrame, AvatarHairStyle } from './avatars'
 
 export type InputState = {
   forward: number
@@ -18,18 +24,6 @@ export type NearbyAction = 'basket' | 'build' | 'home' | 'supply' | 'cat' | 'pla
 export type CatAnimation = 'idle' | 'eat' | 'walk' | 'dance'
 export type DonationBadge = 'bowl-bringer' | 'gentle-hands' | 'storykeeper' | 'bright-bite' | 'safe-passage' | 'dream-builder' | 'garden-keeper' | 'broadcast-builder' | 'trust-keeper' | 'fluff-crew'
 export type GardenUpgrade = 'blanket' | 'simple-bowl' | 'automatic-bowl' | 'cuddlebox' | 'bench' | 'gravel' | 'collar'
-export type AvatarBodyFrame = 'feminine' | 'masculine' | 'androgynous'
-export type AvatarHairStyle = 'short' | 'long' | 'bun' | 'close-cropped'
-export type AvatarStyle = {
-  displayName: string
-  bodyFrame: AvatarBodyFrame
-  hairStyle: AvatarHairStyle
-  skin: string
-  hair: string
-  eyes: string
-  clothing: string
-  pants: string
-}
 export type CompanionProgress = Pick<GameState, 'splotchDiscovered' | 'hunger' | 'trust' | 'safety' | 'hasFed' | 'hasBonded' | 'bondVisits' | 'lastBondAt' | 'lastFedDate' | 'realityVisits'>
 
 export const upgradeCatalog: Record<GardenUpgrade, { title: string; detail: string; cost: number }> = {
@@ -50,6 +44,16 @@ export const shelterBuildCatalog = [
 ] as const
 
 export type GameState = {
+  adventure: AdventureProgress
+  puzzle: PuzzleRound | null
+  openGiftBox: () => boolean
+  buyCollectionItem: (id: string) => boolean
+  equipCollectionItem: (id: string) => void
+  removeCollectionItem: (kind: ItemKind) => void
+  claimChapter: (id: string) => boolean
+  startPuzzle: (kind: PuzzleKind, level: number) => void
+  movePuzzle: (index: number) => void
+  clearPuzzleCards: () => void
   storyVersion: number
   started: boolean
   choosingComplete: boolean
@@ -115,6 +119,8 @@ export type GameState = {
   catPosition: [number, number, number]
   playerPosition: [number, number, number]
   playerActionUntil: number
+  playerAction: 'work' | 'water' | 'feed' | null
+  mealPosition: [number, number, number] | null
   notification: string | null
   resetToken: number
   input: InputState
@@ -162,16 +168,6 @@ export type GameState = {
 const emptyInput: InputState = { forward: 0, backward: 0, left: 0, right: 0, brake: 0, boost: 0 }
 export const localDay = () => new Date().toLocaleDateString('en-CA')
 
-export const defaultAvatarStyle: AvatarStyle = {
-  displayName: 'Garden caretaker',
-  bodyFrame: 'androgynous',
-  hairStyle: 'short',
-  skin: '#d59b78',
-  hair: '#5b3825',
-  eyes: '#4f9fd2',
-  clothing: '#718e3e',
-  pants: '#765c48',
-}
 
 const defaultCompanionProgress = (): CompanionProgress => ({
   splotchDiscovered: false,
@@ -200,6 +196,7 @@ const captureCompanionProgress = (state: GameState): CompanionProgress => ({
 })
 
 const initialPersistentState = {
+  adventure: initialAdventure(),
   storyVersion: 3,
   started: false,
   choosingComplete: false,
@@ -265,11 +262,59 @@ export const useGame = create<GameState>()(
   persist(
     (set, get) => ({
       ...initialPersistentState,
+      puzzle: null,
+      openGiftBox: () => {
+        const state = get()
+        const result = openCollectionBox(state.adventure, state.gardenTokens)
+        if (!result) return false
+        set({ adventure: result.progress, gardenTokens: result.balance })
+        return true
+      },
+      buyCollectionItem: (id) => {
+        const state = get()
+        const result = purchaseCollectionItem(state.adventure, state.gardenTokens, id)
+        if (!result) return false
+        set({ adventure: result.progress, gardenTokens: result.balance })
+        return true
+      },
+      equipCollectionItem: (id) => {
+        const state = get(), item = itemById(id)
+        if (!item || !state.adventure.owned.includes(id)) return
+        set({ adventure: { ...state.adventure, equipped: { ...state.adventure.equipped, [item.kind]: id }, equippedAt: Date.now() } })
+      },
+      removeCollectionItem: (kind) => {
+        const state = get(), equipped = { ...state.adventure.equipped }
+        delete equipped[kind]
+        set({ adventure: { ...state.adventure, equipped, equippedAt: Date.now() } })
+      },
+      claimChapter: (id) => {
+        const state = get(), result = claimAdventureChapter(state, id)
+        if (!result) return false
+        set({ adventure: result.progress, gardenTokens: state.gardenTokens + result.reward })
+        return true
+      },
+      startPuzzle: (kind, level) => set({ puzzle: newPuzzle(kind, level) }),
+      movePuzzle: (index) => {
+        const state = get()
+        if (!state.puzzle) return
+        const next = puzzleMove(state.puzzle, index)
+        if (next === state.puzzle) return
+        if (next.complete) {
+          const field = next.kind === 'memory' ? 'memoryWins' : 'trailWins'
+          set({ puzzle: next, gardenTokens: state.gardenTokens + next.reward, adventure: { ...state.adventure, [field]: state.adventure[field] + 1 } })
+        } else set({ puzzle: next })
+      },
+      clearPuzzleCards: () => {
+        const puzzle = get().puzzle
+        if (puzzle?.kind === 'memory' && puzzle.flipped.length === 2) set({ puzzle: { ...puzzle, flipped: [] } })
+      },
       nearby: null,
       catAnimation: 'idle',
       catPosition: [0, 0, 4.4],
       playerPosition: [0, 0, -9],
       playerActionUntil: 0,
+      playerAction: null,
+      mealPosition: null,
       notification: null,
       verifiedRealityArtifacts: [],
       resetToken: 0,
@@ -318,13 +363,14 @@ export const useGame = create<GameState>()(
           bondingProgress: 0,
           catAnimation: 'idle',
           catPosition: [0, 0, 4.4],
+          mealPosition: null,
           nearby: null,
           resetToken: state.resetToken + 1,
           notification: `${profile.name} is now your companion. ${profile.visualNote}`,
         })
         return true
       },
-      setAvatarStyle: (style) => set((state) => ({ avatarStyle: { ...state.avatarStyle, ...style } })),
+      setAvatarStyle: (style) => set((state) => ({ avatarStyle: normalizeAvatarStyle({ ...state.avatarStyle, ...style }) })),
       discoverSplotch: () => {
         const state = get()
         if (state.splotchDiscovered || state.nearby !== 'cat') return false
@@ -345,14 +391,16 @@ export const useGame = create<GameState>()(
         set({
           lastDailyClaim: localDay(),
           loginDays: state.loginDays + 1,
-          waterUnits: state.waterUnits + 1,
+          food: Math.max(3, state.food),
+          waterUnits: Math.max(3, state.waterUnits),
           treats: state.treats + 1,
           gardenTokens: state.gardenTokens + tokenGrant,
           carePoints: state.carePoints + 15,
           playerActionUntil: Date.now() + 1200,
+          playerAction: 'work',
           notification: firstCrate
-            ? 'Starter crate opened · building supplies, water, a treat, and 120 garden tokens'
-            : `Morning crate opened · water, a treat, and ${tokenGrant} garden tokens`,
+            ? 'Starter crate opened · three meals, water, a treat, and 120 garden tokens'
+            : `Morning crate opened · meals and water refilled, a treat, and ${tokenGrant} garden tokens`,
         })
         return true
       },
@@ -380,6 +428,7 @@ export const useGame = create<GameState>()(
           safety: Math.min(100, state.safety + (nextStage === 3 ? 24 : 12)),
           carePoints: state.carePoints + next.cost,
           playerActionUntil: Date.now() + 1500,
+          playerAction: 'work',
           nextDiscoveryAt: nextStage === 3 && !state.nextDiscoveryAt ? Date.now() + 8 * 60 * 60 * 1000 : state.nextDiscoveryAt,
           notification: `${next.title} complete · −${next.cost} tokens · +${next.cost} care`,
         })
@@ -405,6 +454,7 @@ export const useGame = create<GameState>()(
           gardenTokens: state.gardenTokens - foodPrice,
           carePoints: state.carePoints + 10,
           playerActionUntil: Date.now() + 900,
+          playerAction: 'work',
           notification: `One ${companion.name} meal packed · −${foodPrice} tokens · +10 care`,
         })
         return true
@@ -425,10 +475,14 @@ export const useGame = create<GameState>()(
           trust: Math.min(100, state.trust + 8),
           carePoints: state.carePoints + 35,
           catAnimation: 'eat',
-          playerActionUntil: Date.now() + 900,
+          mealPosition: [state.catPosition[0], 0, state.catPosition[2] - companion.phenotype.scale * companion.phenotype.length * CAT_NOSE_DISTANCE],
+          playerAction: 'feed',
+          playerActionUntil: Date.now() + 1800,
           notification: `Virtual ${companion.name} is fed for today · +35 care`,
         })
-        window.setTimeout(() => useGame.getState().setCatAnimation('idle'), 2600)
+        window.setTimeout(() => {
+          if (useGame.getState().selectedCompanionId === companion.id && useGame.getState().catAnimation === 'eat') useGame.getState().setCatAnimation('idle')
+        }, 12000)
         return true
       },
       waterPlant: () => {
@@ -449,7 +503,8 @@ export const useGame = create<GameState>()(
           plantHydration: 100,
           chandaHelped: true,
           carePoints: state.carePoints + 30,
-          playerActionUntil: Date.now() + 1200,
+          playerAction: 'water',
+          playerActionUntil: Date.now() + 3600,
           notification: 'Plant watered. Chanda has one less task today · +30 care',
         })
         return true
@@ -629,12 +684,20 @@ export const useGame = create<GameState>()(
         const previous = get().catPosition
         if (Math.hypot(catPosition[0] - previous[0], catPosition[2] - previous[2]) > .025) set({ catPosition })
       },
-      setPlayerPosition: (playerPosition) => set({ playerPosition }),
+      setPlayerPosition: (playerPosition) => {
+        const previous = get().playerPosition
+        if (Math.hypot(playerPosition[0] - previous[0], playerPosition[1] - previous[1], playerPosition[2] - previous[2]) > .015) set({ playerPosition })
+      },
       setNotification: (notification) => set({ notification }),
-      setInput: (input) => set((state) => ({ input: { ...state.input, ...input } })),
+      setInput: (input) => {
+        const previous = get().input
+        if (Object.entries(input).some(([key, value]) => previous[key as keyof InputState] !== value)) set({ input: { ...previous, ...input } })
+      },
       resetRover: () => set((state) => ({ resetToken: state.resetToken + 1, notification: 'Caretaker returned to the garden gate.' })),
       resetGame: () => set((state) => ({
         ...initialPersistentState,
+        adventure: initialAdventure(),
+        puzzle: null,
         selectedCompanionId: state.selectedCompanionId,
         avatarStyle: state.avatarStyle,
         donationBadges: state.donationBadges,
@@ -644,6 +707,8 @@ export const useGame = create<GameState>()(
         catPosition: [0, 0, 4.4],
         playerPosition: [0, 0, -9],
         playerActionUntil: 0,
+        playerAction: null,
+        mealPosition: null,
         notification: null,
         verifiedRealityArtifacts: state.verifiedRealityArtifacts,
         resetToken: state.resetToken + 1,
@@ -652,7 +717,12 @@ export const useGame = create<GameState>()(
     }),
     {
       name: 'cat-gardens-splotch-relationship-v4',
-      version: 8,
+      storage: progressStorage(() => localStorage),
+      version: 9,
+      merge: (persisted, current) => {
+        const saved = persisted as Partial<GameState> | undefined
+        return { ...current, ...saved, adventure: normalizeAdventure(saved?.adventure), avatarStyle: normalizeAvatarStyle(saved?.avatarStyle) }
+      },
       migrate: (persistedState, version) => {
         const state = persistedState as Partial<GameState>
         if (version < 6) {
@@ -691,6 +761,7 @@ export const useGame = create<GameState>()(
         } as GameState
       },
       partialize: (state) => ({
+        adventure: state.adventure,
         storyVersion: state.storyVersion,
         started: state.started,
         choosingComplete: state.choosingComplete,

@@ -4,7 +4,7 @@ const { database, ensureSchema } = require('./_db')
 const STRING_ARRAY_FIELDS = ['foodFound', 'partsFound', 'dreamDiscoveries', 'tvChannelsVisited']
 const BOOLEAN_FIELDS = ['started', 'hasFed', 'hasBonded', 'benchPlaced', 'chandaHelped', 'shareRewardClaimed']
 const NUMBER_LIMITS = {
-  storyVersion: [2, 2],
+  storyVersion: [2, 3],
   food: [0, 20],
   parts: [0, 20],
   waterUnits: [0, 1000],
@@ -32,6 +32,18 @@ const NUMBER_LIMITS = {
 function sanitizeState(input) {
   const source = input && typeof input === 'object' ? input : {}
   const state = {}
+  if (source.adventure && typeof source.adventure === 'object') {
+    const adventure = source.adventure
+    const ids = value => Array.isArray(value) ? [...new Set(value.filter(id => typeof id === 'string' && /^[a-z0-9-]{1,60}$/.test(id)))].slice(0, 100) : []
+    const clean = { owned: ids(adventure.owned), chapters: ids(adventure.chapters), lastReveal: ids(adventure.lastReveal).slice(0, 3), equipped: {} }
+    for (const field of ['freeBoxes', 'freeBoxesUsed', 'boxesOpened', 'memoryWins', 'trailWins']) clean[field] = Number.isFinite(adventure[field]) ? Math.max(0, Math.min(100000, Math.floor(adventure[field]))) : 0
+    clean.equippedAt = Number.isFinite(adventure.equippedAt) ? Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.floor(adventure.equippedAt))) : 0
+    for (const kind of ['litter', 'collar', 'sign', 'bowl']) {
+      const id = adventure.equipped?.[kind]
+      if (clean.owned.includes(id)) clean.equipped[kind] = id
+    }
+    state.adventure = clean
+  }
   for (const field of STRING_ARRAY_FIELDS) {
     if (Array.isArray(source[field])) state[field] = [...new Set(source[field].filter((value) => typeof value === 'string').map((value) => value.slice(0, 80)))].slice(0, 100)
   }
@@ -51,8 +63,13 @@ function sanitizeState(input) {
     const clean = {}
     if (typeof avatar.displayName === 'string') clean.displayName = avatar.displayName.replace(/[<>]/g, '').trim().slice(0, 30)
     if (['feminine', 'masculine', 'androgynous'].includes(avatar.bodyFrame)) clean.bodyFrame = avatar.bodyFrame
-    if (['short', 'long', 'bun', 'close-cropped'].includes(avatar.hairStyle)) clean.hairStyle = avatar.hairStyle
-    for (const color of ['skin', 'hair', 'eyes', 'clothing', 'pants']) {
+    if (['short', 'long', 'bun', 'close-cropped', 'ponytail', 'bald'].includes(avatar.hairStyle)) clean.hairStyle = avatar.hairStyle
+    if (['tee', 'tank', 'long-sleeve'].includes(avatar.topStyle)) clean.topStyle = avatar.topStyle
+    if (['trousers', 'shorts', 'skirt'].includes(avatar.bottomStyle)) clean.bottomStyle = avatar.bottomStyle
+    if (['trainers', 'flip-flops', 'boots', 'barefoot'].includes(avatar.footwear)) clean.footwear = avatar.footwear
+    if (Number.isFinite(avatar.height)) clean.height = Math.max(1.4, Math.min(1.95, avatar.height))
+    if (Number.isFinite(avatar.build)) clean.build = Math.max(.8, Math.min(1.3, avatar.build))
+    for (const color of ['skin', 'hair', 'eyes', 'clothing', 'pants', 'shoes']) {
       if (typeof avatar[color] === 'string' && /^#[0-9a-f]{6}$/i.test(avatar[color])) clean[color] = avatar[color].toLowerCase()
     }
     state.avatarStyle = clean

@@ -81,8 +81,8 @@ export const splotchNeeds: SplotchNeed[] = [
     category: 'recurring',
     eyebrow: 'EVERYDAY CARE',
     title: 'Food for a big, healthy boy',
-    detail: 'A recurring need. The reviewed monthly cost and food allocation will come from the sanctuary ledger rather than a fabricated game total.',
-    status: 'Cost awaiting QuickBooks review',
+    detail: 'A recurring need. The sanctuary will publish the monthly cost and food allocation after reviewing its records.',
+    status: 'Reviewed cost not yet published',
     suggestedAmount: 10,
     badge: 'bowl-bringer',
   },
@@ -470,3 +470,9 @@ export const places: Place[] = [
     ],
   },
 ]
+
+export function careNeedsFor(catId: string): CareNeed[] {
+  if (catId === 'splotch') return splotchNeeds
+  const name = cats.find(cat => cat.id === catId)?.name || 'this cat'
+  return [{...splotchNeeds.find(need => need.id === 'food')!, catId, title:`Food and daily care for ${name}`, detail:`Support ${name} and the sanctuary’s shared food and daily care program.`}]
+}

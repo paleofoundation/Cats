@@ -6,6 +6,9 @@ import { ArrowLeft, Check, ChevronRight, Clock3, HeartHandshake, Landmark, Repea
 import catGardensIcon from '../assets/cat-gardens-icon.png'
 import donationHero from '../assets/hero_donate_v2.jpg'
 import './donate.css'
+import { catStories } from './catStories'
+import { careNeedsFor, splotchNeeds } from './data'
+import { tvFundingNeeds } from './catGardensTv'
 
 type Frequency = 'once' | 'monthly'
 
@@ -66,7 +69,12 @@ function initialSelection() {
   const frequency: Frequency = params.get('frequency') === 'once' ? 'once' : 'monthly'
   const requestedAmount = Number(params.get('amount'))
   const programId = params.get('program') || params.get('campaign') || 'greatest-need'
-  const program = programId === 'full-month' ? fullMonthProgram() : givingPrograms.find((item) => item.id === programId || item.needId === programId) || givingPrograms[0]
+  let program = programId === 'full-month' ? fullMonthProgram() : givingPrograms.find((item) => item.id === programId || item.needId === programId) || givingPrograms[0]
+  const catId = params.get('cat')
+  const cat = catStories[catId as keyof typeof catStories]
+  if (cat && program.id === 'food') program = {...program, catId:cat.id, name:`Food and daily care for ${cat.name}`, description:`Support ${cat.name} and the sanctuary’s shared food and daily care program.`}
+  const need = [...(cat ? careNeedsFor(cat.id) : []), ...splotchNeeds.filter(item=>item.catId===catId), ...tvFundingNeeds.filter(item=>item.catId===catId)].find(item=>item.id===params.get('need') && item.category!=='completed')
+  if (need) program = {id:need.id,name:need.title,eyebrow:need.eyebrow,description:need.detail,needId:need.id,badge:need.badge,catId:need.catId||cat?.id||'splotch',program:need.program||'cat-care',suggested:need.suggestedAmount}
   const amount = Number.isFinite(requestedAmount) && requestedAmount >= 5 ? Math.min(500000, requestedAmount) : program.suggested
   return { frequency, amount, program }
 }

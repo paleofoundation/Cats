@@ -1,0 +1,23 @@
+@import './fonts.css';
+.install-content { color:#263c31; font-family:'Manrope',system-ui,sans-serif; max-width:650px; margin:auto; padding:45px 32px; }
+.install-icon { width:80px; height:80px; border-radius:22px; box-shadow:0 8px 25px #21382d20; }
+.install-content .install-eyebrow { font-size:10px; font-weight:700; letter-spacing:.15em; margin:28px 0 15px; color:#778348; }
+.install-content h1 { font:400 clamp(45px,6vw,70px)/1.06 Georgia,serif; letter-spacing:-.045em; margin:0; }
+.install-content>p { line-height:1.7; font-size:15px; color:#657167; }
+.install-platforms { display:flex; gap:7px; margin:27px 0; }
+.install-platforms button { min-height:44px; padding:10px 14px; border:1px solid #ccd4bd; border-radius:50px; color:#334d3b; background:transparent; cursor:pointer; font:600 12px system-ui; }
+.install-platforms button[aria-pressed=true] { background:#2e4b39; color:white; border-color:#2e4b39; }
+.install-steps { padding:0; list-style:none; display:grid; gap:16px; }
+.install-steps li { display:flex; align-items:center; gap:17px; font-size:14px; line-height:1.65; }
+.install-steps b { flex-shrink:0; width:35px; height:35px; border-radius:50%; display:grid; place-items:center; background:#e4ebd2; }
+.install-steps svg { vertical-align:middle; }
+.install-features { display:flex; flex-wrap:wrap; gap:12px 20px; margin:30px 0 20px; }
+.install-features>span { display:flex; align-items:center; gap:7px; font-size:12px; }
+.install-content .install-note { font-size:12px; line-height:1.75; }
+.install-action { display:inline-flex; align-items:center; justify-content:center; gap:12px; border:0; background:#2e4b39; color:white; padding:15px 22px; border-radius:50px; min-height:48px; text-decoration:none; font:600 13px system-ui; cursor:pointer; }
+.install-success { display:flex; align-items:center; gap:12px; padding:22px; background:#e4ebd2; border-radius:15px; margin-top:25px; }
+.install-dialog { position:relative; width:min(680px,100%); max-height:calc(100dvh - 30px); overflow:auto; background:#f6f3e9; border-radius:24px; color:#263c31; }
+.install-dialog .close-button { position:absolute; right:16px; top:16px; min-width:44px; min-height:44px; border-radius:50%; color:#263c31; background:#e4ebd2; cursor:pointer; }
+.app-install-page { overflow:auto; margin:0; background:#f6f3e9; color:#263c31; padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+.install-home-link { display:inline-flex; align-items:center; gap:10px; margin:20px 32px 0; min-height:44px; color:#263c31; text-decoration:none; font:600 13px system-ui; }
+@media(max-width:480px) { .install-content { padding:40px 22px; } .install-platforms { gap:5px; } .install-platforms button { padding:10px 12px; font-size:11px; } .install-dialog { max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); border-radius:18px; } }
