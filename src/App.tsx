@@ -40,7 +40,7 @@ import { EmbeddedCheckout, EmbeddedCheckoutProvider } from '@stripe/react-stripe
 import { loadStripe, type Stripe } from '@stripe/stripe-js'
 import catGardensMark from '../assets/cat-gardens-icon.png'
 import splotchImage from '../assets/splotch.jpg'
-import chandaImage from '../assets/chanda-caretaker.jpg'
+import chandaImage from '../assets/chanda-with-morpheus.jpg'
 import cuddleboxImage from '../assets/hero_cuddleboxes.jpg'
 import mathikoloniGardenShell from '../assets/mathikoloni-garden-shell.webp'
 import mathikoloniAerialPlot from '../assets/mathikoloni-aerial-plot.webp'
@@ -553,7 +553,7 @@ function PersonDialogue({ person, onClose }: { person: PersonId; onClose: () => 
     <div className="story-backdrop person-backdrop" role="presentation">
       <article className={`person-dialogue person-${person}`} role="dialog" aria-modal="true" aria-labelledby="person-title">
         <button className="close-button" onClick={onClose} aria-label={`Close ${person} conversation`}><X size={19} /></button>
-        <div className={`person-portrait ${person === 'chanda' ? 'real-person-portrait' : ''}`}>{person === 'chanda' ? <img src={chandaImage} alt="Chanda, Cat Gardens’ full-time caretaker, surrounded by sanctuary cats" /> : <><UserRound /><span>{person.charAt(0).toUpperCase()}</span><i /></>}</div>
+        <div className={`person-portrait ${person === 'chanda' ? 'real-person-portrait' : ''}`}>{person === 'chanda' ? <img src={chandaImage} alt="Chanda, Cat Gardens’ full-time caretaker, holding a sanctuary cat" /> : <><UserRound /><span>{person.charAt(0).toUpperCase()}</span><i /></>}</div>
         <div className="person-copy">
           <p className="eyebrow">{copy.eyebrow}</p>
           <h2 id="person-title">{copy.title}</h2>
